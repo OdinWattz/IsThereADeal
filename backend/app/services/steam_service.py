@@ -13,7 +13,7 @@ STEAM_API_BASE = "https://api.steampowered.com"
 async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
     """Fetch game metadata and Steam price for a given Steam appid."""
     url = f"{STEAM_STORE_BASE}/appdetails"
-    params = {"appids": appid, "cc": "us", "l": "en"}
+    params = {"appids": appid, "cc": "nl", "l": "en"}
 
     async with httpx.AsyncClient(timeout=15) as client:
         try:
@@ -62,7 +62,7 @@ async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
             "regular_price": regular_price,
             "sale_price": sale_price,
             "discount_percent": discount_pct,
-            "currency": price_overview.get("currency", "USD"),
+            "currency": price_overview.get("currency", "EUR"),
             "url": f"https://store.steampowered.com/app/{appid}",
             "is_on_sale": is_on_sale,
         },
@@ -72,7 +72,7 @@ async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
 async def search_steam_games(query: str):
     """Search for games using the Steam store search API."""
     url = "https://store.steampowered.com/api/storesearch/"
-    params = {"term": query, "l": "english", "cc": "US"}
+    params = {"term": query, "l": "english", "cc": "NL"}
 
     async with httpx.AsyncClient(timeout=10) as client:
         try:
@@ -95,7 +95,7 @@ async def search_steam_games(query: str):
 async def get_featured_deals():
     """Fetch featured / on-sale games from Steam."""
     url = f"{STEAM_STORE_BASE}/featuredcategories"
-    params = {"cc": "us", "l": "en"}
+    params = {"cc": "nl", "l": "en"}
 
     async with httpx.AsyncClient(timeout=10) as client:
         try:

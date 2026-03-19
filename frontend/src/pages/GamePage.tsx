@@ -6,9 +6,30 @@ import { PriceHistoryChart } from '../components/PriceHistoryChart'
 import { useAuthStore } from '../store/authStore'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import {
-  Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft,
-} from 'lucide-react'
+import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
+
+const cardStyle: React.CSSProperties = {
+  backgroundColor: '#111320',
+  border: '1px solid #1e2235',
+  borderRadius: '12px',
+  padding: '24px',
+  marginBottom: '24px',
+}
+
+const actionBtn = (bg: string): React.CSSProperties => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '9px 18px',
+  borderRadius: '8px',
+  fontSize: '0.875rem',
+  fontWeight: 500,
+  border: 'none',
+  cursor: 'pointer',
+  backgroundColor: bg,
+  color: '#fff',
+  textDecoration: 'none',
+})
 
 export function GamePage() {
   const { appid } = useParams<{ appid: string }>()
@@ -34,45 +55,46 @@ export function GamePage() {
 
   const wishlistMutation = useMutation({
     mutationFn: () => addToWishlist(game!.id),
-    onSuccess: () => { toast.success('Added to wishlist!'); qc.invalidateQueries({ queryKey: ['wishlist'] }) },
-    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Failed to add'),
+    onSuccess: () => { toast.success('Toegevoegd aan verlanglijst!'); qc.invalidateQueries({ queryKey: ['wishlist'] }) },
+    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Mislukt'),
   })
 
   const alertMutation = useMutation({
     mutationFn: (price: number) => createAlert(game!.id, price),
     onSuccess: () => {
-      toast.success('Price alert set!')
+      toast.success('Prijsalert ingesteld!')
       setShowAlertForm(false)
       setAlertPrice('')
       qc.invalidateQueries({ queryKey: ['alerts'] })
     },
-    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Failed to set alert'),
+    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Mislukt'),
   })
 
   const handleRefresh = async () => {
     await getGame(appid!, true)
     refetch()
-    toast.success('Prices refreshed!')
+    toast.success('Prijzen vernieuwd!')
   }
+
+  const formatPrice = (val?: number | null) =>
+    val != null ? `€${val.toFixed(2).replace('.', ',')}` : null
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-64 bg-[#13151f] rounded-xl" />
-          <div className="h-8 bg-[#13151f] rounded w-1/2" />
-          <div className="h-48 bg-[#13151f] rounded-xl" />
-        </div>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{ height: '80px', backgroundColor: '#111320', borderRadius: '12px', marginBottom: '16px' }} />
+        ))}
       </div>
     )
   }
 
   if (error || !game) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <p className="text-red-400 mb-4">Game not found or failed to load.</p>
-        <button onClick={() => navigate(-1)} className="text-purple-400 hover:text-purple-300">
-          ← Go back
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', textAlign: 'center' }}>
+        <p style={{ color: '#f87171', marginBottom: '16px' }}>Game niet gevonden of laden mislukt.</p>
+        <button onClick={() => navigate(-1)} style={{ color: '#a78bfa', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
+          ← Terug
         </button>
       </div>
     )
@@ -81,72 +103,84 @@ export function GamePage() {
   const steamPrice = game.prices.find((p) => p.store_name === 'Steam')
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Back */}
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+
+      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-slate-400 hover:text-white text-sm mb-6 transition-colors"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', marginBottom: '24px', padding: 0 }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
       >
-        <ChevronLeft size={16} /> Back
+        <ChevronLeft size={16} /> Terug
       </button>
 
       {/* Hero */}
-      <div className="flex flex-col md:flex-row gap-6 mb-8">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', marginBottom: '28px' }}>
         <img
           src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`}
           alt={game.name}
-          className="w-full md:w-80 rounded-xl object-cover"
+          style={{ width: '320px', maxWidth: '100%', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
         />
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-2">{game.name}</h1>
+        <div style={{ flex: 1, minWidth: '260px' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{game.name}</h1>
 
-          {/* Meta */}
-          <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-4">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
             {game.release_date && (
-              <span className="flex items-center gap-1">
-                <Calendar size={14} /> {game.release_date}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+                <Calendar size={13} /> {game.release_date}
               </span>
             )}
             {game.developers && (
-              <span className="flex items-center gap-1">
-                <Cpu size={14} /> {game.developers}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+                <Cpu size={13} /> {game.developers}
               </span>
             )}
             {game.genres && (
-              <span className="flex items-center gap-1">
-                <Tag size={14} /> {game.genres}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+                <Tag size={13} /> {game.genres}
               </span>
             )}
           </div>
 
           {game.short_description && (
-            <p className="text-slate-400 text-sm mb-4 leading-relaxed">{game.short_description}</p>
+            <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '20px' }}>
+              {game.short_description}
+            </p>
           )}
 
-          {/* Best price highlight */}
           {game.best_price != null && (
-            <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-4 mb-4 inline-block">
-              <p className="text-xs text-green-400 uppercase tracking-wider mb-1">Best price</p>
-              <p className="text-3xl font-bold text-green-400">${game.best_price.toFixed(2)}</p>
-              {game.best_store && <p className="text-sm text-slate-400 mt-1">on {game.best_store}</p>}
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: 'rgba(22,163,74,0.12)',
+              border: '1px solid rgba(22,163,74,0.3)',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+            }}>
+              <p style={{ fontSize: '0.7rem', color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Beste prijs</p>
+              <p style={{ fontSize: '2.2rem', fontWeight: 700, color: '#4ade80', lineHeight: 1 }}>
+                {formatPrice(game.best_price)}
+              </p>
+              {game.best_store && (
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>via {game.best_store}</p>
+              )}
               {steamPrice?.regular_price && game.best_price < steamPrice.regular_price && (
-                <p className="text-xs text-slate-500 mt-1 line-through">
-                  Steam: ${steamPrice.regular_price.toFixed(2)}
+                <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px', textDecoration: 'line-through' }}>
+                  Steam: {formatPrice(steamPrice.regular_price)}
                 </p>
               )}
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
             {game.steam_url && (
-              <a
-                href={game.steam_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-[#1b2838] hover:bg-[#2a475e] text-white rounded-lg text-sm transition-colors"
+              <a href={game.steam_url} target="_blank" rel="noopener noreferrer"
+                style={{ ...actionBtn('#1b2838'), border: '1px solid #2a475e' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2a475e')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1b2838')}
               >
-                <ExternalLink size={14} /> Steam Store
+                <ExternalLink size={14} /> Steam
               </a>
             )}
 
@@ -155,16 +189,19 @@ export function GamePage() {
                 <button
                   onClick={() => wishlistMutation.mutate()}
                   disabled={wishlistMutation.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+                  style={{ ...actionBtn('#7c3aed'), opacity: wishlistMutation.isPending ? 0.5 : 1 }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#6d28d9')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7c3aed')}
                 >
-                  <Heart size={14} /> Add to Wishlist
+                  <Heart size={14} /> Verlanglijst
                 </button>
-
                 <button
                   onClick={() => setShowAlertForm(!showAlertForm)}
-                  className="flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm transition-colors"
+                  style={actionBtn('#b45309')}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#92400e')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#b45309')}
                 >
-                  <Bell size={14} /> Set Alert
+                  <Bell size={14} /> Alert
                 </button>
               </>
             )}
@@ -172,35 +209,38 @@ export function GamePage() {
             <button
               onClick={handleRefresh}
               disabled={isFetching}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1e2235] hover:bg-[#252840] text-slate-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+              style={{ ...actionBtn('#1e2235'), color: '#94a3b8', opacity: isFetching ? 0.5 : 1, border: '1px solid #2a2d3e' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#252840')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
             >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
-              Refresh prices
+              <RefreshCw size={14} />
+              Vernieuwen
             </button>
           </div>
 
-          {/* Alert price form */}
           {showAlertForm && (
-            <div className="mt-4 flex items-center gap-3 p-4 bg-[#13151f] border border-[#1e2235] rounded-xl">
-              <span className="text-sm text-slate-300">Alert me when price drops below</span>
-              <div className="flex items-center gap-1 bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3 py-2">
-                <span className="text-slate-400">$</span>
+            <div style={{
+              marginTop: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px',
+              padding: '16px', backgroundColor: '#0d0f1a', border: '1px solid #1e2235', borderRadius: '10px',
+            }}>
+              <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>Alert als prijs onder</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#1e2235', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '8px 12px' }}>
+                <span style={{ color: '#64748b' }}>€</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="number" step="0.01" min="0"
                   value={alertPrice}
                   onChange={(e) => setAlertPrice(e.target.value)}
-                  className="w-20 bg-transparent text-white text-sm focus:outline-none"
-                  placeholder="9.99"
+                  style={{ width: '80px', backgroundColor: 'transparent', color: '#fff', fontSize: '0.875rem', border: 'none', outline: 'none' }}
+                  placeholder="9,99"
                 />
               </div>
+              <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>komt</span>
               <button
                 onClick={() => alertMutation.mutate(parseFloat(alertPrice))}
                 disabled={!alertPrice || alertMutation.isPending}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+                style={{ ...actionBtn('#b45309'), opacity: !alertPrice || alertMutation.isPending ? 0.5 : 1 }}
               >
-                Set Alert
+                Instellen
               </button>
             </div>
           )}
@@ -208,20 +248,18 @@ export function GamePage() {
       </div>
 
       {/* Price Table */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">
-          All Prices ({game.prices.length} stores)
+      <div style={cardStyle}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
+          Alle prijzen ({game.prices.length} winkels)
         </h2>
         <PriceTable prices={game.prices} />
-      </section>
+      </div>
 
       {/* Price History */}
-      <section>
-        <h2 className="text-xl font-semibold text-white mb-4">Price History</h2>
-        <div className="bg-[#13151f] border border-[#1e2235] rounded-xl p-6">
-          <PriceHistoryChart history={history} />
-        </div>
-      </section>
+      <div style={cardStyle}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>Prijsgeschiedenis</h2>
+        <PriceHistoryChart history={history} />
+      </div>
     </div>
   )
 }

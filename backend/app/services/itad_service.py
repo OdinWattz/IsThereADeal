@@ -10,6 +10,8 @@ ITAD_BASE = "https://api.isthereanydeal.com"
 
 
 async def _get(path: str, params: dict) -> Optional[Any]:
+    if not settings.ITAD_API_KEY or settings.ITAD_API_KEY in ("your_itad_api_key_here", ""):
+        return None
     params["key"] = settings.ITAD_API_KEY
     async with httpx.AsyncClient(timeout=15) as client:
         try:
@@ -34,7 +36,7 @@ async def get_prices_for_game(steam_appid: str) -> List[Dict[str, Any]]:
     if not game_id:
         return []
 
-    data = await _get("/games/prices/v2", {"id": game_id, "country": "US"})
+    data = await _get("/games/prices/v2", {"id": game_id, "country": "NL"})
     if not data:
         return []
 
@@ -46,8 +48,7 @@ async def get_prices_for_game(steam_appid: str) -> List[Dict[str, Any]]:
 
         sale_price = price_info.get("amount")
         regular_price = regular_info.get("amount")
-        currency = price_info.get("currency", "USD")
-
+        currency = price_info.get("currency", "EUR")
         discount_pct = 0
         is_on_sale = False
         if regular_price and sale_price and regular_price > 0:
@@ -74,7 +75,7 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     if not game_id:
         return []
 
-    data = await _get("/games/history/v2", {"id": game_id, "country": "US"})
+    data = await _get("/games/history/v2", {"id": game_id, "country": "NL"})
     if not data:
         return []
 

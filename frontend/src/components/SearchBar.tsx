@@ -52,38 +52,64 @@ export function SearchBar() {
   }
 
   return (
-    <div ref={ref} className="relative w-full">
+    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
       <form onSubmit={handleSubmit}>
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div style={{ position: 'relative' }}>
+          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
           <input
             type="text"
             value={query}
             onChange={handleChange}
             onFocus={() => results.length > 0 && setOpen(true)}
             placeholder="Search games..."
-            className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+            style={{
+              width: '100%',
+              backgroundColor: '#191c2a',
+              border: '1px solid #2a2d3e',
+              borderRadius: '10px',
+              paddingLeft: '36px',
+              paddingRight: '36px',
+              paddingTop: '9px',
+              paddingBottom: '9px',
+              fontSize: '0.875rem',
+              color: '#e2e8f0',
+              outline: 'none',
+            }}
+            onFocusCapture={e => (e.currentTarget.style.borderColor = '#7c3aed')}
+            onBlurCapture={e => (e.currentTarget.style.borderColor = '#2a2d3e')}
           />
           {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-purple-400 border-t-transparent rounded-full animate-spin" />
+            <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', border: '2px solid #7c3aed', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
           )}
         </div>
       </form>
 
       {open && results.length > 0 && (
-        <div className="absolute top-full mt-1 w-full bg-[#1a1d2e] border border-[#2a2d3e] rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', width: '100%',
+          backgroundColor: '#13152a', border: '1px solid #2a2d3e',
+          borderRadius: '12px', boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+          zIndex: 100, overflow: 'hidden',
+        }}>
           {results.map((r) => (
             <button
               key={r.steam_appid}
               onClick={() => handleSelect(r)}
-              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#252840] transition-colors text-left"
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px', border: 'none', background: 'none',
+                cursor: 'pointer', textAlign: 'left',
+                borderBottom: '1px solid #1e2235',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {r.header_image && (
-                <img src={r.header_image} alt="" className="w-12 h-8 object-cover rounded" />
+                <img src={r.header_image} alt="" style={{ width: '52px', height: '32px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
               )}
-              <span className="text-sm text-slate-200 truncate">{r.name}</span>
+              <span style={{ fontSize: '0.875rem', color: '#e2e8f0', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
               {r.is_in_db && (
-                <span className="ml-auto shrink-0 text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded-full">tracked</span>
+                <span style={{ flexShrink: 0, fontSize: '0.7rem', backgroundColor: 'rgba(124,58,237,0.2)', color: '#a78bfa', padding: '2px 8px', borderRadius: '999px' }}>tracked</span>
               )}
             </button>
           ))}

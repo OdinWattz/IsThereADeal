@@ -30,62 +30,44 @@ export function AlertsPage() {
   const triggered = alerts.filter((a) => !a.is_active && a.triggered_at)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-        <Bell size={28} className="text-yellow-400" />
-        Price Alerts
+    <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px' }}>
+      <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Bell size={28} color="#facc15" /> Prijsalerts
       </h1>
-      <p className="text-slate-400 mb-8">
-        {active.length} active alert{active.length !== 1 ? 's' : ''}
+      <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '0.9rem' }}>
+        {active.length} actieve alert{active.length !== 1 ? 's' : ''}
       </p>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-[#13151f] rounded-xl h-20 animate-pulse" />
-          ))}
-        </div>
+        <div>{Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: '76px', backgroundColor: '#111320', borderRadius: '12px', marginBottom: '10px' }} />)}</div>
       ) : alerts.length === 0 ? (
-        <div className="text-center py-20 text-slate-500">
-          <Bell size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="mb-4">No price alerts set yet.</p>
-          <Link to="/" className="text-purple-400 hover:text-purple-300">Browse games to set alerts →</Link>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: '#475569' }}>
+          <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
+          <p style={{ marginBottom: '12px' }}>Nog geen prijsalerts.</p>
+          <Link to="/" style={{ color: '#a78bfa', textDecoration: 'none', fontSize: '0.9rem' }}>Games zoeken om alerts in te stellen →</Link>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Active alerts */}
+        <div>
           {active.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Active</h2>
-              <div className="space-y-3">
-                {active.map((alert) => (
-                  <AlertRow
-                    key={alert.id}
-                    alert={alert}
-                    onDelete={() => deleteMutation.mutate(alert.id)}
-                    onToggle={() => toggleMutation.mutate(alert.id)}
-                  />
-                ))}
-              </div>
+            <div style={{ marginBottom: '28px' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>Actief</p>
+              {active.map((alert) => (
+                <AlertRow key={alert.id} alert={alert}
+                  onDelete={() => deleteMutation.mutate(alert.id)}
+                  onToggle={() => toggleMutation.mutate(alert.id)} />
+              ))}
             </div>
           )}
-
-          {/* Triggered alerts */}
           {triggered.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <CheckCircle size={14} className="text-green-400" /> Triggered
-              </h2>
-              <div className="space-y-3 opacity-60">
-                {triggered.map((alert) => (
-                  <AlertRow
-                    key={alert.id}
-                    alert={alert}
-                    onDelete={() => deleteMutation.mutate(alert.id)}
-                    onToggle={() => toggleMutation.mutate(alert.id)}
-                  />
-                ))}
-              </div>
+            <div style={{ opacity: 0.65 }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle size={13} color="#4ade80" /> Getriggerd
+              </p>
+              {triggered.map((alert) => (
+                <AlertRow key={alert.id} alert={alert}
+                  onDelete={() => deleteMutation.mutate(alert.id)}
+                  onToggle={() => toggleMutation.mutate(alert.id)} />
+              ))}
             </div>
           )}
         </div>
@@ -99,67 +81,43 @@ function AlertRow({ alert, onDelete, onToggle }: {
   onDelete: () => void
   onToggle: () => void
 }) {
+  const fmt = (v?: number | null) => v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—'
   const currentBest = alert.game.best_price
   const willTrigger = currentBest != null && currentBest <= alert.target_price
+  const borderColor = alert.triggered_at ? 'rgba(22,163,74,0.3)' : willTrigger ? 'rgba(234,179,8,0.4)' : '#1e2235'
 
   return (
-    <div className={`flex items-center gap-4 p-4 bg-[#13151f] border rounded-xl transition-colors ${
-      alert.triggered_at
-        ? 'border-green-700/30'
-        : willTrigger
-        ? 'border-yellow-600/50'
-        : 'border-[#1e2235]'
-    }`}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 16px', backgroundColor: '#111320', border: `1px solid ${borderColor}`, borderRadius: '12px', marginBottom: '10px' }}>
       <Link to={`/game/${alert.game.steam_appid}`}>
-        <img
-          src={alert.game.header_image || ''}
-          alt={alert.game.name}
-          className="w-20 h-12 object-cover rounded-lg"
-        />
+        <img src={alert.game.header_image || ''} alt={alert.game.name}
+          style={{ width: '80px', height: '48px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
       </Link>
 
-      <div className="flex-1 min-w-0">
-        <Link
-          to={`/game/${alert.game.steam_appid}`}
-          className="text-sm font-medium text-white hover:text-purple-300 transition-colors line-clamp-1"
-        >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Link to={`/game/${alert.game.steam_appid}`}
+          style={{ fontSize: '0.875rem', fontWeight: 500, color: '#fff', textDecoration: 'none', display: 'block', marginBottom: '4px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           {alert.game.name}
         </Link>
-        <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-400">
-          <span>
-            Target: <span className="text-yellow-400 font-medium">${alert.target_price.toFixed(2)}</span>
-          </span>
-          <span>
-            Current best:{' '}
-            <span className={currentBest != null && currentBest <= alert.target_price ? 'text-green-400 font-medium' : 'text-white'}>
-              {currentBest != null ? `$${currentBest.toFixed(2)}` : '—'}
-            </span>
-          </span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.78rem', color: '#64748b' }}>
+          <span>Doel: <span style={{ color: '#facc15', fontWeight: 600 }}>{fmt(alert.target_price)}</span></span>
+          <span>Huidig: <span style={{ color: willTrigger ? '#4ade80' : '#fff', fontWeight: 600 }}>{fmt(currentBest)}</span></span>
           {alert.triggered_at && (
-            <span className="text-green-400 flex items-center gap-1">
-              <CheckCircle size={10} /> Triggered {new Date(alert.triggered_at).toLocaleDateString()}
+            <span style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle size={10} /> Getriggerd op {new Date(alert.triggered_at).toLocaleDateString('nl-NL')}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onToggle}
-          className={`p-2 rounded-lg transition-colors ${
-            alert.is_active
-              ? 'text-yellow-400 hover:bg-yellow-900/20'
-              : 'text-slate-500 hover:bg-[#1e2235]'
-          }`}
-          title={alert.is_active ? 'Pause alert' : 'Resume alert'}
-        >
+      <div style={{ display: 'flex', gap: '4px' }}>
+        <button onClick={onToggle} title={alert.is_active ? 'Pauzeer' : 'Hervatten'}
+          style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer', color: alert.is_active ? '#facc15' : '#475569', borderRadius: '8px' }}>
           {alert.is_active ? <Bell size={16} /> : <BellOff size={16} />}
         </button>
-        <button
-          onClick={onDelete}
-          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-          title="Delete alert"
-        >
+        <button onClick={onDelete} title="Verwijderen"
+          style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#475569', borderRadius: '8px' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
           <Trash2 size={16} />
         </button>
       </div>

@@ -48,30 +48,33 @@ async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
     if game_name:
         key_prices = await get_all_key_reseller_prices(game_name)
 
-    # Merge: deduplicate by store name, prefer ITAD data over CheapShark for official stores
+    # Merge: deduplicate by normalised store name
     all_prices: List[Dict] = []
-    seen_stores = set()
+    seen_names: set = set()
+
+    def _name_key(p: Dict) -> str:
+        return p.get("store_name", "").lower().strip()
 
     # Steam official first
     if steam_data and "price" in steam_data:
         p = steam_data["price"]
         if p.get("regular_price") is not None:
             all_prices.append(p)
-            seen_stores.add("steam")
+            seen_names.add(_name_key(p))
 
     # ITAD prices
     for p in (itad_prices or []):
-        key = p.get("store_id") or p.get("store_name", "").lower().replace(" ", "_")
-        if key not in seen_stores:
+        k = _name_key(p)
+        if k not in seen_names:
             all_prices.append(p)
-            seen_stores.add(key)
+            seen_names.add(k)
 
     # CheapShark fills in gaps
     for p in (cheap_prices or []):
-        key = p.get("store_id") or p.get("store_name", "").lower().replace(" ", "_")
-        if key not in seen_stores:
+        k = _name_key(p)
+        if k not in seen_names:
             all_prices.append(p)
-            seen_stores.add(key)
+            seen_names.add(k)
 
     # Key reseller prices (always unique enough)
     for p in key_prices:
@@ -123,8 +126,13 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional
 
     await db.flush()
 
-    # Delete old prices and replace
+    # Delete old prices and replace – commit first so the unique constraint is cleared
     await db.execute(delete(GamePrice).where(GamePrice.game_id == game.id))
+    await db.execute(delete(PriceHistory).where(
+        PriceHistory.game_id == game.id,
+        PriceHistory.recorded_at >= utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    ))
+    await db.flush()
 
     for p in prices:
         gp = GamePrice(
@@ -134,7 +142,7 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional
             regular_price=p.get("regular_price"),
             sale_price=p.get("sale_price"),
             discount_percent=p.get("discount_percent", 0),
-            currency=p.get("currency", "USD"),
+            currency=p.get("currency", "EUR"),
             url=p.get("url", ""),
             is_on_sale=p.get("is_on_sale", False),
             fetched_at=utcnow(),
@@ -149,7 +157,7 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional
                 price=p.get("sale_price") or p.get("regular_price") or 0,
                 regular_price=p.get("regular_price"),
                 discount_percent=p.get("discount_percent", 0),
-                currency=p.get("currency", "USD"),
+                currency=p.get("currency", "EUR"),
                 recorded_at=utcnow(),
             )
             db.add(ph)

@@ -13,70 +13,65 @@ export function Navbar() {
   }
 
   return (
-    <nav className="bg-[#13151f] border-b border-[#1e2235] sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
+    <nav style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1a1d2e', position: 'sticky', top: 0, zIndex: 50, width: '100%' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 text-purple-400 font-bold text-xl shrink-0">
-          <Gamepad2 size={24} />
-          <span className="hidden sm:inline">GameDeals</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a78bfa', fontWeight: 700, fontSize: '1.2rem', textDecoration: 'none', flexShrink: 0 }}>
+          <Gamepad2 size={26} />
+          <span>GameDeals</span>
         </Link>
 
-        {/* Search */}
-        <div className="flex-1 max-w-xl">
+        {/* Search – takes remaining space */}
+        <div style={{ flex: 1, maxWidth: '520px' }}>
           <SearchBar />
         </div>
 
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
         {/* Nav links */}
-        <div className="flex items-center gap-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <Link
             to="/deals"
-            className="px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-[#1e2235] transition-colors hidden md:block"
+            style={{ padding: '8px 14px', borderRadius: '8px', fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
           >
             Deals
           </Link>
 
           {isAuthenticated() ? (
             <>
-              <Link
-                to="/wishlist"
-                className="p-2 rounded-lg text-slate-300 hover:text-purple-400 hover:bg-[#1e2235] transition-colors"
-                title="Wishlist"
-              >
+              <Link to="/wishlist" title="Wishlist" style={{ padding: '8px', borderRadius: '8px', color: '#94a3b8', display: 'flex' }}>
                 <Heart size={20} />
               </Link>
-              <Link
-                to="/alerts"
-                className="p-2 rounded-lg text-slate-300 hover:text-yellow-400 hover:bg-[#1e2235] transition-colors"
-                title="Price Alerts"
-              >
+              <Link to="/alerts" title="Price Alerts" style={{ padding: '8px', borderRadius: '8px', color: '#94a3b8', display: 'flex' }}>
                 <Bell size={20} />
               </Link>
-              <div className="flex items-center gap-2 ml-2 pl-2 border-l border-[#1e2235]">
-                <span className="text-sm text-slate-400 hidden md:block">{user?.username}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px', paddingLeft: '12px', borderLeft: '1px solid #1a1d2e' }}>
+                <span style={{ fontSize: '0.875rem', color: '#64748b' }}>{user?.username}</span>
                 <button
                   onClick={handleLogout}
-                  className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-[#1e2235] transition-colors"
                   title="Logout"
+                  style={{ padding: '8px', borderRadius: '8px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
                 >
                   <LogOut size={18} />
                 </button>
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-2 ml-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px' }}>
               <Link
                 to="/login"
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-[#1e2235] transition-colors"
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px', borderRadius: '8px', fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}
               >
-                <LogIn size={16} />
-                Login
+                <LogIn size={15} /> Login
               </Link>
               <Link
                 to="/register"
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 16px', borderRadius: '8px', fontSize: '0.875rem', backgroundColor: '#7c3aed', color: '#fff', textDecoration: 'none', fontWeight: 500 }}
               >
-                <User size={16} />
-                Register
+                <User size={15} /> Register
               </Link>
             </div>
           )}

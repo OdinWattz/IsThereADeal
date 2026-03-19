@@ -16,7 +16,6 @@ const COLORS = [
 
 export function PriceHistoryChart({ history }: Props) {
   const { chartData, stores } = useMemo(() => {
-    // Group by date (day) and store
     const byDate = new Map<string, Record<string, number>>()
     const storeSet = new Set<string>()
 
@@ -34,8 +33,8 @@ export function PriceHistoryChart({ history }: Props) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 text-slate-500 text-sm">
-        No price history available yet
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', color: '#475569', fontSize: '0.875rem' }}>
+        Nog geen prijsgeschiedenis beschikbaar
       </div>
     )
   }
@@ -54,12 +53,12 @@ export function PriceHistoryChart({ history }: Props) {
           tick={{ fill: '#64748b', fontSize: 11 }}
           tickLine={false}
           axisLine={{ stroke: '#1e2235' }}
-          tickFormatter={(v) => `$${v}`}
+          tickFormatter={(v) => `€${v}`}
         />
         <Tooltip
           contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
           labelStyle={{ color: '#94a3b8' }}
-          formatter={(value) => [`$${Number(value).toFixed(2)}`, '']}
+          formatter={(value) => [`€${Number(value).toFixed(2).replace('.', ',')}`, '']}
         />
         <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
         {stores.map((store, i) => (

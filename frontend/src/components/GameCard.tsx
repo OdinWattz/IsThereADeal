@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Game } from '../api/games'
-import { TrendingDown, ExternalLink } from 'lucide-react'
+import { TrendingDown } from 'lucide-react'
 
 interface Props {
   game: Game
@@ -16,55 +16,87 @@ export function GameCard({ game, showBestDeal = true }: Props) {
   return (
     <Link
       to={`/game/${game.steam_appid}`}
-      className="group bg-[#13151f] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-900/20 transition-all duration-200"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#111320',
+        border: '1px solid #1e2235',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        textDecoration: 'none',
+        transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = '#7c3aed'
+        el.style.transform = 'translateY(-2px)'
+        el.style.boxShadow = '0 8px 24px rgba(124,58,237,0.15)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = '#1e2235'
+        el.style.transform = 'translateY(0)'
+        el.style.boxShadow = 'none'
+      }}
     >
-      {/* Header image */}
-      <div className="relative overflow-hidden">
+      {/* Image */}
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
         <img
           src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/header.jpg`}
           alt={game.name}
-          className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
+          style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }}
         />
         {discount > 0 && (
-          <div className="absolute top-2 left-2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-            <TrendingDown size={12} />
-            -{discount}%
+          <div style={{
+            position: 'absolute', top: '8px', left: '8px',
+            backgroundColor: '#16a34a', color: '#fff',
+            fontSize: '0.7rem', fontWeight: 700,
+            padding: '3px 7px', borderRadius: '6px',
+            display: 'flex', alignItems: 'center', gap: '3px',
+          }}>
+            <TrendingDown size={10} /> -{discount}%
           </div>
         )}
         {game.best_store && game.best_store !== 'Steam' && showBestDeal && (
-          <div className="absolute top-2 right-2 bg-purple-600/90 text-white text-xs px-2 py-1 rounded-md">
+          <div style={{
+            position: 'absolute', top: '8px', right: '8px',
+            backgroundColor: 'rgba(124,58,237,0.9)', color: '#fff',
+            fontSize: '0.7rem', padding: '3px 7px', borderRadius: '6px',
+          }}>
             {game.best_store}
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="p-3">
-        <h3 className="text-sm font-medium text-slate-200 line-clamp-2 mb-2 group-hover:text-purple-300 transition-colors">
+      <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <h3 style={{
+          fontSize: '0.85rem', fontWeight: 500, color: '#e2e8f0',
+          overflow: 'hidden', display: '-webkit-box',
+          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          marginBottom: '8px', lineHeight: '1.4',
+        }}>
           {game.name}
         </h3>
 
-        <div className="flex items-end justify-between">
-          <div>
-            {displayPrice !== undefined ? (
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-green-400">
-                  ${displayPrice.toFixed(2)}
+        <div>
+          {displayPrice !== undefined ? (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#4ade80' }}>
+                €{displayPrice.toFixed(2).replace('.', ',')}
+              </span>
+              {regularPrice && regularPrice > displayPrice && (
+                <span style={{ fontSize: '0.75rem', color: '#64748b', textDecoration: 'line-through' }}>
+                  €{regularPrice.toFixed(2).replace('.', ',')}
                 </span>
-                {regularPrice && regularPrice > (displayPrice ?? 0) && (
-                  <span className="text-xs text-slate-500 line-through">
-                    ${regularPrice.toFixed(2)}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span className="text-sm text-slate-500">Free / N/A</span>
-            )}
-            <p className="text-xs text-slate-500 mt-0.5">
-              {game.prices.length} store{game.prices.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <ExternalLink size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+              )}
+            </div>
+          ) : (
+            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Free / N/A</span>
+          )}
+          <p style={{ fontSize: '0.72rem', color: '#475569', marginTop: '2px' }}>
+            {game.prices.length} store{game.prices.length !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
     </Link>

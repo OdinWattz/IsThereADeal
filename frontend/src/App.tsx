@@ -23,9 +23,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="min-h-screen bg-[#0f1117]">
+        <div style={{ minHeight: '100vh', width: '100%', backgroundColor: '#0a0c14' }}>
           <Navbar />
-          <main>
+          <main style={{ width: '100%' }}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/deals" element={<DealsPage />} />

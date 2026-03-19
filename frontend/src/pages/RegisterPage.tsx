@@ -29,70 +29,49 @@ export function RegisterPage() {
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    backgroundColor: '#1e2235', border: '1px solid #2a2d3e', borderRadius: '8px',
+    padding: '10px 14px', color: '#fff', fontSize: '0.875rem', outline: 'none',
+  }
+
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <div className="p-3 bg-purple-600/20 rounded-full">
-              <Gamepad2 size={32} className="text-purple-400" />
-            </div>
+    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '420px' }}>
+
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{ display: 'inline-flex', padding: '14px', backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: '50%', marginBottom: '12px' }}>
+            <Gamepad2 size={32} color="#a78bfa" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Create account</h1>
-          <p className="text-slate-400 mt-1">Track game prices and get notified when deals drop</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Account aanmaken</h1>
+          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Volg prijzen en ontvang meldingen bij deals</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#13151f] border border-[#1e2235] rounded-2xl p-6 space-y-4">
+        <form onSubmit={handleSubmit} style={{ backgroundColor: '#111320', border: '1px solid #1e2235', borderRadius: '16px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              minLength={3}
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-slate-600"
-              placeholder="coolgamer99"
-            />
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#cbd5e1', marginBottom: '6px' }}>Gebruikersnaam</label>
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required minLength={3} style={inputStyle} placeholder="gamelover99" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-slate-600"
-              placeholder="you@example.com"
-            />
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#cbd5e1', marginBottom: '6px' }}>E-mail</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} placeholder="jij@voorbeeld.nl" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-slate-600"
-              placeholder="min. 6 characters"
-            />
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#cbd5e1', marginBottom: '6px' }}>Wachtwoord</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={inputStyle} placeholder="min. 6 tekens" />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 mt-2"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '11px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: 500, fontSize: '0.875rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, marginTop: '4px' }}
           >
-            <UserPlus size={16} />
-            {loading ? 'Creating account...' : 'Create account'}
+            <UserPlus size={16} /> {loading ? 'Aanmaken...' : 'Account aanmaken'}
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-slate-400">
-          Already have an account?{' '}
-          <Link to="/login" className="text-purple-400 hover:text-purple-300 transition-colors">
-            Sign in
-          </Link>
+        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.875rem', color: '#64748b' }}>
+          Al een account?{' '}
+          <Link to="/login" style={{ color: '#a78bfa', textDecoration: 'none' }}>Inloggen</Link>
         </p>
       </div>
     </div>

@@ -252,7 +252,7 @@ export function GamePage() {
         <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
           Alle prijzen ({game.prices.length} winkels)
         </h2>
-        <PriceTable prices={game.prices} />
+        <PriceTable prices={game.prices} gameName={game.name} />
       </div>
 
       {/* Price History */}

@@ -1,8 +1,9 @@
 import type { GamePrice } from '../api/games'
-import { ExternalLink, Key } from 'lucide-react'
+import { ExternalLink, Key, Search } from 'lucide-react'
 
 interface Props {
   prices: GamePrice[]
+  gameName?: string
 }
 
 const STORE_LOGOS: Record<string, string> = {
@@ -21,7 +22,30 @@ function getStoreLogo(storeName: string) {
 const fmt = (val?: number | null) =>
   val != null ? `€${val.toFixed(2).replace('.', ',')}` : null
 
-export function PriceTable({ prices }: Props) {
+const GREY_MARKET_SITES = [
+  {
+    name: 'G2A',
+    icon: '🔑',
+    url: (q: string) => `https://www.g2a.com/search?query=${encodeURIComponent(q)}`,
+  },
+  {
+    name: 'Kinguin',
+    icon: '🔑',
+    url: (q: string) => `https://www.kinguin.net/catalogsearch/result/?q=${encodeURIComponent(q)}`,
+  },
+  {
+    name: 'Eneba',
+    icon: '🔑',
+    url: (q: string) => `https://www.eneba.com/search/?q=${encodeURIComponent(q)}`,
+  },
+  {
+    name: 'AllKeyShop',
+    icon: '🔑',
+    url: (q: string) => `https://www.allkeyshop.com/blog/buy-${q.toLowerCase().replace(/\s+/g, '-')}-cd-key-compare-prices/`,
+  },
+]
+
+export function PriceTable({ prices, gameName }: Props) {
   const official = prices.filter((p) => !p.is_key_reseller)
   const resellers = prices.filter((p) => p.is_key_reseller)
 
@@ -147,6 +171,31 @@ export function PriceTable({ prices }: Props) {
           )}
         </tbody>
       </table>
+      {gameName && (
+        <div style={{ borderTop: '1px solid #1e2235', padding: '12px 16px', backgroundColor: '#0d0f1a' }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>
+            🔑 Zoek op grey-market key sites
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {GREY_MARKET_SITES.map((site) => (
+              <a
+                key={site.name}
+                href={site.url(gameName)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: '#fbbf24', backgroundColor: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.25)', padding: '5px 12px', borderRadius: '6px', textDecoration: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(217,119,6,0.25)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(217,119,6,0.12)')}
+              >
+                {site.icon} {site.name} <Search size={10} />
+              </a>
+            ))}
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: '0.68rem', color: '#475569' }}>
+            Let op: key resellers zijn geen officiële winkels. Koop enkel bij betrouwbare verkopers.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

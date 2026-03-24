@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from app.models.models import Game, GamePrice, PriceHistory
 from app.services.steam_service import get_steam_app_details

@@ -1,21 +1,26 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 
 from app.config import settings
 from app.database import init_db
-from app.services.scheduler import start_scheduler, stop_scheduler
 from app.routers import auth, games, wishlist, alerts
+
+# Scheduler alleen starten buiten Vercel (lokale dev)
+_is_vercel = os.environ.get("VERCEL") == "1"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     await init_db()
-    start_scheduler()
-    yield
-    # Shutdown
-    stop_scheduler()
+    if not _is_vercel:
+        from app.services.scheduler import start_scheduler, stop_scheduler
+        start_scheduler()
+        yield
+        stop_scheduler()
+    else:
+        yield
 
 
 app = FastAPI(
@@ -25,10 +30,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_cors_origins = settings.cors_origins_list
+_allow_credentials = "*" not in _cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -39,11 +47,11 @@ app.include_router(wishlist.router)
 app.include_router(alerts.router)
 
 
-@app.get("/")
+@app.get("/api")
 async def root():
     return {"status": "ok", "message": "GameDeals Tracker API"}
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "healthy"}

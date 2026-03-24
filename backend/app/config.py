@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import os
 
 
 class Settings(BaseSettings):
@@ -8,7 +9,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 
-    DATABASE_URL: str = "sqlite+aiosqlite:///./gamedeals.db"
+    # Vercel Postgres zet POSTGRES_URL automatisch in de omgeving.
+    # DATABASE_URL heeft voorrang; anders valt hij terug op POSTGRES_URL,
+    # en daarna op lokale SQLite.
+    DATABASE_URL: str = os.environ.get(
+        "DATABASE_URL",
+        os.environ.get("POSTGRES_URL", "sqlite+aiosqlite:///./gamedeals.db"),
+    )
 
     STEAM_API_KEY: str = ""
     ITAD_API_KEY: str = ""
@@ -23,6 +30,8 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
+        if self.CORS_ORIGINS.strip() == "*":
+            return ["*"]
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]
 
     class Config:

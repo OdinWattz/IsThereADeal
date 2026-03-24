@@ -4,7 +4,7 @@
   "installCommand": "pip install -r backend/requirements.txt",
   "functions": {
     "api/index.py": {
-      "runtime": "python3.12",
+      "runtime": "python3",
       "maxDuration": 30
     }
   },

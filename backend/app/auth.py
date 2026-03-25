@@ -13,7 +13,10 @@ from app.config import settings
 from app.database import get_db
 from app.models.models import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt 4.0+ raises ValueError on passwords > 72 bytes instead of silently
+# truncating. truncate_error=False restores the old silent-truncation behaviour.
+# Combined with _prep_password (SHA-256 → always 44 bytes) we are doubly safe.
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 

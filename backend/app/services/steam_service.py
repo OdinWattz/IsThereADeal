@@ -113,23 +113,27 @@ async def get_featured_deals():
         for item in items:
             if added >= max_items:
                 break
-            appid = str(item.get("id", ""))
-            if not appid or appid in seen_ids:
+            try:
+                appid = str(item.get("id") or "")
+                name = item.get("name") or ""
+                if not appid or not name or appid in seen_ids:
+                    continue
+                seen_ids.add(appid)
+                discount_pct = item.get("discount_percent", 0) or 0
+                final = (item.get("final_price") or 0) / 100
+                original = (item.get("original_price") or 0) / 100
+                results.append({
+                    "steam_appid": appid,
+                    "name": name,
+                    "header_image": item.get("large_capsule_image") or item.get("header_image") or "",
+                    "regular_price": original,
+                    "sale_price": final if discount_pct > 0 else None,
+                    "discount_percent": discount_pct,
+                    "is_on_sale": discount_pct > 0,
+                })
+                added += 1
+            except Exception:
                 continue
-            seen_ids.add(appid)
-            discount_pct = item.get("discount_percent", 0)
-            final = item.get("final_price", 0) / 100
-            original = item.get("original_price", 0) / 100
-            results.append({
-                "steam_appid": appid,
-                "name": item["name"],
-                "header_image": item.get("large_capsule_image", item.get("header_image", "")),
-                "regular_price": original,
-                "sale_price": final if discount_pct > 0 else None,
-                "discount_percent": discount_pct,
-                "is_on_sale": discount_pct > 0,
-            })
-            added += 1
 
     # Specials first (games on sale), then fill up with top sellers
     _add_items(data.get("specials", {}).get("items", []), max_items=30)

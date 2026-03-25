@@ -71,7 +71,7 @@ export function GamePage() {
       return addToWishlist(game!.id)
     },
     onSuccess: () => { toast.success('Toegevoegd aan verlanglijst!'); qc.invalidateQueries({ queryKey: ['wishlist'] }) },
-    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Mislukt'),
+    onError: (e: unknown) => toast.error((e as {response?: {data?: {detail?: string}}})?.response?.data?.detail ?? 'Mislukt'),
   })
 
   const alertMutation = useMutation({
@@ -82,7 +82,7 @@ export function GamePage() {
       setAlertPrice('')
       qc.invalidateQueries({ queryKey: ['alerts'] })
     },
-    onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Mislukt'),
+    onError: (e: unknown) => toast.error((e as {response?: {data?: {detail?: string}}})?.response?.data?.detail ?? 'Mislukt'),
   })
 
   const handleRefresh = async () => {

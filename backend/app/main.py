@@ -13,7 +13,12 @@ _is_vercel = os.environ.get("VERCEL") == "1"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    try:
+        await init_db()
+    except Exception as e:
+        # Don't crash the whole app if DB is unreachable at startup.
+        import logging
+        logging.getLogger(__name__).error("init_db failed: %s", e)
     if not _is_vercel:
         from app.services.scheduler import start_scheduler, stop_scheduler
         start_scheduler()

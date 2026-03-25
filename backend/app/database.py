@@ -30,8 +30,11 @@ def _get_engine():
     if _engine is None:
         url = _build_url(settings.DATABASE_URL)
         _is_sqlite = "sqlite" in url
-        # Supabase uses PgBouncer pooler – statement cache must be disabled.
-        _connect_args = {"check_same_thread": False} if _is_sqlite else {"statement_cache_size": 0}
+        if _is_sqlite:
+            _connect_args = {"check_same_thread": False}
+        else:
+            # Supabase requires SSL; disable statement cache for PgBouncer pooler.
+            _connect_args = {"ssl": "require", "statement_cache_size": 0}
         _engine = create_async_engine(
             url,
             echo=settings.APP_ENV == "development",

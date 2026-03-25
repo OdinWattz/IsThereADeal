@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals } from '../api/games'
 import type { DlcDeal } from '../api/games'
+import { Link } from 'react-router-dom'
 import { PriceTable } from '../components/PriceTable'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
 import { useAuthStore } from '../store/authStore'
@@ -75,7 +76,14 @@ export function GamePage() {
   })
 
   const alertMutation = useMutation({
-    mutationFn: (price: number) => createAlert(game!.id, price),
+    mutationFn: async (price: number) => {
+      // If game not yet in DB (id=0), save it first via refresh
+      if (game!.id === 0) {
+        const saved = await getGame(appid!, true)
+        return createAlert(saved.id, price)
+      }
+      return createAlert(game!.id, price)
+    },
     onSuccess: () => {
       toast.success('Prijsalert ingesteld!')
       setShowAlertForm(false)
@@ -287,37 +295,44 @@ export function GamePage() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {dlcDeals.map((dlc: DlcDeal) => (
-              <div key={dlc.steam_appid} style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '12px 14px', backgroundColor: '#0d0f1a',
-                border: '1px solid #1e2235', borderRadius: '10px',
-              }}>
-                <span style={{
-                  flexShrink: 0, backgroundColor: '#166534', color: '#4ade80',
-                  fontWeight: 700, fontSize: '0.75rem', padding: '3px 7px', borderRadius: '6px',
-                }}>
-                  -{dlc.discount_percent}%
-                </span>
-                <span style={{ flex: 1, color: '#e2e8f0', fontSize: '0.875rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  {dlc.title}
-                </span>
-                <span style={{ flexShrink: 0, color: '#4ade80', fontWeight: 600, fontSize: '0.9rem' }}>
-                  €{(dlc.sale_price ?? 0).toFixed(2).replace('.', ',')}
-                </span>
-                {dlc.regular_price && (
-                  <span style={{ flexShrink: 0, color: '#475569', fontSize: '0.8rem', textDecoration: 'line-through' }}>
-                    €{dlc.regular_price.toFixed(2).replace('.', ',')}
+              <Link key={dlc.steam_appid} to={`/game/${dlc.steam_appid}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 14px', backgroundColor: '#0d0f1a',
+                  border: '1px solid #1e2235', borderRadius: '10px',
+                  cursor: 'pointer', transition: 'border-color .15s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2a2d3e')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e2235')}
+                >
+                  <span style={{
+                    flexShrink: 0, backgroundColor: '#166534', color: '#4ade80',
+                    fontWeight: 700, fontSize: '0.75rem', padding: '3px 7px', borderRadius: '6px',
+                  }}>
+                    -{dlc.discount_percent}%
                   </span>
-                )}
-                <span style={{ flexShrink: 0, color: '#64748b', fontSize: '0.78rem' }}>{dlc.store_name}</span>
-                {dlc.url && (
-                  <a href={dlc.url} target="_blank" rel="noopener noreferrer"
-                    style={{ flexShrink: 0, color: '#60a5fa', fontSize: '0.78rem', textDecoration: 'none' }}
-                  >
-                    Kopen →
-                  </a>
-                )}
-              </div>
+                  <span style={{ flex: 1, color: '#e2e8f0', fontSize: '0.875rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    {dlc.title}
+                  </span>
+                  <span style={{ flexShrink: 0, color: '#4ade80', fontWeight: 600, fontSize: '0.9rem' }}>
+                    €{(dlc.sale_price ?? 0).toFixed(2).replace('.', ',')}
+                  </span>
+                  {dlc.regular_price && (
+                    <span style={{ flexShrink: 0, color: '#475569', fontSize: '0.8rem', textDecoration: 'line-through' }}>
+                      €{dlc.regular_price.toFixed(2).replace('.', ',')}
+                    </span>
+                  )}
+                  <span style={{ flexShrink: 0, color: '#64748b', fontSize: '0.78rem' }}>{dlc.store_name}</span>
+                  {dlc.url && (
+                    <a href={dlc.url} target="_blank" rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{ flexShrink: 0, color: '#60a5fa', fontSize: '0.78rem', textDecoration: 'none' }}
+                    >
+                      Kopen →
+                    </a>
+                  )}
+                </div>
+              </Link>
             ))}
           </div>
         </div>

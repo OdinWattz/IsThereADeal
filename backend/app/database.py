@@ -3,7 +3,6 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase
 from urllib.parse import urlparse, urlunparse
 import asyncpg
-import ssl as _ssl
 from app.config import settings
 
 
@@ -47,11 +46,10 @@ def _get_engine():
             _password = p.password
             _database = p.path.lstrip("/")
 
-            # Use async_creator to pass statement_cache_size=0 directly to asyncpg.
-            # Passing it through SQLAlchemy's connect_args is unreliable across
-            # versions and does NOT prevent PgBouncer DuplicatePreparedStatementError.
-            # NullPool + statement_cache_size=0 together fully prevent the error.
-            ssl_ctx = _ssl.create_default_context()
+            # ssl="require" (string) = encrypt but skip cert verification,
+            # matching libpq sslmode=require. Supabase PgBouncer uses a
+            # self-signed CA that Vercel's Python runtime doesn't trust.
+            ssl_mode = "require"
 
             async def _creator():
                 return await asyncpg.connect(
@@ -60,7 +58,7 @@ def _get_engine():
                     user=_user,
                     password=_password,
                     database=_database,
-                    ssl=ssl_ctx,
+                    ssl=ssl_mode,
                     statement_cache_size=0,
                 )
 

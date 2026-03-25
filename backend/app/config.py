@@ -52,9 +52,21 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        if self.CORS_ORIGINS.strip() == "*":
+        origins = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+        # Automatically include the Vercel deployment URL so CORS works
+        # without having to manually configure CORS_ORIGINS in the dashboard.
+        for env_var in ("VERCEL_URL", "VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_BRANCH_URL"):
+            vercel_url = os.environ.get(env_var)
+            if vercel_url:
+                # Vercel sets these without the scheme
+                origin = vercel_url if vercel_url.startswith("http") else f"https://{vercel_url}"
+                if origin not in origins:
+                    origins.append(origin)
+
+        if "*" in origins:
             return ["*"]
-        return [o.strip() for o in self.CORS_ORIGINS.split(",")]
+        return origins
 
     class Config:
         env_file = ".env"

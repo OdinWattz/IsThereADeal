@@ -186,6 +186,70 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
 ## 🌐 Productie / online draaien
 
+### Vercel (frontend + API in 1 project)
+
+Deze repository is al geschikt voor 1 gecombineerde Vercel deploy:
+
+- Frontend wordt gebouwd vanuit `frontend/`
+- API draait serverless via `api/index.py`
+- Database moet in productie PostgreSQL zijn (Vercel Postgres, Neon, Supabase, Render, etc.)
+
+#### 1. Project importeren in Vercel
+
+1. Ga naar Vercel en importeer je GitHub repo.
+2. Laat de root directory op repository-root staan.
+3. Deploy 1x zonder extra overrides (de repo gebruikt `vercel.json`).
+
+#### 2. Database koppelen (verplicht voor persistente data)
+
+Kies 1 van deze opties:
+
+1. Vercel Postgres (aanbevolen op Vercel):
+    - Add-ons -> Storage -> Postgres toevoegen
+    - Vercel zet dan automatisch env vars zoals `POSTGRES_URL`
+2. Externe PostgreSQL:
+    - Zet handmatig `DATABASE_URL` in Vercel Environment Variables
+
+Voorbeeld:
+
+```env
+DATABASE_URL=postgresql+asyncpg://gebruiker:wachtwoord@host:5432/gamedeals
+```
+
+#### 3. Environment variables instellen
+
+Minimaal:
+
+```env
+SECRET_KEY=vervang-met-lange-random-string
+APP_ENV=production
+CORS_ORIGINS=https://jouw-vercel-domein.vercel.app
+```
+
+Optioneel (aanbevolen):
+
+```env
+ITAD_API_KEY=...
+STEAM_API_KEY=...
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+SMTP_FROM=...
+```
+
+#### 4. Redeploy en health check
+
+Na het opslaan van env vars: redeploy uitvoeren. Controleer daarna:
+
+- `/api/health` moet `{"status":"healthy"}` teruggeven
+- Frontend home moet laden zonder API-fouten in de browser console
+
+#### 5. Belangrijk om te weten
+
+- Zonder PostgreSQL valt de app op Vercel terug op tijdelijke SQLite in `/tmp` (werkt wel, maar niet persistent).
+- Scheduler draait niet op Vercel serverless; periodieke prijsupdates plan je daar met een externe cron/job runner.
+
 ### Database wisselen naar PostgreSQL
 
 Vervang in `.env`:
@@ -321,7 +385,7 @@ IsThereADeal/
 
 | Method | Endpoint | Beschrijving |
 |---|---|---|
-| `GET` | `/health` | Status check |
+| `GET` | `/api/health` | Status check |
 | `POST` | `/api/auth/register` | Account aanmaken |
 | `POST` | `/api/auth/login` | Inloggen (JWT token) |
 | `GET` | `/api/auth/me` | Ingelogde gebruiker |

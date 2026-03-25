@@ -3,6 +3,23 @@ from typing import List
 import os
 
 
+def _default_database_url() -> str:
+    """Choose a safe database default per environment."""
+    explicit_url = os.environ.get("DATABASE_URL")
+    if explicit_url:
+        return explicit_url
+
+    vercel_postgres_url = os.environ.get("POSTGRES_URL")
+    if vercel_postgres_url:
+        return vercel_postgres_url
+
+    # Vercel filesystem is read-only except /tmp; keep local default unchanged.
+    if os.environ.get("VERCEL") == "1":
+        return "sqlite+aiosqlite:////tmp/gamedeals.db"
+
+    return "sqlite+aiosqlite:///./gamedeals.db"
+
+
 class Settings(BaseSettings):
     APP_ENV: str = "development"
     SECRET_KEY: str = "dev-secret-key-change-in-production"
@@ -12,10 +29,7 @@ class Settings(BaseSettings):
     # Vercel Postgres zet POSTGRES_URL automatisch in de omgeving.
     # DATABASE_URL heeft voorrang; anders valt hij terug op POSTGRES_URL,
     # en daarna op lokale SQLite.
-    DATABASE_URL: str = os.environ.get(
-        "DATABASE_URL",
-        os.environ.get("POSTGRES_URL", "sqlite+aiosqlite:///./gamedeals.db"),
-    )
+    DATABASE_URL: str = _default_database_url()
 
     STEAM_API_KEY: str = ""
     ITAD_API_KEY: str = ""

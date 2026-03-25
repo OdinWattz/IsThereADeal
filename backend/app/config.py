@@ -9,6 +9,14 @@ def _default_database_url() -> str:
     if explicit_url:
         return explicit_url
 
+    # Supabase Vercel integration sets individual POSTGRES_* vars.
+    pg_host = os.environ.get("POSTGRES_HOST")
+    pg_user = os.environ.get("POSTGRES_USER")
+    pg_password = os.environ.get("POSTGRES_PASSWORD")
+    pg_database = os.environ.get("POSTGRES_DATABASE", "postgres")
+    if pg_host and pg_user and pg_password:
+        return f"postgresql://{pg_user}:{pg_password}@{pg_host}:5432/{pg_database}"
+
     vercel_postgres_url = os.environ.get("POSTGRES_URL")
     if vercel_postgres_url:
         return vercel_postgres_url

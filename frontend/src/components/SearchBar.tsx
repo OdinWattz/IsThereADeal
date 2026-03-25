@@ -48,7 +48,10 @@ export function SearchBar() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (results.length > 0) handleSelect(results[0])
+    if (query.trim().length < 2) return
+    setOpen(false)
+    setQuery('')
+    navigate(`/search?q=${encodeURIComponent(query.trim())}`)
   }
 
   return (
@@ -113,6 +116,18 @@ export function SearchBar() {
               )}
             </button>
           ))}
+          <button
+            onClick={() => { setOpen(false); setQuery(''); navigate(`/search?q=${encodeURIComponent(query.trim())}`) }}
+            style={{
+              width: '100%', padding: '10px 14px', border: 'none', background: 'none',
+              cursor: 'pointer', textAlign: 'center', color: '#a78bfa', fontSize: '0.82rem',
+              fontWeight: 500,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            Alle resultaten bekijken →
+          </button>
         </div>
       )}
     </div>

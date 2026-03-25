@@ -72,7 +72,7 @@ async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
 async def search_steam_games(query: str):
     """Search for games using the Steam store search API."""
     url = "https://store.steampowered.com/api/storesearch/"
-    params = {"term": query, "l": "english", "cc": "NL"}
+    params = {"term": query, "l": "english", "cc": "NL", "count": 50}
 
     async with httpx.AsyncClient(timeout=10) as client:
         try:
@@ -87,7 +87,7 @@ async def search_steam_games(query: str):
         results.append({
             "steam_appid": str(item["id"]),
             "name": item["name"],
-            "header_image": item.get("tiny_image", ""),
+            "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{item['id']}/header.jpg",
         })
     return results
 

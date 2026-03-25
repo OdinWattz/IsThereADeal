@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { getFeaturedDeals, getDeals } from '../api/games'
-import { GameCard } from '../components/GameCard'
+import { getFeaturedDeals, getDeals, type TrendingDeal } from '../api/games'
 import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export function HomePage() {
   const { data: featured = [], isLoading: featuredLoading } = useQuery({
@@ -96,19 +96,56 @@ export function HomePage() {
         )}
       </section>
 
-      {/* DB Tracked Deals */}
+      {/* Best Deals Right Now */}
       {dbDeals.length > 0 && (
         <section>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Zap size={20} style={{ color: '#a78bfa' }} />
-            Tracked Deals (All Stores)
+            Best Deals Right Now
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
             {dealsLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} style={{ backgroundColor: '#111320', borderRadius: '12px', height: '220px' }} />
                 ))
-              : dbDeals.map((game) => <GameCard key={game.id} game={game} />)}
+              : dbDeals.map((d: TrendingDeal) => (
+                  <Link key={`${d.steam_appid}-${d.store_name}`} to={`/game/${d.steam_appid}`} style={{ textDecoration: 'none' }}>
+                    <div
+                      style={{ backgroundColor: '#111320', border: '1px solid #1e2235', borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.2s, transform 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#7c3aed'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1e2235'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+                    >
+                      <div style={{ position: 'relative' }}>
+                        <img src={d.header_image} alt={d.name} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+                        {d.discount_percent > 0 && (
+                          <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: '#16a34a', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>
+                            -{d.discount_percent}%
+                          </div>
+                        )}
+                        {d.store_name && d.store_name !== 'Steam' && (
+                          <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: 'rgba(124,58,237,0.9)', color: '#fff', fontSize: '0.65rem', padding: '3px 6px', borderRadius: '6px' }}>
+                            {d.store_name}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ padding: '12px' }}>
+                        <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {d.name}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '1rem' }}>
+                            ${d.sale_price.toFixed(2)}
+                          </span>
+                          {d.regular_price > d.sale_price && (
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', textDecoration: 'line-through' }}>
+                              ${d.regular_price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
           </div>
         </section>
       )}

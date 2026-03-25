@@ -9,17 +9,20 @@ def _default_database_url() -> str:
     if explicit_url:
         return explicit_url
 
-    # Supabase Vercel integration sets individual POSTGRES_* vars.
+    # Supabase Vercel integration sets POSTGRES_URL with the correct pooler URL
+    # (including the right port 6543 and SSL). Use this before building from parts.
+    vercel_postgres_url = os.environ.get("POSTGRES_URL")
+    if vercel_postgres_url:
+        return vercel_postgres_url
+
+    # Fallback: build from individual POSTGRES_* vars (also set by Supabase).
     pg_host = os.environ.get("POSTGRES_HOST")
     pg_user = os.environ.get("POSTGRES_USER")
     pg_password = os.environ.get("POSTGRES_PASSWORD")
     pg_database = os.environ.get("POSTGRES_DATABASE", "postgres")
+    pg_port = os.environ.get("POSTGRES_PORT", "5432")
     if pg_host and pg_user and pg_password:
-        return f"postgresql://{pg_user}:{pg_password}@{pg_host}:5432/{pg_database}"
-
-    vercel_postgres_url = os.environ.get("POSTGRES_URL")
-    if vercel_postgres_url:
-        return vercel_postgres_url
+        return f"postgresql://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
 
     # Vercel filesystem is read-only except /tmp; keep local default unchanged.
     if os.environ.get("VERCEL") == "1":

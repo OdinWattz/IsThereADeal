@@ -58,17 +58,20 @@ async def get_deals(
     limit: int = 40,
 ):
     """Get all games currently on sale from our database."""
-    result = await db.execute(
-        select(Game)
-        .join(GamePrice)
-        .where(GamePrice.is_on_sale == True)
-        .options(selectinload(Game.prices))
-        .distinct()
-        .offset(skip)
-        .limit(limit)
-    )
-    games = result.scalars().all()
-    return [_enrich_game(g) for g in games]
+    try:
+        result = await db.execute(
+            select(Game)
+            .join(GamePrice)
+            .where(GamePrice.is_on_sale == True)
+            .options(selectinload(Game.prices))
+            .distinct()
+            .offset(skip)
+            .limit(limit)
+        )
+        games = result.scalars().all()
+        return [_enrich_game(g) for g in games]
+    except Exception:
+        return []
 
 
 @router.get("/{steam_appid}", response_model=GameOut)
@@ -110,36 +113,36 @@ async def get_game(
             steam_data = data.get("steam_data")
             if not steam_data:
                 raise HTTPException(status_code=404, detail="Game not found")
-            # Build a transient Game-like object
-            transient = Game(
-                steam_appid=steam_appid,
-                name=steam_data.get("name", ""),
-                header_image=steam_data.get("header_image", ""),
-                short_description=steam_data.get("short_description", ""),
-                genres=steam_data.get("genres", ""),
-                developers=steam_data.get("developers", ""),
-                publishers=steam_data.get("publishers", ""),
-                release_date=steam_data.get("release_date", ""),
-                steam_url=steam_data.get("steam_url", ""),
-            )
-            transient.id = 0
-            from app.models.models import GamePrice as GP
-            transient.prices = [
-                GP(
-                    game_id=0,
-                    store_name=p.get("store_name", "Unknown"),
-                    store_id=p.get("store_id"),
-                    regular_price=p.get("regular_price"),
-                    sale_price=p.get("sale_price"),
-                    discount_percent=p.get("discount_percent", 0),
-                    currency=p.get("currency", "EUR"),
-                    url=p.get("url"),
-                    is_on_sale=p.get("is_on_sale", False),
-                    is_key_reseller=p.get("is_key_reseller", False),
-                )
+            prices_out = [
+                {
+                    "store_name": p.get("store_name", "Unknown"),
+                    "store_id": p.get("store_id"),
+                    "regular_price": p.get("regular_price"),
+                    "sale_price": p.get("sale_price"),
+                    "discount_percent": p.get("discount_percent", 0),
+                    "currency": p.get("currency", "EUR"),
+                    "url": p.get("url"),
+                    "is_on_sale": p.get("is_on_sale", False),
+                }
                 for p in data.get("prices", [])
             ]
-            return _enrich_game(transient)
+            best = data.get("best_price")
+            from app.models.schemas import GameOut as GameOutSchema, GamePriceOut
+            return GameOutSchema(
+                id=0,
+                steam_appid=steam_appid,
+                name=steam_data.get("name", ""),
+                header_image=steam_data.get("header_image"),
+                short_description=steam_data.get("short_description"),
+                genres=steam_data.get("genres"),
+                developers=steam_data.get("developers"),
+                publishers=steam_data.get("publishers"),
+                release_date=steam_data.get("release_date"),
+                steam_url=steam_data.get("steam_url"),
+                prices=[GamePriceOut(**p) for p in prices_out],
+                best_price=best.get("sale_price") or best.get("regular_price") if best else None,
+                best_store=best.get("store_name") if best else None,
+            )
 
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -153,17 +156,19 @@ async def get_price_history_route(
     db: AsyncSession = Depends(get_db),
 ):
     """Get price history for a game – from DB + ITAD."""
-    result = await db.execute(select(Game).where(Game.steam_appid == steam_appid))
-    game = result.scalar_one_or_none()
-
     db_history = []
-    if game:
-        hist_result = await db.execute(
-            select(PriceHistory)
-            .where(PriceHistory.game_id == game.id)
-            .order_by(PriceHistory.recorded_at.asc())
-        )
-        db_history = hist_result.scalars().all()
+    try:
+        result = await db.execute(select(Game).where(Game.steam_appid == steam_appid))
+        game = result.scalar_one_or_none()
+        if game:
+            hist_result = await db.execute(
+                select(PriceHistory)
+                .where(PriceHistory.game_id == game.id)
+                .order_by(PriceHistory.recorded_at.asc())
+            )
+            db_history = hist_result.scalars().all()
+    except Exception:
+        db_history = []
 
     # Also fetch from ITAD for richer history
     itad_history = await get_price_history(steam_appid)

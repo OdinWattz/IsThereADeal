@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 from app.config import settings
 
 
@@ -7,11 +8,21 @@ def _build_url(url: str) -> str:
     """
     Vercel Postgres geeft een postgres:// of postgresql:// URL.
     SQLAlchemy async heeft postgresql+asyncpg:// nodig.
+    asyncpg begrijpt 'sslmode' niet (dat is een libpq param) – strip het uit
+    de query string; SSL wordt via connect_args doorgegeven.
     """
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    # Strip 'sslmode' from query string – asyncpg rejects it as unknown kwarg.
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query, keep_blank_values=True)
+    qs.pop("sslmode", None)
+    new_query = urlencode({k: v[0] for k, v in qs.items()})
+    url = urlunparse(parsed._replace(query=new_query))
+
     return url
 
 

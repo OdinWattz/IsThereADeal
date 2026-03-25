@@ -81,8 +81,19 @@ export const searchGames = (q: string) =>
 export const getFeaturedDeals = () =>
   api.get<any[]>('/games/featured').then((r) => r.data)
 
-export const getDeals = (skip = 0, limit = 40) =>
-  api.get<Game[]>('/games/deals', { params: { skip, limit } }).then((r) => r.data)
+export interface TrendingDeal {
+  steam_appid: string
+  name: string
+  sale_price: number
+  regular_price: number
+  discount_percent: number
+  store_name: string
+  header_image: string
+  deal_rating: number
+}
+
+export const getDeals = (page = 0, limit = 20) =>
+  api.get<TrendingDeal[]>('/games/deals', { params: { page, limit } }).then((r) => r.data)
 
 export const getGame = (steamAppid: string, refresh = false) =>
   api.get<Game>(`/games/${steamAppid}`, { params: { refresh } }).then((r) => r.data)

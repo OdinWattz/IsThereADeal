@@ -6,6 +6,7 @@ from app.services import cache as _cache
 
 _HISTORY_TTL = 1800  # 30 minutes
 _DLC_TTL = 1800      # 30 minutes
+_ITAD_ID_TTL = 86400  # 24 hours – game IDs are stable
 
 ITAD_BASE = "https://api.isthereanydeal.com"
 
@@ -18,7 +19,7 @@ async def _get(path: str, params: dict) -> Optional[Any]:
     if not _has_key():
         return None
     params["key"] = settings.ITAD_API_KEY
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=8) as client:
         try:
             resp = await client.get(f"{ITAD_BASE}{path}", params=params)
             resp.raise_for_status()
@@ -31,7 +32,7 @@ async def _post(path: str, params: dict, body: Any) -> Optional[Any]:
     if not _has_key():
         return None
     params["key"] = settings.ITAD_API_KEY
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=8) as client:
         try:
             resp = await client.post(f"{ITAD_BASE}{path}", params=params, json=body)
             resp.raise_for_status()
@@ -41,10 +42,20 @@ async def _post(path: str, params: dict, body: Any) -> Optional[Any]:
 
 
 async def get_game_id_by_appid(steam_appid: str) -> Optional[str]:
-    """Resolve a Steam appid to an ITAD plain/id."""
+    """Resolve a Steam appid to an ITAD plain/id. Result cached 24 h."""
+    cache_key = f"itad_id:{steam_appid}"
+    cached = _cache.get(cache_key, ttl=_ITAD_ID_TTL)
+    if cached is not None:
+        return None if cached == "__not_found__" else cached
+
     data = await _get("/games/lookup/v1", {"appid": steam_appid})
     if data and data.get("found"):
-        return data["game"]["id"]
+        game_id = data["game"]["id"]
+        _cache.set(cache_key, game_id)
+        return game_id
+
+    # Cache negative result to avoid hammering ITAD for unknown games
+    _cache.set(cache_key, "__not_found__")
     return None
 
 

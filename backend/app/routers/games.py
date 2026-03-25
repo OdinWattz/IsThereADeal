@@ -51,27 +51,14 @@ async def featured_deals():
     return await get_featured_deals()
 
 
-@router.get("/deals", response_model=List[GameOut])
+@router.get("/deals")
 async def get_deals(
-    db: AsyncSession = Depends(get_db),
-    skip: int = 0,
-    limit: int = 40,
+    page: int = 0,
+    limit: int = 20,
 ):
-    """Get all games currently on sale from our database."""
-    try:
-        result = await db.execute(
-            select(Game)
-            .join(GamePrice)
-            .where(GamePrice.is_on_sale == True)
-            .options(selectinload(Game.prices))
-            .distinct()
-            .offset(skip)
-            .limit(limit)
-        )
-        games = result.scalars().all()
-        return [_enrich_game(g) for g in games]
-    except Exception:
-        return []
+    """Get trending deals from CheapShark (fresh, paginated, sorted by deal quality)."""
+    from app.services.cheapshark_service import get_trending_deals
+    return await get_trending_deals(page, limit)
 
 
 @router.get("/{steam_appid}", response_model=GameOut)

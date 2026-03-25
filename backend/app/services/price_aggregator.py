@@ -1,7 +1,4 @@
-"""
-Price aggregator – combines prices from Steam, ITAD, CheapShark and key resellers
-and persists them to the database.
-"""
+"""\nPrice aggregator – combines prices from Steam, ITAD, CheapShark and key resellers\nand persists them to the database.\n"""
 import asyncio
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
@@ -13,6 +10,10 @@ from app.services.steam_service import get_steam_app_details
 from app.services.itad_service import get_prices_for_game, get_price_history
 from app.services.cheapshark_service import get_deals_by_steam_appid
 from app.services.keyreseller_service import get_all_key_reseller_prices
+from app.services import cache as _cache
+
+_PRICES_TTL = 300   # 5 minutes
+_HISTORY_TTL = 1800  # 30 minutes
 
 
 def utcnow():
@@ -22,7 +23,12 @@ def utcnow():
 async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
     """
     Fetch prices from all sources in parallel and return a merged dict.
+    Results are cached in-memory for _PRICES_TTL seconds.
     """
+    cache_key = f"prices:{steam_appid}"
+    cached = _cache.get(cache_key, ttl=_PRICES_TTL)
+    if cached is not None:
+        return cached
     steam_task = get_steam_app_details(steam_appid)
     itad_task = get_prices_for_game(steam_appid)
     cheap_task = get_deals_by_steam_appid(steam_appid)
@@ -87,11 +93,13 @@ async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
     else:
         best = None
 
-    return {
+    result = {
         "steam_data": steam_data,
         "prices": all_prices,
         "best_price": best,
     }
+    _cache.set(cache_key, result)
+    return result
 
 
 async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional[Game]:

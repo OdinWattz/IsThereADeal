@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from contextlib import asynccontextmanager
 import os
 
@@ -38,6 +39,7 @@ app = FastAPI(
 _cors_origins = settings.cors_origins_list
 _allow_credentials = "*" not in _cors_origins
 
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,

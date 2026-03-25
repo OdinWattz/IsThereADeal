@@ -1,10 +1,11 @@
-"""
-IsThereAnyDeal (ITAD) API service – fetches deals from 30+ stores.
-Docs: https://docs.isthereanydeal.com/
-"""
+"""\nIsThereAnyDeal (ITAD) API service – fetches deals from 30+ stores.\nDocs: https://docs.isthereanydeal.com/\n"""
 import httpx
 from typing import Optional, List, Dict, Any
 from app.config import settings
+from app.services import cache as _cache
+
+_HISTORY_TTL = 1800  # 30 minutes
+_DLC_TTL = 1800      # 30 minutes
 
 ITAD_BASE = "https://api.isthereanydeal.com"
 
@@ -92,6 +93,11 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
     """
     import asyncio
 
+    cache_key = f"dlc:{steam_appid}"
+    cached = _cache.get(cache_key, ttl=_DLC_TTL)
+    if cached is not None:
+        return cached
+
     # Step 1 – get DLC appids from Steam
     async with httpx.AsyncClient(timeout=10) as client:
         try:
@@ -150,11 +156,18 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
             "currency": price_info.get("currency", "EUR"),
         })
 
-    return sorted(results, key=lambda x: x.get("sale_price") or 999)
+    results.sort(key=lambda x: x.get("sale_price") or 999)
+    _cache.set(cache_key, results)
+    return results
 
 
 async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     """Fetch historical prices from ITAD (GET /games/history/v2 returns a flat list)."""
+    cache_key = f"history:{steam_appid}"
+    cached = _cache.get(cache_key, ttl=_HISTORY_TTL)
+    if cached is not None:
+        return cached
+
     game_id = await get_game_id_by_appid(steam_appid)
     if not game_id:
         return []
@@ -182,4 +195,5 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
             "currency": price_info.get("currency", "EUR"),
             "recorded_at": entry.get("timestamp", ""),  # timestamp is on root entry
         })
+    _cache.set(cache_key, results)
     return results

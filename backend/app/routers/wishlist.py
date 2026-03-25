@@ -48,44 +48,49 @@ async def add_to_wishlist(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Ensure game exists
-    result = await db.execute(select(Game).where(Game.id == payload.game_id))
-    game = result.scalar_one_or_none()
-    if not game:
-        raise HTTPException(status_code=404, detail="Game not found")
+    try:
+        # Ensure game exists
+        result = await db.execute(select(Game).where(Game.id == payload.game_id))
+        game = result.scalar_one_or_none()
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
 
-    # Check duplicate
-    existing = await db.execute(
-        select(WishlistItem).where(
-            WishlistItem.user_id == current_user.id,
-            WishlistItem.game_id == payload.game_id,
+        # Check duplicate
+        existing = await db.execute(
+            select(WishlistItem).where(
+                WishlistItem.user_id == current_user.id,
+                WishlistItem.game_id == payload.game_id,
+            )
         )
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Already in wishlist")
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Already in wishlist")
 
-    item = WishlistItem(
-        user_id=current_user.id,
-        game_id=payload.game_id,
-        target_price=payload.target_price,
-    )
-    db.add(item)
-    await db.flush()
+        item = WishlistItem(
+            user_id=current_user.id,
+            game_id=payload.game_id,
+            target_price=payload.target_price,
+        )
+        db.add(item)
+        await db.flush()
 
-    # Reload with relations
-    result = await db.execute(
-        select(WishlistItem)
-        .where(WishlistItem.id == item.id)
-        .options(selectinload(WishlistItem.game).selectinload(Game.prices))
-    )
-    item = result.scalar_one()
-    return WishlistItemOut(
-        id=item.id,
-        game_id=item.game_id,
-        added_at=item.added_at,
-        target_price=item.target_price,
-        game=_enrich_game(item.game),
-    )
+        # Reload with relations
+        result = await db.execute(
+            select(WishlistItem)
+            .where(WishlistItem.id == item.id)
+            .options(selectinload(WishlistItem.game).selectinload(Game.prices))
+        )
+        item = result.scalar_one()
+        return WishlistItemOut(
+            id=item.id,
+            game_id=item.game_id,
+            added_at=item.added_at,
+            target_price=item.target_price,
+            game=_enrich_game(item.game),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.delete("/{item_id}", status_code=204)

@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase
 from urllib.parse import urlparse, urlunparse
 from app.config import settings
@@ -8,16 +9,15 @@ def _build_url(url: str) -> str:
     """
     Vercel Postgres geeft een postgres:// of postgresql:// URL.
     SQLAlchemy async heeft postgresql+asyncpg:// nodig.
-    asyncpg begrijpt 'sslmode' niet (dat is een libpq param) – strip het uit
-    de query string; SSL wordt via connect_args doorgegeven.
+    asyncpg begrijpt geen libpq query params (sslmode, supa, etc.) –
+    strip de volledige query string; SSL gaat via connect_args.
     """
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-    # asyncpg doesn't understand libpq-style query params (sslmode, supa, etc.)
-    # Strip the entire query string; SSL is passed via connect_args instead.
+    # Strip all libpq-style query params; asyncpg rejects them.
     parsed = urlparse(url)
     url = urlunparse(parsed._replace(query=""))
 
@@ -29,7 +29,6 @@ class Base(DeclarativeBase):
 
 
 # Lazy engine – aangemaakt bij eerste gebruik, niet bij module-import.
-# Zo crasht Vercel niet als env vars nog niet geladen zijn.
 _engine = None
 _session_factory = None
 _tables_created = False
@@ -42,14 +41,22 @@ def _get_engine():
         _is_sqlite = "sqlite" in url
         if _is_sqlite:
             _connect_args = {"check_same_thread": False}
+            _engine = create_async_engine(
+                url,
+                echo=settings.APP_ENV == "development",
+                connect_args=_connect_args,
+            )
         else:
-            # Supabase requires SSL; disable statement cache for PgBouncer pooler.
-            _connect_args = {"ssl": "require", "statement_cache_size": 0}
-        _engine = create_async_engine(
-            url,
-            echo=settings.APP_ENV == "development",
-            connect_args=_connect_args,
-        )
+            # NullPool: no connection pooling – required for serverless (Vercel) +
+            # PgBouncer (Supabase transaction pooler). Each request gets a fresh
+            # connection, so DuplicatePreparedStatementError can never occur.
+            # statement_cache_size=0 disables asyncpg's prepared-statement cache.
+            _engine = create_async_engine(
+                url,
+                echo=settings.APP_ENV == "development",
+                poolclass=NullPool,
+                connect_args={"ssl": "require", "statement_cache_size": 0},
+            )
         _session_factory = async_sessionmaker(
             _engine,
             class_=AsyncSession,

@@ -10,6 +10,7 @@ import { WishlistPage } from './pages/WishlistPage'
 import { AlertsPage } from './pages/AlertsPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { VercelAnalytics } from './vitals'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,7 @@ function App() {
             },
           }}
         />
+        <VercelAnalytics />
       </BrowserRouter>
     </QueryClientProvider>
   )

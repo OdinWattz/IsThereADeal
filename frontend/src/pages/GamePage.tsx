@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getGame, getPriceHistory, addToWishlist, createAlert } from '../api/games'
+import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals } from '../api/games'
+import type { DlcDeal } from '../api/games'
 import { PriceTable } from '../components/PriceTable'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
 import { useAuthStore } from '../store/authStore'
@@ -49,6 +50,13 @@ export function GamePage() {
   const { data: history = [] } = useQuery({
     queryKey: ['history', appid],
     queryFn: () => getPriceHistory(appid!),
+    enabled: !!appid,
+    staleTime: 1000 * 60 * 30,
+  })
+
+  const { data: dlcDeals = [] } = useQuery({
+    queryKey: ['dlc-deals', appid],
+    queryFn: () => getDlcDeals(appid!),
     enabled: !!appid,
     staleTime: 1000 * 60 * 30,
   })
@@ -267,6 +275,53 @@ export function GamePage() {
         <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>Prijsgeschiedenis</h2>
         <PriceHistoryChart history={history} />
       </div>
+
+      {/* DLC Deals */}
+      {dlcDeals.length > 0 && (
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '4px' }}>
+            🎁 DLC in de aanbieding
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: '16px' }}>
+            {dlcDeals.length} DLC{dlcDeals.length !== 1 ? "'s" : ''} voor dit spel zijn momenteel afgeprijsd
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {dlcDeals.map((dlc: DlcDeal) => (
+              <div key={dlc.steam_appid} style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '12px 14px', backgroundColor: '#0d0f1a',
+                border: '1px solid #1e2235', borderRadius: '10px',
+              }}>
+                <span style={{
+                  flexShrink: 0, backgroundColor: '#166534', color: '#4ade80',
+                  fontWeight: 700, fontSize: '0.75rem', padding: '3px 7px', borderRadius: '6px',
+                }}>
+                  -{dlc.discount_percent}%
+                </span>
+                <span style={{ flex: 1, color: '#e2e8f0', fontSize: '0.875rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  {dlc.title}
+                </span>
+                <span style={{ flexShrink: 0, color: '#4ade80', fontWeight: 600, fontSize: '0.9rem' }}>
+                  €{(dlc.sale_price ?? 0).toFixed(2).replace('.', ',')}
+                </span>
+                {dlc.regular_price && (
+                  <span style={{ flexShrink: 0, color: '#475569', fontSize: '0.8rem', textDecoration: 'line-through' }}>
+                    €{dlc.regular_price.toFixed(2).replace('.', ',')}
+                  </span>
+                )}
+                <span style={{ flexShrink: 0, color: '#64748b', fontSize: '0.78rem' }}>{dlc.store_name}</span>
+                {dlc.url && (
+                  <a href={dlc.url} target="_blank" rel="noopener noreferrer"
+                    style={{ flexShrink: 0, color: '#60a5fa', fontSize: '0.78rem', textDecoration: 'none' }}
+                  >
+                    Kopen →
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

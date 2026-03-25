@@ -9,7 +9,7 @@ from app.models.models import Game, GamePrice, PriceHistory
 from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchResult
 from app.services.steam_service import search_steam_games, get_featured_deals
 from app.services.price_aggregator import upsert_game_and_prices
-from app.services.itad_service import get_price_history
+from app.services.itad_service import get_price_history, get_dlc_deals_for_game
 
 router = APIRouter(prefix="/api/games", tags=["games"])
 
@@ -193,6 +193,15 @@ async def get_price_history_route(
         )
 
     return sorted(combined, key=lambda x: x.recorded_at)
+
+
+@router.get("/{steam_appid}/dlc-deals", response_model=List[dict])
+async def get_dlc_deals_route(steam_appid: str):
+    """Get on-sale DLC for a game (no DB needed, live from Steam + ITAD)."""
+    try:
+        return await get_dlc_deals_for_game(steam_appid)
+    except Exception:
+        return []
 
 
 def _enrich_game(game: Game) -> GameOut:

@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
 
+    # Secret used to authenticate the /api/alerts/run-check cron endpoint.
+    # Vercel sets this automatically for cron jobs via Authorization: Bearer header.
+    CRON_SECRET: str = ""
+
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     @property

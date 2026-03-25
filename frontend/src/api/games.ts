@@ -90,6 +90,20 @@ export const getGame = (steamAppid: string, refresh = false) =>
 export const getPriceHistory = (steamAppid: string) =>
   api.get<PriceHistoryPoint[]>(`/games/${steamAppid}/history`).then((r) => r.data)
 
+export interface DlcDeal {
+  steam_appid: string
+  title: string
+  sale_price?: number
+  regular_price?: number
+  discount_percent: number
+  store_name: string
+  url?: string
+  currency: string
+}
+
+export const getDlcDeals = (steamAppid: string) =>
+  api.get<DlcDeal[]>(`/games/${steamAppid}/dlc-deals`).then((r) => r.data)
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export const register = (username: string, email: string, password: string) =>

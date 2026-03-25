@@ -1,16 +1,48 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import List
+from datetime import datetime, timezone
 
 from app.database import get_db
 from app.auth import get_current_user
+from app.config import settings
 from app.models.models import User, PriceAlert, Game
 from app.models.schemas import PriceAlertCreate, PriceAlertOut
 from app.routers.games import _enrich_game
+from app.services.email_service import send_price_alert_email
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
+
+
+async def _check_and_fire_alert(alert: PriceAlert, db: AsyncSession) -> bool:
+    """Check one alert. Returns True if triggered and email sent."""
+    prices = (alert.game.prices if alert.game else []) or []
+    valid = [p for p in prices if (p.sale_price or p.regular_price)]
+    if not valid:
+        return False
+    best = min(valid, key=lambda x: x.sale_price or x.regular_price or 999)
+    current_price = best.sale_price or best.regular_price
+    if current_price is None or current_price > alert.target_price:
+        return False
+
+    alert.triggered_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    alert.is_active = False
+    await db.flush()
+
+    if alert.notify_email and alert.user and alert.user.email:
+        await send_price_alert_email(
+            to_email=alert.user.email,
+            username=alert.user.username,
+            game_name=alert.game.name,
+            current_price=current_price,
+            target_price=alert.target_price,
+            store_name=best.store_name,
+            store_url=best.url or "",
+            header_image=alert.game.header_image or "",
+        )
+    return True
 
 
 @router.get("", response_model=List[PriceAlertOut])
@@ -61,8 +93,17 @@ async def create_alert(
         target_price=payload.target_price,
         notify_email=payload.notify_email,
     )
+    # Attach relations so _check_and_fire_alert can work inline
+    alert.game = game
+    alert.user = current_user
     db.add(alert)
     await db.flush()
+
+    # Immediate check: if the current price already meets the target, fire right away
+    try:
+        await _check_and_fire_alert(alert, db)
+    except Exception:
+        pass
 
     return PriceAlertOut(
         id=alert.id,
@@ -92,6 +133,42 @@ async def delete_alert(
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
     await db.delete(alert)
+
+
+@router.post("/run-check", status_code=200, include_in_schema=False)
+async def run_alert_check(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Cron endpoint: check all active alerts and send email notifications.
+    Called by Vercel Cron (Authorization: Bearer {CRON_SECRET}).
+    """
+    auth = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    is_vercel_cron = request.headers.get("x-vercel-cron") == "1"
+    is_valid_secret = bool(settings.CRON_SECRET) and auth == settings.CRON_SECRET
+    if not (is_vercel_cron or is_valid_secret):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    result = await db.execute(
+        select(PriceAlert)
+        .where(PriceAlert.is_active == True)
+        .options(
+            selectinload(PriceAlert.user),
+            selectinload(PriceAlert.game).selectinload(Game.prices),
+        )
+    )
+    alerts = result.scalars().all()
+
+    triggered = 0
+    for alert in alerts:
+        try:
+            if await _check_and_fire_alert(alert, db):
+                triggered += 1
+        except Exception as e:
+            print(f"[Alerts cron] Error on alert {alert.id}: {e}")
+
+    return {"checked": len(alerts), "triggered": triggered}
 
 
 @router.patch("/{alert_id}/toggle", response_model=PriceAlertOut)

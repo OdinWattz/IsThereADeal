@@ -10,5 +10,8 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/(.*)",     "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/alerts/run-check", "schedule": "0 9 * * *" }
   ]
 }

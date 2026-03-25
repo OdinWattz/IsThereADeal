@@ -21,7 +21,7 @@ async def send_price_alert_email(
         print(f"[Email] Would send alert to {to_email}: {game_name} is now ${current_price:.2f}")
         return
 
-    subject = f"🎮 Price Alert: {game_name} is now ${current_price:.2f}!"
+    subject = f"🎮 Prijsalert: {game_name} is nu €{current_price:.2f}!"
 
     html = f"""
     <html>
@@ -31,30 +31,30 @@ async def send_price_alert_email(
         {f'<img src="{header_image}" style="width:100%; border-radius:8px; margin-bottom:16px;">' if header_image else ''}
         <h2 style="color: #60a5fa;">{game_name}</h2>
         <p>Hi <strong>{username}</strong>,</p>
-        <p>Good news! The price for <strong>{game_name}</strong> has dropped below your target price.</p>
+        <p>Goed nieuws! De prijs van <strong>{game_name}</strong> is onder je doelprijs gezakt.</p>
         <table style="width:100%; border-collapse:collapse; margin: 16px 0;">
           <tr>
-            <td style="padding: 8px; border: 1px solid #334;">Current Price</td>
+            <td style="padding: 8px; border: 1px solid #334;">Huidige prijs</td>
             <td style="padding: 8px; border: 1px solid #334; color: #4ade80; font-size: 1.4em;">
-              <strong>${current_price:.2f}</strong>
+              <strong>€{current_price:.2f}</strong>
             </td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #334;">Your Target</td>
-            <td style="padding: 8px; border: 1px solid #334;">${target_price:.2f}</td>
+            <td style="padding: 8px; border: 1px solid #334;">Jouw doelprijs</td>
+            <td style="padding: 8px; border: 1px solid #334;">€{target_price:.2f}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #334;">Store</td>
+            <td style="padding: 8px; border: 1px solid #334;">Winkel</td>
             <td style="padding: 8px; border: 1px solid #334;">{store_name}</td>
           </tr>
         </table>
         <a href="{store_url}"
            style="display:inline-block; background:#4ade80; color:#000; padding:12px 24px;
                   border-radius:8px; text-decoration:none; font-weight:bold; margin-top:8px;">
-          Buy Now
+          Nu kopen
         </a>
         <p style="margin-top: 24px; color: #888; font-size: 0.85em;">
-          You're receiving this because you set a price alert on GameDeals Tracker.
+          Je ontvangt dit bericht omdat je een prijsalert hebt ingesteld op IsThereADeal.
         </p>
       </div>
     </body>

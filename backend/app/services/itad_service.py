@@ -91,8 +91,12 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     if not game_id:
         return []
 
+    # Request 2 years of history
+    from datetime import datetime, timedelta, timezone
+    since = (datetime.now(timezone.utc) - timedelta(days=730)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # Flat list: [{timestamp, shop, deal: {price, regular, cut}}]
-    entries = await _get("/games/history/v2", {"id": game_id, "country": "NL"})
+    entries = await _get("/games/history/v2", {"id": game_id, "country": "NL", "since": since})
     if not entries or not isinstance(entries, list):
         return []
 

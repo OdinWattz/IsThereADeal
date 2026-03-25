@@ -54,7 +54,14 @@ export function GamePage() {
   })
 
   const wishlistMutation = useMutation({
-    mutationFn: () => addToWishlist(game!.id),
+    mutationFn: async () => {
+      // If game not yet in DB (id=0), save it first via refresh
+      if (game!.id === 0) {
+        const saved = await getGame(appid!, true)
+        return addToWishlist(saved.id)
+      }
+      return addToWishlist(game!.id)
+    },
     onSuccess: () => { toast.success('Toegevoegd aan verlanglijst!'); qc.invalidateQueries({ queryKey: ['wishlist'] }) },
     onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Mislukt'),
   })

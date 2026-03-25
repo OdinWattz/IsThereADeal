@@ -12,27 +12,35 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserOut, status_code=201)
 async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Check duplicates
-    existing = await db.execute(
-        select(User).where((User.username == payload.username) | (User.email == payload.email))
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Username or email already taken")
+    try:
+        # Check duplicates
+        existing = await db.execute(
+            select(User).where((User.username == payload.username) | (User.email == payload.email))
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Username or email already taken")
 
-    user = User(
-        username=payload.username,
-        email=payload.email,
-        hashed_password=hash_password(payload.password),
-    )
-    db.add(user)
-    await db.flush()
-    return user
+        user = User(
+            username=payload.username,
+            email=payload.email,
+            hashed_password=hash_password(payload.password),
+        )
+        db.add(user)
+        await db.flush()
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.post("/login", response_model=Token)
 async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.username == payload.username))
-    user = result.scalar_one_or_none()
+    try:
+        result = await db.execute(select(User).where(User.username == payload.username))
+        user = result.scalar_one_or_none()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(

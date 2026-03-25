@@ -58,7 +58,7 @@ export function PriceHistoryChart({ history }: Props) {
         <Tooltip
           contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
           labelStyle={{ color: '#94a3b8' }}
-          formatter={(value) => [`€${Number(value).toFixed(2).replace('.', ',')}`, '']}
+          formatter={(value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name]}
         />
         <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
         {stores.map((store, i) => (

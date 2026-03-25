@@ -2,26 +2,19 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase
 from urllib.parse import urlparse, urlunparse
+import asyncpg
+import ssl as _ssl
 from app.config import settings
 
 
-def _build_url(url: str) -> str:
-    """
-    Vercel Postgres geeft een postgres:// of postgresql:// URL.
-    SQLAlchemy async heeft postgresql+asyncpg:// nodig.
-    asyncpg begrijpt geen libpq query params (sslmode, supa, etc.) –
-    strip de volledige query string; SSL gaat via connect_args.
-    """
+def _strip_query(url: str) -> str:
+    """Convert postgres:// → postgresql+asyncpg:// and strip all libpq query params."""
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-    # Strip all libpq-style query params; asyncpg rejects them.
     parsed = urlparse(url)
-    url = urlunparse(parsed._replace(query=""))
-
-    return url
+    return urlunparse(parsed._replace(query=""))
 
 
 class Base(DeclarativeBase):
@@ -37,25 +30,45 @@ _tables_created = False
 def _get_engine():
     global _engine, _session_factory
     if _engine is None:
-        url = _build_url(settings.DATABASE_URL)
-        _is_sqlite = "sqlite" in url
+        raw_url = settings.DATABASE_URL
+        _is_sqlite = "sqlite" in raw_url
         if _is_sqlite:
-            _connect_args = {"check_same_thread": False}
             _engine = create_async_engine(
-                url,
+                raw_url,
                 echo=settings.APP_ENV == "development",
-                connect_args=_connect_args,
+                connect_args={"check_same_thread": False},
             )
         else:
-            # NullPool: no connection pooling – required for serverless (Vercel) +
-            # PgBouncer (Supabase transaction pooler). Each request gets a fresh
-            # connection, so DuplicatePreparedStatementError can never occur.
-            # statement_cache_size=0 disables asyncpg's prepared-statement cache.
+            url = _strip_query(raw_url)
+            p = urlparse(url)
+            _host = p.hostname
+            _port = p.port or 5432
+            _user = p.username
+            _password = p.password
+            _database = p.path.lstrip("/")
+
+            # Use async_creator to pass statement_cache_size=0 directly to asyncpg.
+            # Passing it through SQLAlchemy's connect_args is unreliable across
+            # versions and does NOT prevent PgBouncer DuplicatePreparedStatementError.
+            # NullPool + statement_cache_size=0 together fully prevent the error.
+            ssl_ctx = _ssl.create_default_context()
+
+            async def _creator():
+                return await asyncpg.connect(
+                    host=_host,
+                    port=_port,
+                    user=_user,
+                    password=_password,
+                    database=_database,
+                    ssl=ssl_ctx,
+                    statement_cache_size=0,
+                )
+
             _engine = create_async_engine(
-                url,
-                echo=settings.APP_ENV == "development",
+                "postgresql+asyncpg://",
+                async_creator=_creator,
                 poolclass=NullPool,
-                connect_args={"ssl": "require", "statement_cache_size": 0},
+                echo=settings.APP_ENV == "development",
             )
         _session_factory = async_sessionmaker(
             _engine,

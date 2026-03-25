@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
-from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
+from urllib.parse import urlparse, urlunparse
 from app.config import settings
 
 
@@ -16,12 +16,10 @@ def _build_url(url: str) -> str:
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-    # Strip 'sslmode' from query string – asyncpg rejects it as unknown kwarg.
+    # asyncpg doesn't understand libpq-style query params (sslmode, supa, etc.)
+    # Strip the entire query string; SSL is passed via connect_args instead.
     parsed = urlparse(url)
-    qs = parse_qs(parsed.query, keep_blank_values=True)
-    qs.pop("sslmode", None)
-    new_query = urlencode({k: v[0] for k, v in qs.items()})
-    url = urlunparse(parsed._replace(query=new_query))
+    url = urlunparse(parsed._replace(query=""))
 
     return url
 

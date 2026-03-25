@@ -59,7 +59,7 @@ export function HomePage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-            {featured.slice(0, 10).map((game) => (
+            {featured.slice(0, 20).map((game) => (
               <a
                 key={game.steam_appid}
                 href={`/game/${game.steam_appid}`}

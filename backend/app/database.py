@@ -23,6 +23,7 @@ class Base(DeclarativeBase):
 # Zo crasht Vercel niet als env vars nog niet geladen zijn.
 _engine = None
 _session_factory = None
+_tables_created = False
 
 
 def _get_engine():
@@ -49,7 +50,16 @@ def _get_engine():
 
 
 async def get_db():
-    _, factory = _get_engine()
+    global _tables_created
+    engine, factory = _get_engine()
+    # Ensure tables exist on first use – works even when lifespan didn't fire (Vercel).
+    if not _tables_created:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            _tables_created = True
+        except Exception:
+            pass  # non-fatal; queries will fail naturally if DB is truly unreachable
     async with factory() as session:
         try:
             yield session

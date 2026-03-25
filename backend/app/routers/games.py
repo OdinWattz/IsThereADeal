@@ -22,10 +22,13 @@ async def search_games(
     """Search Steam for games."""
     steam_results = await search_steam_games(q)
 
-    # Check which ones are already in our DB
+    # Check which ones are already in our DB – non-fatal if DB is unavailable
     appids = [r["steam_appid"] for r in steam_results]
-    db_result = await db.execute(select(Game).where(Game.steam_appid.in_(appids)))
-    db_games = {g.steam_appid: g for g in db_result.scalars().all()}
+    try:
+        db_result = await db.execute(select(Game).where(Game.steam_appid.in_(appids)))
+        db_games = {g.steam_appid: g for g in db_result.scalars().all()}
+    except Exception:
+        db_games = {}
 
     results = []
     for r in steam_results:
@@ -75,24 +78,68 @@ async def get_game(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a game with all prices. Fetches from APIs if not in DB or refresh=true."""
-    result = await db.execute(
-        select(Game)
-        .where(Game.steam_appid == steam_appid)
-        .options(selectinload(Game.prices))
-    )
-    game = result.scalar_one_or_none()
-
-    if game is None or refresh:
-        game = await upsert_game_and_prices(db, steam_appid)
-        if game is None:
-            raise HTTPException(status_code=404, detail="Game not found")
-        # Reload with prices
+    game = None
+    try:
         result = await db.execute(
             select(Game)
             .where(Game.steam_appid == steam_appid)
             .options(selectinload(Game.prices))
         )
         game = result.scalar_one_or_none()
+    except Exception:
+        game = None
+
+    if game is None or refresh:
+        try:
+            game = await upsert_game_and_prices(db, steam_appid)
+            if game is None:
+                raise HTTPException(status_code=404, detail="Game not found")
+            # Reload with prices
+            result = await db.execute(
+                select(Game)
+                .where(Game.steam_appid == steam_appid)
+                .options(selectinload(Game.prices))
+            )
+            game = result.scalar_one_or_none()
+        except HTTPException:
+            raise
+        except Exception:
+            # DB unavailable – fetch directly from APIs and return without persisting
+            from app.services.price_aggregator import fetch_all_prices
+            data = await fetch_all_prices(steam_appid)
+            steam_data = data.get("steam_data")
+            if not steam_data:
+                raise HTTPException(status_code=404, detail="Game not found")
+            # Build a transient Game-like object
+            transient = Game(
+                steam_appid=steam_appid,
+                name=steam_data.get("name", ""),
+                header_image=steam_data.get("header_image", ""),
+                short_description=steam_data.get("short_description", ""),
+                genres=steam_data.get("genres", ""),
+                developers=steam_data.get("developers", ""),
+                publishers=steam_data.get("publishers", ""),
+                release_date=steam_data.get("release_date", ""),
+                steam_url=steam_data.get("steam_url", ""),
+            )
+            transient.id = 0
+            from app.models.models import GamePrice as GP
+            transient.prices = [
+                GP(
+                    game_id=0,
+                    store_name=p.get("store_name", "Unknown"),
+                    store_id=p.get("store_id"),
+                    regular_price=p.get("regular_price"),
+                    sale_price=p.get("sale_price"),
+                    discount_percent=p.get("discount_percent", 0),
+                    currency=p.get("currency", "EUR"),
+                    url=p.get("url"),
+                    is_on_sale=p.get("is_on_sale", False),
+                    is_key_reseller=p.get("is_key_reseller", False),
+                )
+                for p in data.get("prices", [])
+            ]
+            return _enrich_game(transient)
 
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")

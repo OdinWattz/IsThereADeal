@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Filter, ChevronDown } from 'lucide-react'
 import api from '../api/client'
@@ -70,6 +70,11 @@ export function BrowsePage() {
 
   const games = data?.items || []
   const hasMore = data?.has_more || false
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
 
   const resetFilters = () => {
     setMinPrice(0)

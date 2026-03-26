@@ -1,82 +1,170 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X } from 'lucide-react'
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate('/')
+    setMobileMenuOpen(false)
   }
 
   return (
-    <nav style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1a1d2e', position: 'sticky', top: 0, zIndex: 50, width: '100%' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Logo */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a78bfa', fontWeight: 700, fontSize: '1.2rem', textDecoration: 'none', flexShrink: 0 }}>
-          <Gamepad2 size={26} />
-          <span>GameDeals</span>
-        </Link>
-
-        {/* Search – takes remaining space */}
-        <div style={{ flex: 1, maxWidth: '520px' }}>
-          <SearchBar />
-        </div>
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+    <nav className="bg-[#0d0f1a] border-b border-[#1a1d2e] sticky top-0 z-50 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {/* Main Nav Bar */}
+        <div className="h-16 flex items-center justify-between gap-4">
+          {/* Logo */}
           <Link
-            to="/deals"
-            style={{ padding: '8px 14px', borderRadius: '8px', fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+            to="/"
+            className="flex items-center gap-2 text-purple-400 font-bold text-lg sm:text-xl flex-shrink-0"
           >
-            Deals
+            <Gamepad2 size={26} />
+            <span className="hidden sm:inline">GameDeals</span>
           </Link>
 
-          {isAuthenticated() ? (
-            <>
-              <Link to="/wishlist" title="Wishlist" style={{ padding: '8px', borderRadius: '8px', color: '#94a3b8', display: 'flex' }}>
-                <Heart size={20} />
-              </Link>
-              <Link to="/alerts" title="Price Alerts" style={{ padding: '8px', borderRadius: '8px', color: '#94a3b8', display: 'flex' }}>
-                <Bell size={20} />
-              </Link>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px', paddingLeft: '12px', borderLeft: '1px solid #1a1d2e' }}>
-                <span style={{ fontSize: '0.875rem', color: '#64748b' }}>{user?.username}</span>
-                <button
-                  onClick={handleLogout}
-                  title="Logout"
-                  style={{ padding: '8px', borderRadius: '8px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
+          {/* Desktop Search */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <SearchBar />
+          </div>
+
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              to="/deals"
+              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+            >
+              Deals
+            </Link>
+
+            {isAuthenticated() ? (
+              <>
+                <Link
+                  to="/wishlist"
+                  title="Wishlist"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
                 >
-                  <LogOut size={18} />
-                </button>
-              </div>
-            </>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px' }}>
+                  <Heart size={20} />
+                </Link>
+                <Link
+                  to="/alerts"
+                  title="Price Alerts"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <Bell size={20} />
+                </Link>
+                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-[#1a1d2e]">
+                  <Link
+                    to="/profile"
+                    title="Profile"
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  >
+                    <User size={20} />
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    title="Logout"
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              </>
+            ) : (
               <Link
                 to="/login"
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px', borderRadius: '8px', fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                <LogIn size={15} /> Login
+                <LogIn size={16} />
+                <span>Inloggen</span>
               </Link>
-              <Link
-                to="/register"
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 16px', borderRadius: '8px', fontSize: '0.875rem', backgroundColor: '#7c3aed', color: '#fff', textDecoration: 'none', fontWeight: 500 }}
-              >
-                <User size={15} /> Register
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-gray-400 hover:text-white"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile Search (always visible on mobile) */}
+        <div className="md:hidden pb-3">
+          <SearchBar />
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#111320] border-t border-[#1a1d2e]">
+          <div className="px-4 py-3 space-y-2">
+            <Link
+              to="/deals"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+            >
+              Deals
+            </Link>
+
+            {isAuthenticated() ? (
+              <>
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <Heart size={20} />
+                  <span>Verlanglijst</span>
+                </Link>
+                <Link
+                  to="/alerts"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <Bell size={20} />
+                  <span>Price Alerts</span>
+                </Link>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <User size={20} />
+                  <span>Profiel</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors text-left"
+                >
+                  <LogOut size={20} />
+                  <span>Uitloggen</span>
+                </button>
+                <div className="pt-2 px-4 text-sm text-gray-500 border-t border-[#1a1d2e]">
+                  Ingelogd als <span className="text-gray-300">{user?.username}</span>
+                </div>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <LogIn size={18} />
+                <span>Inloggen</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

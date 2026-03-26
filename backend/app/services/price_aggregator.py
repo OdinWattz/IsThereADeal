@@ -20,10 +20,14 @@ def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
+async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False) -> Dict[str, Any]:
     """
     Fetch prices from all sources in parallel and return a merged dict.
     Results are cached in-memory for _PRICES_TTL seconds.
+
+    Args:
+        steam_appid: Steam application ID
+        include_key_resellers: If True, fetch prices from key resellers (slower)
     """
     cache_key = f"prices:{steam_appid}"
     cached = _cache.get(cache_key, ttl=_PRICES_TTL)
@@ -45,13 +49,22 @@ async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
         cheap_prices = []
 
     # Fetch key reseller prices (slower, run after we have game name)
-    game_name = ""
-    if steam_data:
-        game_name = steam_data.get("name", "")
-
+    # Only if explicitly requested - uses separate cache
     key_prices = []
-    if game_name:
-        key_prices = await get_all_key_reseller_prices(game_name)
+    if include_key_resellers:
+        game_name = ""
+        if steam_data:
+            game_name = steam_data.get("name", "")
+
+        if game_name:
+            # Check separate cache first (longer TTL for slow API calls)
+            key_cache_key = f"key_resellers:{game_name.lower()}"
+            cached_keys = _cache.get(key_cache_key, ttl=600)  # 10 min
+            if cached_keys is not None:
+                key_prices = cached_keys
+            else:
+                key_prices = await get_all_key_reseller_prices(game_name)
+                _cache.set(key_cache_key, key_prices)
 
     # Merge: deduplicate by normalised store name
     all_prices: List[Dict] = []
@@ -102,11 +115,16 @@ async def fetch_all_prices(steam_appid: str) -> Dict[str, Any]:
     return result
 
 
-async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional[Game]:
+async def upsert_game_and_prices(db: AsyncSession, steam_appid: str, include_key_resellers: bool = False) -> Optional[Game]:
     """
     Fetch all data for a game, upsert the Game record, and refresh its prices.
+
+    Args:
+        db: Database session
+        steam_appid: Steam application ID
+        include_key_resellers: If True, fetch prices from key resellers (slower)
     """
-    data = await fetch_all_prices(steam_appid)
+    data = await fetch_all_prices(steam_appid, include_key_resellers)
     steam_data = data.get("steam_data")
     prices = data.get("prices", [])
 
@@ -170,4 +188,8 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str) -> Optional
             db.add(ph)
 
     await db.flush()
+
+    # Eagerly load prices relationship before returning to avoid N+1 queries
+    await db.refresh(game, ["prices"])
+
     return game

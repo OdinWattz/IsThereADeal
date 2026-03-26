@@ -40,10 +40,11 @@ export function GamePage() {
   const { isAuthenticated } = useAuthStore()
   const [alertPrice, setAlertPrice] = useState('')
   const [showAlertForm, setShowAlertForm] = useState(false)
+  const [showKeyResellers, setShowKeyResellers] = useState(false)
 
   const { data: game, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['game', appid],
-    queryFn: () => getGame(appid!),
+    queryKey: ['game', appid, showKeyResellers],
+    queryFn: () => getGame(appid!, false, showKeyResellers),
     enabled: !!appid,
     staleTime: 1000 * 60 * 5,
   })
@@ -126,26 +127,24 @@ export function GamePage() {
   const steamPrice = game.prices.find((p) => p.store_name === 'Steam')
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', marginBottom: '24px', padding: 0 }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+        className="inline-flex items-center gap-1 text-gray-500 hover:text-white text-sm mb-4 sm:mb-6 transition-colors"
       >
         <ChevronLeft size={16} /> Terug
       </button>
 
       {/* Hero */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', marginBottom: '28px' }}>
+      <div className="flex flex-col md:flex-row gap-6 sm:gap-7 mb-6 sm:mb-7">
         <img
           src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`}
           alt={game.name}
-          style={{ width: '320px', maxWidth: '100%', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
+          className="w-full md:w-80 rounded-xl object-cover"
         />
-        <div style={{ flex: 1, minWidth: '260px' }}>
+        <div className="flex-1 min-w-0">
           <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{game.name}</h1>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
@@ -272,9 +271,20 @@ export function GamePage() {
 
       {/* Price Table */}
       <div style={cardStyle}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
-          Alle prijzen ({game.prices.length} winkels)
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', margin: 0 }}>
+            Alle prijzen ({game.prices.length} winkels)
+          </h2>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', color: '#94a3b8' }}>
+            <input
+              type="checkbox"
+              checked={showKeyResellers}
+              onChange={(e) => setShowKeyResellers(e.target.checked)}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            <span>Toon key resellers (trager)</span>
+          </label>
+        </div>
         <PriceTable prices={game.prices} gameName={game.name} />
       </div>
 

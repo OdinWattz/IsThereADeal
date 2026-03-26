@@ -65,9 +65,16 @@ async def get_deals(
 async def get_game(
     steam_appid: str,
     refresh: bool = False,
+    include_key_resellers: bool = False,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a game with all prices. Fetches from APIs if not in DB or refresh=true."""
+    """Get a game with all prices. Fetches from APIs if not in DB or refresh=true.
+
+    Args:
+        steam_appid: Steam application ID
+        refresh: Force refresh from APIs
+        include_key_resellers: Include key reseller prices (slower, opt-in)
+    """
     game = None
     try:
         result = await db.execute(
@@ -81,22 +88,16 @@ async def get_game(
 
     if game is None or refresh:
         try:
-            game = await upsert_game_and_prices(db, steam_appid)
+            game = await upsert_game_and_prices(db, steam_appid, include_key_resellers)
             if game is None:
                 raise HTTPException(status_code=404, detail="Game not found")
-            # Reload with prices
-            result = await db.execute(
-                select(Game)
-                .where(Game.steam_appid == steam_appid)
-                .options(selectinload(Game.prices))
-            )
-            game = result.scalar_one_or_none()
+            # Prices already loaded via eager loading - no second query needed!
         except HTTPException:
             raise
         except Exception:
             # DB unavailable – fetch directly from APIs and return without persisting
             from app.services.price_aggregator import fetch_all_prices
-            data = await fetch_all_prices(steam_appid)
+            data = await fetch_all_prices(steam_appid, include_key_resellers)
             steam_data = data.get("steam_data")
             if not steam_data:
                 raise HTTPException(status_code=404, detail="Game not found")

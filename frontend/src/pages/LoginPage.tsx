@@ -1,16 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { login } from '../api/games'
 import toast from 'react-hot-toast'
 import { Gamepad2, LogIn } from 'lucide-react'
 
+const REMEMBER_ME_KEY = 'remembered_username'
+
 export function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
+
+  // Load remembered username on mount
+  useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBER_ME_KEY)
+    if (remembered) {
+      setUsername(remembered)
+      setRememberMe(true)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,6 +30,14 @@ export function LoginPage() {
     try {
       const data = await login(username, password)
       setAuth(data.access_token, data.user)
+
+      // Save or clear remembered username
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, username)
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY)
+      }
+
       toast.success(`Welcome back, ${data.user.username}!`)
       navigate('/')
     } catch (err: any) {
@@ -27,45 +47,78 @@ export function LoginPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', boxSizing: 'border-box',
-    backgroundColor: '#1e2235', border: '1px solid #2a2d3e', borderRadius: '8px',
-    padding: '10px 14px', color: '#fff', fontSize: '0.875rem', outline: 'none',
-  }
-
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div style={{ width: '100%', maxWidth: '420px' }}>
-
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div style={{ display: 'inline-flex', padding: '14px', backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: '50%', marginBottom: '12px' }}>
-            <Gamepad2 size={32} color="#a78bfa" />
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-7">
+          <div className="inline-flex p-3.5 bg-purple-600/15 rounded-full mb-3">
+            <Gamepad2 size={32} className="text-purple-400" />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Welkom terug</h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Log in om je verlanglijst en alerts te bekijken</p>
+          <h1 className="text-2xl font-bold text-white mb-1">Welkom terug</h1>
+          <p className="text-gray-400 text-sm">Log in om je verlanglijst en alerts te bekijken</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ backgroundColor: '#111320', border: '1px solid #1e2235', borderRadius: '16px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} className="bg-[#111320] border border-[#1e2235] rounded-2xl p-6 sm:p-7 space-y-4">
+          {/* Username */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#cbd5e1', marginBottom: '6px' }}>Gebruikersnaam</label>
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required style={inputStyle} placeholder="jouw_naam" />
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
+              Gebruikersnaam
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="jouw_naam"
+            />
           </div>
+
+          {/* Password */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#cbd5e1', marginBottom: '6px' }}>Wachtwoord</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} placeholder="••••••••" />
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
+              Wachtwoord
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="••••••••"
+            />
           </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-600 bg-[#1e2235] text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+            />
+            <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-400 cursor-pointer select-none">
+              Gebruikersnaam onthouden
+            </label>
+          </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '11px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: 500, fontSize: '0.875rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, marginTop: '4px' }}
+            className="flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed rounded-lg text-white font-medium text-sm transition-colors mt-6"
           >
-            <LogIn size={16} /> {loading ? 'Inloggen...' : 'Inloggen'}
+            <LogIn size={16} />
+            {loading ? 'Inloggen...' : 'Inloggen'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.875rem', color: '#64748b' }}>
+        <p className="text-center mt-4 text-sm text-gray-400">
           Nog geen account?{' '}
-          <Link to="/register" style={{ color: '#a78bfa', textDecoration: 'none' }}>Aanmaken</Link>
+          <Link to="/register" className="text-purple-400 hover:text-purple-300 transition-colors">
+            Aanmaken
+          </Link>
         </p>
       </div>
     </div>

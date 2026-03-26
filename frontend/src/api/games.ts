@@ -73,6 +73,20 @@ export interface User {
   created_at: string
 }
 
+// ── Profile / User Management ────────────────────────────────────────────────
+
+export const updateProfile = (data: { username?: string; email?: string }) =>
+  api.patch<User>('/auth/me', data).then(r => r.data)
+
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  api.post('/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword
+  })
+
+export const deleteAccount = (password: string) =>
+  api.delete('/auth/me', { data: { current_password: password } })
+
 // ── Games ────────────────────────────────────────────────────────────────────
 
 export const searchGames = (q: string) =>
@@ -95,8 +109,10 @@ export interface TrendingDeal {
 export const getDeals = (page = 0, limit = 20) =>
   api.get<TrendingDeal[]>('/games/deals', { params: { page, limit } }).then((r) => r.data)
 
-export const getGame = (steamAppid: string, refresh = false) =>
-  api.get<Game>(`/games/${steamAppid}`, { params: { refresh } }).then((r) => r.data)
+export const getGame = (steamAppid: string, refresh = false, includeKeyResellers = false) =>
+  api.get<Game>(`/games/${steamAppid}`, {
+    params: { refresh, include_key_resellers: includeKeyResellers }
+  }).then((r) => r.data)
 
 export const getPriceHistory = (steamAppid: string) =>
   api.get<PriceHistoryPoint[]>(`/games/${steamAppid}/history`).then((r) => r.data)

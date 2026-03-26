@@ -5,6 +5,7 @@ Docs: https://apidocs.cheapshark.com/
 """
 import httpx
 from typing import List, Dict, Any, Optional
+from app.services import cache as _cache
 
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
 
@@ -114,25 +115,39 @@ async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, A
 
 
 async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:
-    """Look up deals for a game by Steam appid via CheapShark."""
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            resp = await client.get(
-                f"{CHEAPSHARK_BASE}/games",
-                params={"steamAppID": steam_appid},
-            )
-            resp.raise_for_status()
-            games = resp.json()
-        except Exception:
+    """Look up deals for a game by Steam appid via CheapShark.
+
+    Uses caching to reduce API calls: the steam_appid -> gameID mapping
+    is cached for 24 hours, eliminating the first lookup on repeat requests.
+    """
+    # Check cache for steam_appid -> gameID mapping (24 hours)
+    cache_key = f"cheapshark_id:{steam_appid}"
+    game_id = _cache.get(cache_key, ttl=86400)  # 24 hours
+
+    if not game_id:
+        # First API call: lookup gameID by steam_appid
+        async with httpx.AsyncClient(timeout=10) as client:
+            try:
+                resp = await client.get(
+                    f"{CHEAPSHARK_BASE}/games",
+                    params={"steamAppID": steam_appid},
+                )
+                resp.raise_for_status()
+                games = resp.json()
+            except Exception:
+                return []
+
+        if not games:
             return []
 
-    if not games:
-        return []
+        game_id = games[0].get("gameID")
+        if not game_id:
+            return []
 
-    game_id = games[0].get("gameID")
-    if not game_id:
-        return []
+        # Cache the mapping for future requests
+        _cache.set(cache_key, game_id)
 
+    # Second API call: get deals using gameID (always needed, but faster if cached)
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             resp = await client.get(

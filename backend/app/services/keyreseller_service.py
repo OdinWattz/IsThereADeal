@@ -31,7 +31,7 @@ async def get_allkeyshop_prices(game_name: str) -> List[Dict[str, Any]]:
     }
     results = []
 
-    async with httpx.AsyncClient(timeout=15, headers=HEADERS) as client:
+    async with httpx.AsyncClient(timeout=8, headers=HEADERS) as client:
         try:
             resp = await client.get(search_url, params=params)
             resp.raise_for_status()
@@ -82,7 +82,7 @@ async def get_eneba_prices(game_name: str) -> List[Dict[str, Any]]:
     }
     """
     results = []
-    async with httpx.AsyncClient(timeout=10, headers=HEADERS) as client:
+    async with httpx.AsyncClient(timeout=6, headers=HEADERS) as client:
         try:
             resp = await client.post(
                 url,
@@ -124,7 +124,7 @@ async def get_g2a_prices(game_name: str) -> List[Dict[str, Any]]:
     params = {"query": game_name, "itemsPerPage": 5, "currency": "USD"}
     results = []
 
-    async with httpx.AsyncClient(timeout=10, headers=HEADERS) as client:
+    async with httpx.AsyncClient(timeout=6, headers=HEADERS) as client:
         try:
             resp = await client.get(url, params=params)
             resp.raise_for_status()

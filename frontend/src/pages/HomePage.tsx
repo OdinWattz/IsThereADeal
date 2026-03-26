@@ -17,80 +17,82 @@ export function HomePage() {
   })
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 24px', width: '100%' }}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
       {/* Hero */}
-      <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, color: '#fff', marginBottom: '12px', lineHeight: 1.1 }}>
+      <div className="text-center mb-12 sm:mb-16">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-3 sm:mb-4 leading-tight">
           Find the{' '}
-          <span style={{ background: 'linear-gradient(135deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             best game deals
           </span>
         </h1>
-        <p style={{ color: '#94a3b8', fontSize: '1.1rem', maxWidth: '560px', margin: '0 auto 32px' }}>
+        <p className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto mb-6 sm:mb-8 px-4">
           Compare prices across Steam, GOG, Humble, Fanatical, key resellers and more.
           Set price alerts and never miss a sale.
         </p>
         {/* Feature pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {[
-            { icon: <TrendingDown size={15} />, label: '30+ stores compared' },
-            { icon: <Zap size={15} />, label: 'Live price alerts' },
-            { icon: <BarChart2 size={15} />, label: 'Price history charts' },
+            { icon: <TrendingDown size={15} />, label: '30+ stores' },
+            { icon: <Zap size={15} />, label: 'Live alerts' },
+            { icon: <BarChart2 size={15} />, label: 'Price history' },
           ].map(({ icon, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111320', border: '1px solid #1e2235', padding: '8px 16px', borderRadius: '999px', fontSize: '0.85rem', color: '#94a3b8' }}>
-              <span style={{ color: '#a78bfa' }}>{icon}</span>
-              {label}
+            <div key={label} className="flex items-center gap-2 bg-[#111320] border border-[#1e2235] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm text-gray-400">
+              <span className="text-purple-400">{icon}</span>
+              <span className="hidden sm:inline">{label}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Steam Featured Deals */}
-      <section style={{ marginBottom: '56px' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <TrendingDown size={20} style={{ color: '#4ade80' }} />
+      <section className="mb-10 sm:mb-14">
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-5 flex items-center gap-2">
+          <TrendingDown size={20} className="text-green-400" />
           Steam Featured Deals
         </h2>
         {featuredLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{ backgroundColor: '#111320', borderRadius: '12px', height: '220px', animation: 'pulse 2s infinite' }} />
+              <div key={i} className="bg-[#111320] rounded-xl h-48 sm:h-56 animate-pulse" />
             ))}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {featured.slice(0, 40).map((game) => (
-              <a
+              <Link
                 key={game.steam_appid}
-                href={`/game/${game.steam_appid}`}
-                style={{ display: 'block', backgroundColor: '#111320', border: '1px solid #1e2235', borderRadius: '12px', overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#7c3aed'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1e2235'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+                to={`/game/${game.steam_appid}`}
+                className="block bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div style={{ position: 'relative' }}>
-                  <img src={game.header_image} alt={game.name} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+                <div className="relative">
+                  <img
+                    src={game.header_image}
+                    alt={game.name}
+                    className="w-full h-24 sm:h-28 object-cover"
+                  />
                   {game.discount_percent > 0 && (
-                    <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: '#16a34a', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>
+                    <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded">
                       -{game.discount_percent}%
                     </div>
                   )}
                 </div>
-                <div style={{ padding: '12px' }}>
-                  <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="p-2 sm:p-3">
+                  <p className="text-xs sm:text-sm text-gray-200 mb-1 sm:mb-2 truncate">
                     {game.name}
                   </p>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '1rem' }}>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-green-400 font-bold text-sm sm:text-base">
                       €{(game.sale_price ?? game.regular_price ?? 0).toFixed(2).replace('.', ',')}
                     </span>
                     {game.regular_price > (game.sale_price ?? game.regular_price) && (
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', textDecoration: 'line-through' }}>
+                      <span className="text-xs text-gray-500 line-through">
                         €{game.regular_price.toFixed(2).replace('.', ',')}
                       </span>
                     )}
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}
@@ -99,49 +101,51 @@ export function HomePage() {
       {/* Best Deals Right Now */}
       {dbDeals.length > 0 && (
         <section>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Zap size={20} style={{ color: '#a78bfa' }} />
+          <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-5 flex items-center gap-2">
+            <Zap size={20} className="text-purple-400" />
             Best Deals Right Now
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {dealsLoading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} style={{ backgroundColor: '#111320', borderRadius: '12px', height: '220px' }} />
+                  <div key={i} className="bg-[#111320] rounded-xl h-48 sm:h-56 animate-pulse" />
                 ))
               : dbDeals.map((d: TrendingDeal) => (
-                  <Link key={`${d.steam_appid}-${d.store_name}`} to={`/game/${d.steam_appid}`} style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{ backgroundColor: '#111320', border: '1px solid #1e2235', borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.2s, transform 0.2s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#7c3aed'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1e2235'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
-                    >
-                      <div style={{ position: 'relative' }}>
-                        <img src={d.header_image} alt={d.name} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
-                        {d.discount_percent > 0 && (
-                          <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: '#16a34a', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>
-                            -{d.discount_percent}%
-                          </div>
-                        )}
-                        {d.store_name && d.store_name !== 'Steam' && (
-                          <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: 'rgba(124,58,237,0.9)', color: '#fff', fontSize: '0.65rem', padding: '3px 6px', borderRadius: '6px' }}>
-                            {d.store_name}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ padding: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {d.name}
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '1rem' }}>
-                            ${d.sale_price.toFixed(2)}
-                          </span>
-                          {d.regular_price > d.sale_price && (
-                            <span style={{ fontSize: '0.75rem', color: '#64748b', textDecoration: 'line-through' }}>
-                              ${d.regular_price.toFixed(2)}
-                            </span>
-                          )}
+                  <Link
+                    key={`${d.steam_appid}-${d.store_name}`}
+                    to={`/game/${d.steam_appid}`}
+                    className="block bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 transition-all duration-200"
+                  >
+                    <div className="relative">
+                      <img
+                        src={d.header_image}
+                        alt={d.name}
+                        className="w-full h-24 sm:h-28 object-cover"
+                      />
+                      {d.discount_percent > 0 && (
+                        <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                          -{d.discount_percent}%
                         </div>
+                      )}
+                      {d.store_name && d.store_name !== 'Steam' && (
+                        <div className="absolute top-2 right-2 bg-purple-600/90 text-white text-[10px] px-1.5 py-0.5 rounded">
+                          {d.store_name}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2 sm:p-3">
+                      <p className="text-xs sm:text-sm text-gray-200 mb-1 sm:mb-2 truncate">
+                        {d.name}
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-green-400 font-bold text-sm sm:text-base">
+                          ${d.sale_price.toFixed(2)}
+                        </span>
+                        {d.regular_price > d.sale_price && (
+                          <span className="text-xs text-gray-500 line-through">
+                            ${d.regular_price.toFixed(2)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </Link>

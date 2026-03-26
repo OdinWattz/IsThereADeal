@@ -71,10 +71,14 @@ async def get_deals_for_title(game_title: str) -> List[Dict[str, Any]]:
 
 async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, Any]]:
     """
-    Get top deals sorted by CheapShark DealRating (quality metric).
-    Always returns fresh data with Steam appids so the frontend can link
-    directly to our /game/:appid route.
+    Get quality deals sorted by CheapShark DealRating, filtered and randomized.
+    Fetches more deals than needed, applies quality filters, then randomizes.
     """
+    import random
+
+    # Fetch more deals for better randomization (3x requested)
+    fetch_size = max(limit * 3, 60)
+
     async with httpx.AsyncClient(timeout=6) as client:
         try:
             resp = await client.get(
@@ -82,9 +86,10 @@ async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, A
                 params={
                     "sortBy": "DealRating",
                     "onSale": 1,
+                    "lowerPrice": 2,        # Minimum $2 to filter shovelware
                     "upperPrice": 60,
                     "pageNumber": page,
-                    "pageSize": limit,
+                    "pageSize": fetch_size,
                 },
             )
             resp.raise_for_status()
@@ -97,13 +102,34 @@ async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, A
         steam_appid = str(deal.get("steamAppID") or "").strip()
         if not steam_appid or steam_appid.lower() == "none":
             continue
+
+        name = deal.get("title", "")
         store_id = str(deal.get("storeID", ""))
         sale = float(deal.get("salePrice") or 0)
         normal = float(deal.get("normalPrice") or 0)
         savings = float(deal.get("savings") or 0)
+
+        # Quality filters
+        if sale < 2.0:  # Skip very cheap games
+            continue
+        if savings < 15:  # Skip small discounts (<15%)
+            continue
+        if normal > 150:  # Skip overpriced editions
+            continue
+
+        # Filter out adult/shovelware keywords
+        name_lower = name.lower()
+        skip_keywords = [
+            'hentai', 'anime girl', 'waifu', 'ecchi', 'adult only',
+            'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex',
+            'soundtrack', 'artbook', 'wallpaper', 'OST'
+        ]
+        if any(kw in name_lower for kw in skip_keywords):
+            continue
+
         results.append({
             "steam_appid": steam_appid,
-            "name": deal.get("title", ""),
+            "name": name,
             "sale_price": round(sale, 2),
             "regular_price": round(normal, 2),
             "discount_percent": min(round(savings), 100),
@@ -111,7 +137,10 @@ async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, A
             "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
             "deal_rating": float(deal.get("dealRating") or 0),
         })
-    return results
+
+    # Randomize before limiting
+    random.shuffle(results)
+    return results[:limit]
 
 
 async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:

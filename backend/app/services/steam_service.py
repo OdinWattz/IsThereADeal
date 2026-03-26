@@ -93,7 +93,9 @@ async def search_steam_games(query: str):
 
 
 async def get_featured_deals():
-    """Fetch featured / on-sale games from Steam."""
+    """Fetch featured / on-sale games from Steam, filtered and randomized."""
+    import random
+
     url = f"{STEAM_STORE_BASE}/featuredcategories"
     params = {"cc": "nl", "l": "en"}
 
@@ -108,7 +110,8 @@ async def get_featured_deals():
     seen_ids: set = set()
     results = []
 
-    def _add_items(items, max_items=20):
+    def _add_items(items, max_items=50):
+        """Add items with quality filtering"""
         added = 0
         for item in items:
             if added >= max_items:
@@ -118,10 +121,30 @@ async def get_featured_deals():
                 name = item.get("name") or ""
                 if not appid or not name or appid in seen_ids:
                     continue
-                seen_ids.add(appid)
+
                 discount_pct = item.get("discount_percent", 0) or 0
                 final = (item.get("final_price") or 0) / 100
                 original = (item.get("original_price") or 0) / 100
+
+                # Quality filters to avoid shovelware and adult content
+                if final > 0 and final < 2.0:  # Skip very cheap games (usually shovelware)
+                    continue
+                if discount_pct > 0 and discount_pct < 10:  # Skip tiny discounts
+                    continue
+                if original > 150:  # Skip overpriced bundles/editions
+                    continue
+
+                # Filter out common adult/shovelware keywords
+                name_lower = name.lower()
+                skip_keywords = [
+                    'hentai', 'anime girl', 'waifu', 'ecchi', 'adult only',
+                    'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex',
+                    'soundtrack only', 'artbook', 'wallpaper'
+                ]
+                if any(kw in name_lower for kw in skip_keywords):
+                    continue
+
+                seen_ids.add(appid)
                 results.append({
                     "steam_appid": appid,
                     "name": name,
@@ -135,9 +158,11 @@ async def get_featured_deals():
             except Exception:
                 continue
 
-    # Specials first (games on sale), then fill up with top sellers
-    _add_items(data.get("specials", {}).get("items", []), max_items=30)
-    _add_items(data.get("top_sellers", {}).get("items", []), max_items=20)
-    _add_items(data.get("new_releases", {}).get("items", []), max_items=10)
+    # Collect more games than needed for better randomization
+    _add_items(data.get("specials", {}).get("items", []), max_items=50)
+    _add_items(data.get("top_sellers", {}).get("items", []), max_items=30)
+    _add_items(data.get("new_releases", {}).get("items", []), max_items=20)
 
-    return results
+    # Randomize and limit to 40 games for homepage
+    random.shuffle(results)
+    return results[:40]

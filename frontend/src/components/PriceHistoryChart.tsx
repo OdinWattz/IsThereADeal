@@ -9,26 +9,22 @@ interface Props {
   history: PriceHistoryPoint[]
 }
 
-const COLORS = [
-  '#a78bfa', '#34d399', '#60a5fa', '#f59e0b', '#f87171',
-  '#c084fc', '#6ee7b7', '#93c5fd',
-]
-
 export function PriceHistoryChart({ history }: Props) {
-  const { chartData, stores } = useMemo(() => {
-    const byDate = new Map<string, Record<string, number>>()
-    const storeSet = new Set<string>()
+  const chartData = useMemo(() => {
+    const byDate = new Map<string, { lowestPrice: number; storeName: string }>()
 
+    // For each date, find the lowest price across all stores
     for (const h of history) {
       const date = h.recorded_at.split('T')[0]
-      storeSet.add(h.store_name)
-      if (!byDate.has(date)) byDate.set(date, {})
-      byDate.get(date)![h.store_name] = h.price
+      const existing = byDate.get(date)
+
+      if (!existing || h.price < existing.lowestPrice) {
+        byDate.set(date, { lowestPrice: h.price, storeName: h.store_name })
+      }
     }
 
     const sorted = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))
-    const chartData = sorted.map(([date, prices]) => ({ date, ...prices }))
-    return { chartData, stores: [...storeSet] }
+    return sorted.map(([date, { lowestPrice }]) => ({ date, price: lowestPrice }))
   }, [history])
 
   if (chartData.length === 0) {
@@ -58,21 +54,18 @@ export function PriceHistoryChart({ history }: Props) {
         <Tooltip
           contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
           labelStyle={{ color: '#94a3b8' }}
-          formatter={(value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name]}
+          formatter={(value) => [`€${Number(value).toFixed(2).replace('.', ',')}`, 'Beste Prijs']}
         />
         <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
-        {stores.map((store, i) => (
-          <Line
-            key={store}
-            type="monotone"
-            dataKey={store}
-            stroke={COLORS[i % COLORS.length]}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-            connectNulls
-          />
-        ))}
+        <Line
+          type="monotone"
+          dataKey="price"
+          name="Beste Prijs"
+          stroke="#34d399"
+          strokeWidth={2.5}
+          dot={false}
+          activeDot={{ r: 5 }}
+        />
       </LineChart>
     </ResponsiveContainer>
   )

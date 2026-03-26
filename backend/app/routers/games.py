@@ -49,35 +49,52 @@ async def search_games(
 async def browse_games(
     q: Optional[str] = None,
     genre: Optional[str] = None,
+    developer: Optional[str] = None,
+    publisher: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_discount: Optional[int] = None,
+    min_metacritic: Optional[int] = None,
+    min_review_score: Optional[int] = None,
     on_sale: Optional[bool] = None,
     sort_by: str = "name",
-    limit: int = Query(60, le=200),
+    limit: int = Query(50, le=200),
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
-    """Browse games with simple filters."""
+    """Advanced search/browse with filters."""
     try:
         from sqlalchemy import or_
 
-        # Get games with prices
-        query = select(Game).options(selectinload(Game.prices)).limit(200)
+        # Get games - increase limit to get more games
+        query = select(Game).options(selectinload(Game.prices)).limit(500)
 
         filters = []
-
-        # Text search
         if q:
             search_term = f"%{q.lower()}%"
             filters.append(
                 or_(
                     Game.name.ilike(search_term),
                     Game.developers.ilike(search_term),
+                    Game.publishers.ilike(search_term),
                     Game.genres.ilike(search_term),
                 )
             )
 
-        # Genre filter
         if genre:
             filters.append(Game.genres.ilike(f"%{genre}%"))
+
+        if developer:
+            filters.append(Game.developers.ilike(f"%{developer}%"))
+
+        if publisher:
+            filters.append(Game.publishers.ilike(f"%{publisher}%"))
+
+        if min_metacritic is not None:
+            filters.append(Game.metacritic_score >= min_metacritic)
+
+        if min_review_score is not None:
+            filters.append(Game.steam_review_score >= min_review_score)
 
         if filters:
             query = query.where(*filters)
@@ -89,14 +106,23 @@ async def browse_games(
         enriched_games = []
         for game in games:
             try:
-                if not game.prices:
+                # Skip if no prices
+                if not game.prices or len(game.prices) == 0:
                     continue
 
                 enriched = _enrich_game(game)
 
-                # On sale filter
+                # Apply remaining filters
+                if min_price is not None and (enriched.get("best_price") is None or enriched["best_price"] < min_price):
+                    continue
+                if max_price is not None and (enriched.get("best_price") is None or enriched["best_price"] > max_price):
+                    continue
                 if on_sale and not any(p.is_on_sale for p in game.prices):
                     continue
+                if min_discount is not None:
+                    max_discount = max((p.discount_percent for p in game.prices), default=0)
+                    if max_discount < min_discount:
+                        continue
 
                 enriched_games.append(enriched)
             except Exception as e:

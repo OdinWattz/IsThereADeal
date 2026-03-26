@@ -24,6 +24,13 @@ export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '')
+  const [developer, setDeveloper] = useState(searchParams.get('developer') || '')
+  const [publisher, setPublisher] = useState(searchParams.get('publisher') || '')
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
+  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
+  const [minMetacritic, setMinMetacritic] = useState(searchParams.get('min_metacritic') || '')
+  const [minReviewScore, setMinReviewScore] = useState(searchParams.get('min_review_score') || '')
   const [onSale, setOnSale] = useState(searchParams.get('on_sale') === 'true')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [showFilters, setShowFilters] = useState(false)
@@ -34,6 +41,13 @@ export function BrowsePage() {
     const params: Record<string, string> = {}
     if (searchQuery) params.q = searchQuery
     if (selectedGenre) params.genre = selectedGenre
+    if (developer) params.developer = developer
+    if (publisher) params.publisher = publisher
+    if (minPrice) params.min_price = minPrice
+    if (maxPrice) params.max_price = maxPrice
+    if (minDiscount) params.min_discount = minDiscount
+    if (minMetacritic) params.min_metacritic = minMetacritic
+    if (minReviewScore) params.min_review_score = minReviewScore
     if (onSale) params.on_sale = 'true'
     params.sort_by = sortBy
     return params
@@ -57,6 +71,13 @@ export function BrowsePage() {
   const clearFilters = () => {
     setSearchQuery('')
     setSelectedGenre('')
+    setDeveloper('')
+    setPublisher('')
+    setMinPrice('')
+    setMaxPrice('')
+    setMinDiscount('')
+    setMinMetacritic('')
+    setMinReviewScore('')
     setOnSale(false)
     setSortBy('name')
     setSearchParams({})
@@ -127,7 +148,7 @@ export function BrowsePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Genre */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Genre</label>
@@ -141,6 +162,87 @@ export function BrowsePage() {
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Developer */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Developer</label>
+              <input
+                type="text"
+                value={developer}
+                onChange={(e) => setDeveloper(e.target.value)}
+                placeholder="Bijv. Valve"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Publisher */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Publisher</label>
+              <input
+                type="text"
+                value={publisher}
+                onChange={(e) => setPublisher(e.target.value)}
+                placeholder="Bijv. EA"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Price Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Prijs (€)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder="Min"
+                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Max"
+                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+
+            {/* Min Discount */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Korting (%)</label>
+              <input
+                type="number"
+                value={minDiscount}
+                onChange={(e) => setMinDiscount(e.target.value)}
+                placeholder="Bijv. 50"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Min Metacritic */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Metacritic</label>
+              <input
+                type="number"
+                value={minMetacritic}
+                onChange={(e) => setMinMetacritic(e.target.value)}
+                placeholder="Bijv. 80"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Min Review Score */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Review Score (%)</label>
+              <input
+                type="number"
+                value={minReviewScore}
+                onChange={(e) => setMinReviewScore(e.target.value)}
+                placeholder="Bijv. 90"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
 
             {/* On Sale Toggle */}

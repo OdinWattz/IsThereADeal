@@ -1,334 +1,373 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Filter, ChevronDown } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Filter, ChevronDown, Search, Tag, Award, Star, X } from 'lucide-react'
+import type { Game } from '../api/games'
 import api from '../api/client'
 
-interface BrowseGame {
-  steam_appid: string
-  name: string
-  sale_price: number
-  regular_price: number
-  discount_percent: number
-  store_name: string
-  header_image: string
-  deal_rating: number
-}
-
-interface BrowseResponse {
-  items: BrowseGame[]
-  has_more: boolean
-  total_fetched: number
-}
-
-const STORES = [
-  { id: '', name: 'Alle winkels' },
-  { id: '1', name: 'Steam' },
-  { id: '7', name: 'GOG' },
-  { id: '11', name: 'Humble Store' },
-  { id: '3', name: 'GreenManGaming' },
-  { id: '13', name: 'Fanatical' },
-  { id: '25', name: 'Epic Games' },
-  { id: '2', name: 'GamersGate' },
-  { id: '8', name: 'Origin' },
+const GENRES = [
+  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports',
+  'Racing', 'Puzzle', 'Platformer', 'Shooter', 'Fighting', 'Horror',
+  'Survival', 'Sandbox', 'MMORPG', 'Indie', 'Casual'
 ]
 
 const SORT_OPTIONS = [
-  { value: 'DealRating', label: 'Beste deals' },
-  { value: 'Price', label: 'Prijs (laag → hoog)' },
-  { value: 'Savings', label: 'Hoogste korting' },
-  { value: 'Recent', label: 'Nieuwste deals' },
+  { value: 'name', label: 'Naam (A-Z)' },
+  { value: 'price', label: 'Prijs (Laag-Hoog)' },
+  { value: 'discount', label: 'Hoogste Korting' },
+  { value: 'metacritic', label: 'Metacritic Score' },
+  { value: 'reviews', label: 'Review Score' },
 ]
 
 export function BrowsePage() {
-  const [page, setPage] = useState(0)
-  const [minPrice, setMinPrice] = useState(0)
-  const [maxPrice, setMaxPrice] = useState(999)
-  const [minDiscount, setMinDiscount] = useState(0)
-  const [sortBy, setSortBy] = useState('DealRating')
-  const [storeId, setStoreId] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
+  const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '')
+  const [developer, setDeveloper] = useState(searchParams.get('developer') || '')
+  const [publisher, setPublisher] = useState(searchParams.get('publisher') || '')
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
+  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
+  const [minMetacritic, setMinMetacritic] = useState(searchParams.get('min_metacritic') || '')
+  const [minReviewScore, setMinReviewScore] = useState(searchParams.get('min_review_score') || '')
+  const [onSale, setOnSale] = useState(searchParams.get('on_sale') === 'true')
+  const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [showFilters, setShowFilters] = useState(true)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['browse', page, minPrice, maxPrice, minDiscount, sortBy, storeId],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '60',
-        min_price: minPrice.toString(),
-        max_price: maxPrice.toString(),
-        min_discount: minDiscount.toString(),
-        sort_by: sortBy,
-      })
-      if (storeId) params.append('store_id', storeId)
+  // Build query params
+  const buildParams = () => {
+    const params: Record<string, string> = {}
+    if (searchQuery) params.q = searchQuery
+    if (selectedGenre) params.genre = selectedGenre
+    if (developer) params.developer = developer
+    if (publisher) params.publisher = publisher
+    if (minPrice) params.min_price = minPrice
+    if (maxPrice) params.max_price = maxPrice
+    if (minDiscount) params.min_discount = minDiscount
+    if (minMetacritic) params.min_metacritic = minMetacritic
+    if (minReviewScore) params.min_review_score = minReviewScore
+    if (onSale) params.on_sale = 'true'
+    params.sort_by = sortBy
+    return params
+  }
 
-      const response = await api.get<BrowseResponse>(`/games/browse?${params}`)
+  const params = buildParams()
+
+  const { data: games = [], isLoading } = useQuery({
+    queryKey: ['browse', params],
+    queryFn: async () => {
+      const response = await api.get<Game[]>('/games/browse', { params })
       return response.data
     },
     staleTime: 1000 * 60 * 5,
   })
 
-  const games = data?.items || []
-  const hasMore = data?.has_more || false
-
-  // Scroll to top when page changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [page])
-
-  const resetFilters = () => {
-    setMinPrice(0)
-    setMaxPrice(999)
-    setMinDiscount(0)
-    setSortBy('DealRating')
-    setStoreId('')
-    setPage(0)
+  const handleSearch = () => {
+    setSearchParams(buildParams())
   }
 
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedGenre('')
+    setDeveloper('')
+    setPublisher('')
+    setMinPrice('')
+    setMaxPrice('')
+    setMinDiscount('')
+    setMinMetacritic('')
+    setMinReviewScore('')
+    setOnSale(false)
+    setSortBy('name')
+    setSearchParams({})
+  }
+
+  const activeFilterCount = Object.values(buildParams()).filter(v => v && v !== 'name').length
+  const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Browse Games</h1>
-        <p className="text-gray-400 text-sm">
-          Ontdek duizenden games op sale. Alle content inclusief adult games.
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
+          <Search size={32} className="text-purple-400" />
+          Browse Games
+        </h1>
+        <p className="text-gray-400 text-sm sm:text-base">
+          Ontdek games met geavanceerde filters
         </p>
       </div>
 
-      {/* Filters Toggle Button (Mobile) */}
-      <button
-        onClick={() => setShowFilters(!showFilters)}
-        className="md:hidden w-full flex items-center justify-between bg-[#111320] border border-[#1e2235] rounded-lg px-4 py-3 mb-4 text-white"
-      >
-        <span className="flex items-center gap-2">
-          <Filter size={18} />
-          Filters
-        </span>
-        <ChevronDown
-          size={18}
-          className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar Filters */}
-        <div
-          className={`${
-            showFilters ? 'block' : 'hidden'
-          } md:block w-full md:w-64 flex-shrink-0`}
+      {/* Search Bar */}
+      <div className="mb-6 flex gap-3">
+        <div className="flex-1 relative">
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Zoek op naam, developer, publisher, genre..."
+            className="w-full bg-[#111320] border border-[#1e2235] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+        <button
+          onClick={handleSearch}
+          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors hidden sm:block"
         >
-          <div className="bg-[#111320] border border-[#1e2235] rounded-xl p-5 sticky top-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Filters</h2>
-              <button
-                onClick={resetFilters}
-                className="text-xs text-purple-400 hover:text-purple-300"
-              >
-                Reset
-              </button>
-            </div>
+          Zoek
+        </button>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="px-4 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg transition-colors relative"
+        >
+          <Filter size={20} />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
 
-            {/* Sort By */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Sorteer op
-              </label>
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="mb-6 bg-[#111320] border border-[#1e2235] rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Filter size={20} />
+              Filters
+            </h3>
+            <button
+              onClick={clearFilters}
+              className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+            >
+              <X size={16} />
+              Wis Alles
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Genre */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Genre</label>
               <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value)
-                  setPage(0)
-                }}
-                className="w-full bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+                <option value="">Alle Genres</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
                 ))}
               </select>
             </div>
 
-            {/* Store Filter */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Winkel
-              </label>
-              <select
-                value={storeId}
-                onChange={(e) => {
-                  setStoreId(e.target.value)
-                  setPage(0)
-                }}
-                className="w-full bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-              >
-                {STORES.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
+            {/* Developer */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Developer</label>
+              <input
+                type="text"
+                value={developer}
+                onChange={(e) => setDeveloper(e.target.value)}
+                placeholder="Bijv. Valve"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Publisher */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Publisher</label>
+              <input
+                type="text"
+                value={publisher}
+                onChange={(e) => setPublisher(e.target.value)}
+                placeholder="Bijv. EA"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
 
             {/* Price Range */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Prijs (USD)
-              </label>
-              <div className="flex items-center gap-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Prijs (€)</label>
+              <div className="flex gap-2">
                 <input
                   type="number"
                   value={minPrice}
-                  onChange={(e) => setMinPrice(Number(e.target.value))}
+                  onChange={(e) => setMinPrice(e.target.value)}
                   placeholder="Min"
-                  min="0"
-                  className="w-full bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
-                <span className="text-gray-500">-</span>
                 <input
                   type="number"
                   value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="Max"
-                  min="0"
-                  className="w-full bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
 
-            {/* Discount Range */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Minimale korting: {minDiscount}%
-              </label>
+            {/* Min Discount */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Korting (%)</label>
               <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
+                type="number"
                 value={minDiscount}
-                onChange={(e) => {
-                  setMinDiscount(Number(e.target.value))
-                  setPage(0)
-                }}
-                className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-500"
+                onChange={(e) => setMinDiscount(e.target.value)}
+                placeholder="Bijv. 50"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>0%</span>
-                <span>50%</span>
-                <span>100%</span>
-              </div>
             </div>
 
-            {/* Apply Button */}
-            <button
-              onClick={() => setPage(0)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              Filters toepassen
-            </button>
+            {/* Min Metacritic */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Metacritic</label>
+              <input
+                type="number"
+                value={minMetacritic}
+                onChange={(e) => setMinMetacritic(e.target.value)}
+                placeholder="Bijv. 80"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
 
-            {/* Results Count */}
-            <div className="mt-4 pt-4 border-t border-[#1e2235]">
-              <p className="text-xs text-gray-500 text-center">
-                {games.length} resultaten gevonden
-              </p>
+            {/* Min Review Score */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Min Review Score (%)</label>
+              <input
+                type="number"
+                value={minReviewScore}
+                onChange={(e) => setMinReviewScore(e.target.value)}
+                placeholder="Bijv. 90"
+                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* On Sale Toggle */}
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={onSale}
+                  onChange={(e) => setOnSale(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <span className="text-sm text-gray-300">Alleen in de aanbieding</span>
+              </label>
             </div>
           </div>
+
+          <button
+            onClick={handleSearch}
+            className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          >
+            Filters Toepassen
+          </button>
         </div>
+      )}
 
-        {/* Games Grid */}
-        <div className="flex-1">
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(12)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-[#111320] border border-[#1e2235] rounded-xl h-64 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : games.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-gray-400 text-lg mb-2">Geen games gevonden</p>
-              <p className="text-gray-500 text-sm mb-4">
-                Probeer andere filters
-              </p>
-              <button
-                onClick={resetFilters}
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium"
-              >
-                Reset filters
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {games.map((game) => (
-                  <Link
-                    key={game.steam_appid}
-                    to={`/game/${game.steam_appid}`}
-                    className="group bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-all"
-                  >
-                    <div className="relative">
-                      <img
-                        src={game.header_image}
-                        alt={game.name}
-                        className="w-full aspect-[460/215] object-cover"
-                        loading="lazy"
-                      />
-                      {game.discount_percent > 0 && (
-                        <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
-                          -{game.discount_percent}%
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h3 className="text-white font-medium text-sm mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-                        {game.name}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-green-400 font-bold text-lg">
-                            ${game.sale_price.toFixed(2)}
-                          </div>
-                          {game.discount_percent > 0 && (
-                            <div className="text-gray-500 text-xs line-through">
-                              ${game.regular_price.toFixed(2)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {game.store_name}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-center gap-3 mt-8">
-                <button
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  className="px-4 py-2 bg-[#111320] border border-[#1e2235] rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
-                >
-                  Vorige
-                </button>
-                <span className="text-gray-400 text-sm">Pagina {page + 1}</span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!hasMore}
-                  className="px-4 py-2 bg-[#111320] border border-[#1e2235] rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
-                >
-                  Volgende
-                </button>
-              </div>
-            </>
-          )}
+      {/* Sort & Results Count */}
+      <div className="mb-6 flex items-center justify-between">
+        <p className="text-gray-400 text-sm">
+          {isLoading ? 'Laden...' : `${games.length} resultaten`}
+        </p>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-400 hidden sm:inline">Sorteer:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value)
+              setSearchParams({ ...buildParams(), sort_by: e.target.value })
+            }}
+            className="bg-[#111320] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* Results Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="h-80 bg-[#111320] border border-[#1e2235] rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : games.length === 0 ? (
+        <div className="text-center py-20">
+          <Search size={64} className="mx-auto mb-4 text-gray-600 opacity-30" />
+          <p className="text-gray-400 mb-2 text-lg">Geen games gevonden</p>
+          <p className="text-gray-500 text-sm mb-4">Probeer andere filters of zoektermen</p>
+          <button
+            onClick={clearFilters}
+            className="text-purple-400 hover:text-purple-300 font-medium"
+          >
+            Reset filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {games.map((game) => {
+            const maxDiscount = Math.max(...(game.prices?.map((p) => p.discount_percent) || [0]))
+            const isOnSale = game.prices?.some((p) => p.is_on_sale) || false
+
+            return (
+              <Link
+                key={game.id}
+                to={`/game/${game.steam_appid}`}
+                className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group"
+              >
+                <div className="relative">
+                  <img
+                    src={game.header_image || ''}
+                    alt={game.name}
+                    className="w-full aspect-[460/215] object-cover"
+                    loading="lazy"
+                  />
+                  {isOnSale && maxDiscount > 0 && (
+                    <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                      <Tag size={12} />
+                      -{maxDiscount}%
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                    {game.name}
+                  </h3>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {game.metacritic_score && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <Award size={12} className="text-yellow-400" />
+                        <span className="text-yellow-400 font-semibold">{game.metacritic_score}</span>
+                      </div>
+                    )}
+                    {game.steam_review_score && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <Star size={12} className="text-blue-400" />
+                        <span className="text-blue-400 font-semibold">{game.steam_review_score}%</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-white">{fmt(game.best_price)}</span>
+                    {game.best_store && (
+                      <span className="text-xs text-gray-500">via {game.best_store}</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

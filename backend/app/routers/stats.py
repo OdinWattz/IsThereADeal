@@ -19,12 +19,14 @@ async def get_user_savings(
     Calculate user's potential savings from wishlisted games.
     Shows how much they could save vs regular price.
     """
-    # Get all wishlist items with prices
+    # Get all wishlist items (without join to avoid duplicates)
+    from sqlalchemy.orm import selectinload
     result = await db.execute(
         select(WishlistItem)
         .where(WishlistItem.user_id == current_user.id)
-        .join(Game)
-        .join(GamePrice)
+        .options(
+            selectinload(WishlistItem.game).selectinload(Game.prices)
+        )
     )
     wishlist_items = result.scalars().all()
 
@@ -35,21 +37,19 @@ async def get_user_savings(
     games_on_sale = 0
     games_at_target = 0
 
-    # Load game relationships
+    # Calculate savings per unique game
     for item in wishlist_items:
-        await db.refresh(item, ['game'])
-        await db.refresh(item.game, ['prices'])
-
-        if not item.game.prices:
+        if not item.game or not item.game.prices:
             continue
 
-        # Find best current price
+        # Find best current price across all stores
         best_regular = min((p.regular_price for p in item.game.prices if p.regular_price), default=0)
         best_sale = min(
             (p.sale_price for p in item.game.prices if p.sale_price and p.is_on_sale),
             default=best_regular
         )
 
+        # Add to totals (once per game, not per store!)
         if best_regular > 0:
             total_regular_price += best_regular
 

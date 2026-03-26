@@ -393,18 +393,22 @@ export function WishlistPage() {
             />
 
             <div className="bg-yellow-950/30 border border-yellow-900/50 rounded-lg p-3 mb-4">
-              <p className="text-yellow-400 text-xs">
-                ⚠️ Je Steam wishlist moet <strong>publiek</strong> zijn. Check je{' '}
-                <a
-                  href="https://steamcommunity.com/my/edit/settings"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-yellow-300"
-                >
-                  privacy instellingen
-                </a>
-                .
+              <p className="text-yellow-400 text-xs mb-2">
+                ⚠️ <strong>Belangrijk:</strong> Je WISHLIST moet publiek zijn (niet alleen je profile!)
               </p>
+              <ol className="text-yellow-400 text-xs space-y-1 ml-4 list-decimal">
+                <li>Ga naar Steam → Profile → Edit Profile</li>
+                <li>Privacy Settings → "My wishlist" → <strong>Public</strong></li>
+                <li>Save en probeer opnieuw</li>
+              </ol>
+              <a
+                href="https://steamcommunity.com/my/edit/settings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-yellow-300 underline hover:text-yellow-200 text-xs mt-2 inline-block"
+              >
+                Open Steam Privacy Settings →
+              </a>
             </div>
 
             <div className="flex gap-3">

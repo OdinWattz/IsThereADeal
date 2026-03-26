@@ -116,7 +116,7 @@ async def import_steam_wishlist(user_input: str) -> Dict[str, Any]:
         return {
             "success": False,
             "steam_id": steam_id,
-            "error": "Kon wishlist niet ophalen. Zorg dat je wishlist publiek is in je Steam privacy instellingen."
+            "error": "Kon wishlist niet ophalen. Je WISHLIST moet publiek zijn (niet alleen je profile). Ga naar Steam → Profile → Edit Profile → Privacy Settings → 'My wishlist' → Public."
         }
 
     return {

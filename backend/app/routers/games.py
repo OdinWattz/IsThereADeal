@@ -45,6 +45,112 @@ async def search_games(
     return results
 
 
+@router.get("/browse", response_model=List[GameOut])
+async def browse_games(
+    q: Optional[str] = None,
+    genre: Optional[str] = None,
+    developer: Optional[str] = None,
+    publisher: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_discount: Optional[int] = None,
+    min_metacritic: Optional[int] = None,
+    min_review_score: Optional[int] = None,
+    on_sale: Optional[bool] = None,
+    sort_by: str = "name",  # name, price, discount, metacritic, reviews
+    limit: int = Query(50, le=100),
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Advanced search/browse with filters.
+    Search in local database with multiple filter options.
+    """
+    from sqlalchemy import or_, and_, desc
+
+    query = select(Game).options(selectinload(Game.prices))
+
+    # Text search (name, developers, publishers, genres)
+    if q:
+        search_term = f"%{q.lower()}%"
+        query = query.where(
+            or_(
+                Game.name.ilike(search_term),
+                Game.developers.ilike(search_term),
+                Game.publishers.ilike(search_term),
+                Game.genres.ilike(search_term),
+            )
+        )
+
+    # Genre filter
+    if genre:
+        query = query.where(Game.genres.ilike(f"%{genre}%"))
+
+    # Developer filter
+    if developer:
+        query = query.where(Game.developers.ilike(f"%{developer}%"))
+
+    # Publisher filter
+    if publisher:
+        query = query.where(Game.publishers.ilike(f"%{publisher}%"))
+
+    # Metacritic score filter
+    if min_metacritic is not None:
+        query = query.where(Game.metacritic_score >= min_metacritic)
+
+    # Review score filter
+    if min_review_score is not None:
+        query = query.where(Game.steam_review_score >= min_review_score)
+
+    # Execute query
+    result = await db.execute(query)
+    games = result.scalars().all()
+
+    # Enrich with prices and apply price/discount filters
+    enriched_games = []
+    for game in games:
+        enriched = _enrich_game(game)
+
+        # Price filters
+        if min_price is not None and (enriched["best_price"] is None or enriched["best_price"] < min_price):
+            continue
+        if max_price is not None and (enriched["best_price"] is None or enriched["best_price"] > max_price):
+            continue
+
+        # On sale filter
+        if on_sale:
+            if not any(p.is_on_sale for p in game.prices):
+                continue
+
+        # Discount filter
+        if min_discount is not None:
+            max_discount = max((p.discount_percent for p in game.prices), default=0)
+            if max_discount < min_discount:
+                continue
+
+        enriched_games.append(enriched)
+
+    # Sorting
+    if sort_by == "price":
+        enriched_games.sort(key=lambda g: g.get("best_price") or float("inf"))
+    elif sort_by == "discount":
+        enriched_games.sort(
+            key=lambda g: max((p["discount_percent"] for p in g.get("prices", [])), default=0),
+            reverse=True,
+        )
+    elif sort_by == "metacritic":
+        enriched_games.sort(key=lambda g: g.get("metacritic_score") or 0, reverse=True)
+    elif sort_by == "reviews":
+        enriched_games.sort(key=lambda g: g.get("steam_review_score") or 0, reverse=True)
+    else:  # name
+        enriched_games.sort(key=lambda g: g["name"].lower())
+
+    # Pagination
+    paginated = enriched_games[offset : offset + limit]
+
+    return [GameOut(**g) for g in paginated]
+
+
 @router.get("/featured", response_model=List[dict])
 async def featured_deals():
     """Get featured Steam deals (no auth needed)."""

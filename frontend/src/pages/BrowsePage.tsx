@@ -73,7 +73,7 @@ export function BrowsePage() {
           Browse Games
         </h1>
         <p className="text-gray-400 text-sm sm:text-base">
-          Ontdek games met geavanceerde filters
+          Ontdek games met filters • Stel korting op 100% voor gratis games
         </p>
       </div>
 
@@ -147,9 +147,11 @@ export function BrowsePage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">Min Korting (%)</label>
               <input
                 type="number"
+                min="0"
+                max="100"
                 value={minDiscount}
                 onChange={(e) => setMinDiscount(e.target.value)}
-                placeholder="Bijv. 50"
+                placeholder="0-100 (100 = gratis)"
                 className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>

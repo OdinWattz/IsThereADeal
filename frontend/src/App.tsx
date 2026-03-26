@@ -6,9 +6,12 @@ import { HomePage } from './pages/HomePage'
 import { GamePage } from './pages/GamePage'
 import { DealsPage } from './pages/DealsPage'
 import { BrowsePage } from './pages/BrowsePage'
+import { FreeGamesPage } from './pages/FreeGamesPage'
 import { SearchPage } from './pages/SearchPage'
 import { WishlistPage } from './pages/WishlistPage'
 import { AlertsPage } from './pages/AlertsPage'
+import { CollectionsPage } from './pages/CollectionsPage'
+import { CollectionDetailPage } from './pages/CollectionDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -33,10 +36,13 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/deals" element={<DealsPage />} />
               <Route path="/browse" element={<BrowsePage />} />
+              <Route path="/free" element={<FreeGamesPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/game/:appid" element={<GamePage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/collections" element={<CollectionsPage />} />
+              <Route path="/collections/:id" element={<CollectionDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

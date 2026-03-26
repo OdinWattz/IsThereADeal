@@ -172,6 +172,70 @@ async def get_trending_deals(page: int = 0, limit: int = 20, apply_quality_filte
     return results[:limit]
 
 
+async def get_free_games(limit: int = 50) -> List[Dict[str, Any]]:
+    """
+    Get currently free games (price = 0).
+    Returns games that are free to play or temporarily free.
+    """
+    cache_key = "free_games"
+    cached = _cache.get(cache_key, ttl=3600)  # Cache for 1 hour
+    if cached:
+        return cached[:limit]
+
+    params = {
+        "sortBy": "DealRating",
+        "upperPrice": 0,  # Only free games
+        "pageSize": 100,  # Fetch more to filter and deduplicate
+    }
+
+    async with httpx.AsyncClient(timeout=8) as client:
+        try:
+            resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
+            resp.raise_for_status()
+            deals = resp.json()
+        except Exception:
+            return []
+
+    # Deduplicate by steam_appid
+    game_dict = {}
+
+    for deal in deals:
+        steam_appid = str(deal.get("steamAppID") or "").strip()
+        if not steam_appid or steam_appid.lower() == "none":
+            continue
+
+        name = deal.get("title", "")
+        store_id = str(deal.get("storeID", ""))
+
+        # Filter out DLC, soundtracks, and other non-game content
+        name_lower = name.lower()
+        skip_keywords = [
+            'soundtrack', 'artbook', 'wallpaper', 'ost', ' dlc',
+            'expansion pack', 'season pass', 'cosmetic'
+        ]
+        if any(kw in name_lower for kw in skip_keywords):
+            continue
+
+        # Only keep one entry per game (first one found, which has best deal rating)
+        if steam_appid not in game_dict:
+            game_dict[steam_appid] = {
+                "steam_appid": steam_appid,
+                "name": name,
+                "store_name": STORE_NAMES.get(store_id, f"Store #{store_id}"),
+                "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
+                "deal_rating": float(deal.get("dealRating") or 0),
+                "url": f"https://www.cheapshark.com/redirect?dealID={deal.get('dealID', '')}",
+            }
+
+    results = list(game_dict.values())
+
+    # Sort by deal rating (highest first)
+    results.sort(key=lambda x: x["deal_rating"], reverse=True)
+
+    _cache.set(cache_key, results)
+    return results[:limit]
+
+
 async def browse_all_deals(
     page: int = 0,
     limit: int = 60,

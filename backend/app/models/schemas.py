@@ -142,6 +142,51 @@ class PriceAlertOut(BaseModel):
         from_attributes = True
 
 
+# ── Collections ───────────────────────────────────────────────────────────────
+
+class CollectionCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    is_public: bool = False
+
+
+class CollectionUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
+class CollectionItemAdd(BaseModel):
+    game_id: Optional[int] = None
+    steam_appid: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class CollectionItemOut(BaseModel):
+    id: int
+    game_id: int
+    added_at: datetime
+    notes: Optional[str] = None
+    game: GameOut
+
+    class Config:
+        from_attributes = True
+
+
+class CollectionOut(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    description: Optional[str] = None
+    is_public: bool
+    created_at: datetime
+    updated_at: datetime
+    items: List[CollectionItemOut] = []
+
+    class Config:
+        from_attributes = True
+
+
 # ── Search ────────────────────────────────────────────────────────────────────
 
 class SearchResult(BaseModel):

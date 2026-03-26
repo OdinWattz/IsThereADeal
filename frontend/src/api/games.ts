@@ -133,6 +133,18 @@ export interface DlcDeal {
 export const getDlcDeals = (steamAppid: string) =>
   api.get<DlcDeal[]>(`/games/${steamAppid}/dlc-deals`).then((r) => r.data)
 
+export interface FreeGame {
+  steam_appid: string
+  name: string
+  store_name: string
+  header_image: string
+  deal_rating: number
+  url: string
+}
+
+export const getFreeGames = (limit = 50) =>
+  api.get<FreeGame[]>('/games/free', { params: { limit } }).then((r) => r.data)
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export const register = (username: string, email: string, password: string) =>
@@ -181,3 +193,52 @@ export const deleteAlert = (id: number) =>
 
 export const toggleAlert = (id: number) =>
   api.patch<PriceAlert>(`/alerts/${id}/toggle`).then((r) => r.data)
+
+// ── Collections ───────────────────────────────────────────────────────────────
+
+export interface CollectionItem {
+  id: number
+  game_id: number
+  added_at: string
+  notes?: string
+  game: Game
+}
+
+export interface Collection {
+  id: number
+  user_id: number
+  name: string
+  description?: string
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  items: CollectionItem[]
+}
+
+export const getCollections = () =>
+  api.get<Collection[]>('/collections').then((r) => r.data)
+
+export const getCollection = (id: number) =>
+  api.get<Collection>(`/collections/${id}`).then((r) => r.data)
+
+export const createCollection = (name: string, description?: string, isPublic = false) =>
+  api.post<Collection>('/collections', { name, description, is_public: isPublic }).then((r) => r.data)
+
+export const updateCollection = (id: number, data: { name?: string; description?: string; is_public?: boolean }) =>
+  api.patch<Collection>(`/collections/${id}`, data).then((r) => r.data)
+
+export const deleteCollection = (id: number) =>
+  api.delete(`/collections/${id}`)
+
+export const addGameToCollection = (collectionId: number, gameIdOrAppid: number | string, notes?: string) => {
+  const payload = typeof gameIdOrAppid === 'string'
+    ? { steam_appid: gameIdOrAppid, notes }
+    : { game_id: gameIdOrAppid, notes }
+  return api.post<CollectionItem>(`/collections/${collectionId}/items`, payload).then((r) => r.data)
+}
+
+export const removeGameFromCollection = (collectionId: number, itemId: number) =>
+  api.delete(`/collections/${collectionId}/items/${itemId}`)
+
+export const updateCollectionItemNotes = (collectionId: number, itemId: number, notes: string) =>
+  api.patch(`/collections/${collectionId}/items/${itemId}/notes`, null, { params: { notes } })

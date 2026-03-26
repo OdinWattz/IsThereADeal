@@ -89,6 +89,19 @@ async def get_deals(
     return await get_trending_deals(page, limit, apply_quality_filter=True)
 
 
+@router.get("/free")
+async def get_free_games_route(limit: int = 50):
+    """
+    Get currently free games from various stores.
+    Returns games that are free to play or temporarily free.
+
+    Query params:
+        limit: Maximum number of results (default: 50)
+    """
+    from app.services.cheapshark_service import get_free_games
+    return await get_free_games(limit)
+
+
 @router.get("/browse")
 async def browse_games(
     page: int = 0,

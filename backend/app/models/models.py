@@ -22,6 +22,7 @@ class User(Base):
 
     wishlist_items = relationship("WishlistItem", back_populates="user", cascade="all, delete-orphan")
     price_alerts = relationship("PriceAlert", back_populates="user", cascade="all, delete-orphan")
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
 
 
 class Game(Base):
@@ -119,3 +120,41 @@ class PriceAlert(Base):
 
     user = relationship("User", back_populates="price_alerts")
     game = relationship("Game", back_populates="price_alerts")
+
+
+class Collection(Base):
+    """User-created game collections (e.g., 'Must Play', 'Backlog', 'Favorites')"""
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    user = relationship("User", back_populates="collections")
+    items = relationship("CollectionItem", back_populates="collection", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_collection_name"),
+    )
+
+
+class CollectionItem(Base):
+    """Games within a collection"""
+    __tablename__ = "collection_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=False)
+    game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
+    added_at = Column(DateTime, default=utcnow)
+    notes = Column(Text, nullable=True)  # User notes about the game
+
+    collection = relationship("Collection", back_populates="items")
+    game = relationship("Game")
+
+    __table_args__ = (
+        UniqueConstraint("collection_id", "game_id", name="uq_collection_game"),
+    )

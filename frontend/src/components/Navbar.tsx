@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3 } from 'lucide-react'
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
@@ -36,6 +36,12 @@ export function Navbar() {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-2">
+            <Link
+              to="/browse"
+              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+            >
+              Browse
+            </Link>
             <Link
               to="/deals"
               className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
@@ -107,6 +113,14 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-[#111320] border-t border-[#1a1d2e]">
           <div className="px-4 py-3 space-y-2">
+            <Link
+              to="/browse"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+            >
+              <Grid3x3 size={20} />
+              <span>Browse Games</span>
+            </Link>
             <Link
               to="/deals"
               onClick={() => setMobileMenuOpen(false)}

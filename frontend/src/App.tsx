@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar'
 import { HomePage } from './pages/HomePage'
 import { GamePage } from './pages/GamePage'
 import { DealsPage } from './pages/DealsPage'
+import { BrowsePage } from './pages/BrowsePage'
 import { SearchPage } from './pages/SearchPage'
 import { WishlistPage } from './pages/WishlistPage'
 import { AlertsPage } from './pages/AlertsPage'
@@ -31,6 +32,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/deals" element={<DealsPage />} />
+              <Route path="/browse" element={<BrowsePage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/game/:appid" element={<GamePage />} />
               <Route path="/wishlist" element={<WishlistPage />} />

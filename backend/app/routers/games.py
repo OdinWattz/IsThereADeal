@@ -58,7 +58,34 @@ async def get_deals(
 ):
     """Get trending deals from CheapShark (fresh, paginated, sorted by deal quality)."""
     from app.services.cheapshark_service import get_trending_deals
-    return await get_trending_deals(page, limit)
+    return await get_trending_deals(page, limit, apply_quality_filter=True)
+
+
+@router.get("/browse")
+async def browse_games(
+    page: int = 0,
+    limit: int = 60,
+    min_price: float = 0,
+    max_price: float = 999,
+    min_discount: int = 0,
+    sort_by: str = "DealRating",
+    store_id: Optional[str] = None,
+):
+    """
+    Browse all available deals with custom filters.
+    No content filtering - shows all games including adult content.
+
+    Query params:
+        page: Page number (default: 0)
+        limit: Results per page, max 60 (default: 60)
+        min_price: Minimum price in USD (default: 0)
+        max_price: Maximum price in USD (default: 999)
+        min_discount: Minimum discount percentage 0-100 (default: 0)
+        sort_by: Sort method - DealRating, Price, Savings, Recent (default: DealRating)
+        store_id: Filter by store ID (1=Steam, 7=GOG, 11=Humble, etc.)
+    """
+    from app.services.cheapshark_service import browse_all_deals
+    return await browse_all_deals(page, limit, min_price, max_price, min_discount, sort_by, store_id)
 
 
 @router.get("/{steam_appid}", response_model=GameOut)

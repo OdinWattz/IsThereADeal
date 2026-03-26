@@ -181,6 +181,18 @@ export const updateTargetPrice = (id: number, target_price: number) =>
     params: { target_price },
   }).then((r) => r.data)
 
+export interface SteamImportResult {
+  success: boolean
+  imported: number
+  skipped: number
+  failed: number
+  total: number
+  message: string
+}
+
+export const importSteamWishlist = (steamInput: string) =>
+  api.post<SteamImportResult>('/wishlist/import-steam', { steam_input: steamInput }).then((r) => r.data)
+
 // ── Alerts ────────────────────────────────────────────────────────────────────
 
 export const getAlerts = () =>

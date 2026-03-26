@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getWishlist, removeFromWishlist, updateTargetPrice } from '../api/games'
+import { getWishlist, removeFromWishlist, updateTargetPrice, importSteamWishlist } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 import { Navigate, Link } from 'react-router-dom'
-import { Heart, Trash2, Target, Filter, ArrowUpDown, ExternalLink, Tag } from 'lucide-react'
+import { Heart, Trash2, Target, Filter, ArrowUpDown, ExternalLink, Tag, Download, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type SortOption = 'price-low' | 'price-high' | 'date-new' | 'date-old' | 'name' | 'discount'
@@ -16,6 +16,8 @@ export function WishlistPage() {
   const [sortBy, setSortBy] = useState<SortOption>('date-new')
   const [filterOnSale, setFilterOnSale] = useState(false)
   const [filterTargetMet, setFilterTargetMet] = useState(false)
+  const [showSteamImport, setShowSteamImport] = useState(false)
+  const [steamInput, setSteamInput] = useState('')
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />
 
@@ -38,6 +40,19 @@ export function WishlistPage() {
       toast.success('Doelprijs bijgewerkt!')
       setEditingId(null)
       qc.invalidateQueries({ queryKey: ['wishlist'] })
+    },
+  })
+
+  const steamImportMutation = useMutation({
+    mutationFn: (input: string) => importSteamWishlist(input),
+    onSuccess: (data) => {
+      toast.success(data.message)
+      setShowSteamImport(false)
+      setSteamInput('')
+      qc.invalidateQueries({ queryKey: ['wishlist'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Import mislukt')
     },
   })
 
@@ -100,17 +115,26 @@ export function WishlistPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <Heart size={32} className="text-pink-400" />
-          Verlanglijst
-        </h1>
-        <p className="text-gray-400 text-sm sm:text-base">
-          {items.length} game{items.length !== 1 ? 's' : ''} bijgehouden
-          {targetMetCount > 0 && (
-            <span className="ml-2 text-green-400">• {targetMetCount} op doelprijs!</span>
-          )}
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <Heart size={32} className="text-pink-400" />
+            Verlanglijst
+          </h1>
+          <p className="text-gray-400 text-sm sm:text-base">
+            {items.length} game{items.length !== 1 ? 's' : ''} bijgehouden
+            {targetMetCount > 0 && (
+              <span className="ml-2 text-green-400">• {targetMetCount} op doelprijs!</span>
+            )}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowSteamImport(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1b2838] hover:bg-[#2a3f5f] text-white rounded-lg transition-colors font-medium text-sm"
+        >
+          <Download size={18} />
+          <span className="hidden sm:inline">Steam Import</span>
+        </button>
       </div>
 
       {/* Target Met Banner */}
@@ -181,10 +205,10 @@ export function WishlistPage() {
           <p className="text-gray-400 mb-4 text-lg">Je verlanglijst is leeg</p>
           <p className="text-gray-500 mb-6 text-sm">Begin met het toevoegen van games aan je verlanglijst!</p>
           <Link
-            to="/deals"
+            to="/search"
             className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
-            Deals bekijken →
+            Games zoeken →
           </Link>
         </div>
       ) : processedItems.length === 0 ? (
@@ -327,6 +351,79 @@ export function WishlistPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Steam Import Modal */}
+      {showSteamImport && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111320] border border-[#1e2235] rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Download size={24} className="text-blue-400" />
+                Steam Wishlist Importeren
+              </h2>
+              <button
+                onClick={() => setShowSteamImport(false)}
+                className="p-2 hover:bg-[#1e2235] rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-gray-400 text-sm mb-4">
+                Importeer je publieke Steam wishlist. Werkt met:
+              </p>
+              <ul className="text-gray-500 text-xs space-y-1 mb-4">
+                <li>• Steam ID: <code className="text-purple-400">76561197960287930</code></li>
+                <li>• Profile URL: <code className="text-purple-400">steamcommunity.com/profiles/...</code></li>
+                <li>• Vanity URL: <code className="text-purple-400">steamcommunity.com/id/gaben</code></li>
+                <li>• Vanity name: <code className="text-purple-400">gaben</code></li>
+              </ul>
+            </div>
+
+            <input
+              type="text"
+              value={steamInput}
+              onChange={(e) => setSteamInput(e.target.value)}
+              placeholder="Steam ID, profile URL, of vanity name"
+              className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+              disabled={steamImportMutation.isPending}
+            />
+
+            <div className="bg-yellow-950/30 border border-yellow-900/50 rounded-lg p-3 mb-4">
+              <p className="text-yellow-400 text-xs">
+                ⚠️ Je Steam wishlist moet <strong>publiek</strong> zijn. Check je{' '}
+                <a
+                  href="https://steamcommunity.com/my/edit/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-yellow-300"
+                >
+                  privacy instellingen
+                </a>
+                .
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSteamImport(false)}
+                className="flex-1 px-4 py-3 bg-[#1e2235] hover:bg-[#252938] text-gray-300 rounded-lg font-medium transition-colors"
+                disabled={steamImportMutation.isPending}
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={() => steamImportMutation.mutate(steamInput)}
+                disabled={!steamInput.trim() || steamImportMutation.isPending}
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {steamImportMutation.isPending ? 'Importeren...' : 'Importeren'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -113,6 +113,11 @@ class WishlistItemCreate(BaseModel):
     target_price: Optional[float] = None
 
 
+class SteamWishlistImport(BaseModel):
+    """Schema for importing Steam wishlist."""
+    steam_input: str = Field(..., min_length=1, description="Steam ID, profile URL, or vanity name")
+
+
 class WishlistItemOut(BaseModel):
     id: int
     game_id: int

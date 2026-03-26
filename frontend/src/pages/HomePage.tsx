@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getFeaturedDeals } from '../api/games'
 import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { DealOfTheDay } from '../components/DealOfTheDay'
 
 export function HomePage() {
   const { data: featured = [], isLoading } = useQuery({
@@ -38,6 +39,9 @@ export function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* Deal of the Day */}
+      <DealOfTheDay />
 
       {/* Steam Featured Deals */}
       <section>

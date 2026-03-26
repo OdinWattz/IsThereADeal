@@ -51,6 +51,34 @@ async def featured_deals():
     return await get_featured_deals()
 
 
+@router.get("/deal-of-the-day")
+async def get_deal_of_the_day():
+    """
+    Get the featured Deal of the Day.
+    Changes daily at midnight (deterministic based on date seed).
+    """
+    from app.services.cheapshark_service import get_trending_deals
+    from datetime import datetime
+    import random
+
+    # Get top deals
+    deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
+
+    if not deals:
+        return None
+
+    # Use today's date as seed for deterministic daily selection
+    today = datetime.utcnow().date()
+    seed = int(today.strftime("%Y%m%d"))
+    random.seed(seed)
+
+    # Select a deal from top 50 (ensures quality but still variety)
+    top_deals = deals[:min(50, len(deals))]
+    selected = random.choice(top_deals)
+
+    return selected
+
+
 @router.get("/deals")
 async def get_deals(
     page: int = 0,

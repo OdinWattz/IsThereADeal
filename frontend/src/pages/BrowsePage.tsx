@@ -121,39 +121,62 @@ export function BrowsePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Price Range */}
+            {/* Max Price Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Prijs (€)</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  placeholder="Min"
-                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="Max"
-                  className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-300">Max Prijs</label>
+                <span className="text-sm font-semibold text-purple-400">
+                  {maxPrice ? `€${maxPrice}` : '∞'}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={maxPrice || '100'}
+                onChange={(e) => setMaxPrice(e.target.value === '100' ? '' : e.target.value)}
+                className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                style={{
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${maxPrice || 100}%, #1e2235 ${maxPrice || 100}%, #1e2235 100%)`
+                }}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>€0</span>
+                <span>€25</span>
+                <span>€50</span>
+                <span>€75</span>
+                <span>∞</span>
               </div>
             </div>
 
-            {/* Min Discount */}
+            {/* Min Discount Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Min Korting (%)</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-300">Min Korting</label>
+                <span className="text-sm font-semibold text-purple-400">
+                  {minDiscount || '0'}%{minDiscount === '100' && ' (gratis)'}
+                </span>
+              </div>
               <input
-                type="number"
+                type="range"
                 min="0"
                 max="100"
-                value={minDiscount}
+                step="5"
+                value={minDiscount || '0'}
                 onChange={(e) => setMinDiscount(e.target.value)}
-                placeholder="0-100 (100 = gratis)"
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                style={{
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 100%)`
+                }}
               />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span>100%</span>
+              </div>
             </div>
           </div>
 

@@ -262,8 +262,9 @@ async def browse_all_deals(
     import asyncio
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
-    # To get 60 results after filtering, fetch up to 3 pages (180 deals)
-    pages_to_fetch = 3
+    # To get 60 results after filtering, fetch up to 5 pages (300 deals)
+    # More pages needed because of quality filtering
+    pages_to_fetch = 5
     all_deals = []
 
     async def fetch_page(page_num: int):
@@ -310,9 +311,7 @@ async def browse_all_deals(
         savings = float(deal.get("savings") or 0)
 
         # Quality filters to remove shovelware/junk games
-        if sale < 1.0:  # Skip extremely cheap games (often broken/removed)
-            continue
-        if savings < 10:  # Skip tiny discounts (<10%)
+        if sale < 0.5:  # Skip extremely cheap games (often broken/removed)
             continue
         if normal > 200:  # Skip overpriced special editions
             continue
@@ -328,8 +327,10 @@ async def browse_all_deals(
         if any(kw in name_lower for kw in skip_keywords):
             continue
 
-        # Apply user-specified discount filter (after quality filters)
-        if savings < min_discount:
+        # Apply minimum discount filter
+        # Use either user-specified min_discount OR default 5% (whichever is higher)
+        effective_min_discount = max(min_discount, 5)
+        if savings < effective_min_discount:
             continue
 
         # Deduplicate: only keep the best price per game
@@ -363,7 +364,7 @@ async def browse_all_deals(
 
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
-    # If we fetched close to 180 deals (3 full pages), there's probably more
+    # If we fetched close to 300 deals (5 full pages), there's probably more
     has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
 
     return {

@@ -18,7 +18,7 @@ export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
-  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '10')
+  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -55,7 +55,7 @@ export function BrowsePage() {
   const clearFilters = () => {
     setMinPrice('')
     setMaxPrice('')
-    setMinDiscount('10')
+    setMinDiscount('')
     setSortBy('name')
     setSearchQuery('')
     setSearchParams({})

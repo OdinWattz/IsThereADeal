@@ -73,6 +73,10 @@ async def browse_games(
     }
     cs_sort = sort_map.get(sort_by, "DealRating")
 
+    # If user wants high discounts, automatically sort by Savings for better results
+    if min_discount >= 50 and cs_sort == "DealRating":
+        cs_sort = "Savings"
+
     result = await browse_all_deals(page, limit, min_price, max_price, min_discount, cs_sort)
 
     # Return just the items list (frontend expects array of games)

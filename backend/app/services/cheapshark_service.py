@@ -262,9 +262,20 @@ async def browse_all_deals(
     import asyncio
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
-    # To get 60 results after filtering, fetch up to 5 pages (300 deals)
-    # More pages needed because of quality filtering
-    pages_to_fetch = 5
+    # Dynamically adjust pages based on discount filter - higher discount needs more pages
+    # Low discount (0-25%): 5 pages = 300 deals
+    # Medium discount (25-50%): 8 pages = 480 deals
+    # High discount (50-75%): 12 pages = 720 deals
+    # Very high discount (75%+): 20 pages = 1200 deals
+    if min_discount >= 75:
+        pages_to_fetch = 20
+    elif min_discount >= 50:
+        pages_to_fetch = 12
+    elif min_discount >= 25:
+        pages_to_fetch = 8
+    else:
+        pages_to_fetch = 5
+
     all_deals = []
 
     async def fetch_page(page_num: int):
@@ -279,7 +290,7 @@ async def browse_all_deals(
         if store_id:
             params["storeID"] = store_id
 
-        async with httpx.AsyncClient(timeout=6) as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             try:
                 resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
                 resp.raise_for_status()
@@ -359,16 +370,19 @@ async def browse_all_deals(
                 "deal_rating": float(deal.get("dealRating") or 0),
             }
 
-    # Convert to list
+    # Convert to list and sort by deal rating (best deals first)
     results = list(game_dict.values())
+    results.sort(key=lambda x: x["deal_rating"], reverse=True)
 
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
-    # If we fetched close to 300 deals (5 full pages), there's probably more
     has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
 
+    # For high discount filters, return more results (since there are fewer matches)
+    effective_limit = limit if min_discount < 50 else min(limit * 2, 120)
+
     return {
-        "items": results[:limit],
+        "items": results[:effective_limit],
         "has_more": has_more,
         "total_fetched": len(results)
     }

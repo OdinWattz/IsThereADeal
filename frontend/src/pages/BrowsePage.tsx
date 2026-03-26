@@ -6,12 +6,6 @@ import type { Game } from '../api/games'
 import api from '../api/client'
 import { QuickViewModal } from '../components/QuickViewModal'
 
-const GENRES = [
-  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports',
-  'Racing', 'Puzzle', 'Platformer', 'Shooter', 'Fighting', 'Horror',
-  'Survival', 'Sandbox', 'MMORPG', 'Indie', 'Casual'
-]
-
 const SORT_OPTIONS = [
   { value: 'name', label: 'Naam (A-Z)' },
   { value: 'price', label: 'Prijs (Laag-Hoog)' },
@@ -22,33 +16,19 @@ const SORT_OPTIONS = [
 
 export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '')
-  const [developer, setDeveloper] = useState(searchParams.get('developer') || '')
-  const [publisher, setPublisher] = useState(searchParams.get('publisher') || '')
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
   const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
-  const [minMetacritic, setMinMetacritic] = useState(searchParams.get('min_metacritic') || '')
-  const [minReviewScore, setMinReviewScore] = useState(searchParams.get('min_review_score') || '')
-  const [onSale, setOnSale] = useState(searchParams.get('on_sale') === 'true')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [showFilters, setShowFilters] = useState(false)
   const [quickViewAppid, setQuickViewAppid] = useState<string | null>(null)
 
-  // Build query params
+  // Build query params (only CheapShark-supported params)
   const buildParams = () => {
     const params: Record<string, string> = {}
-    if (searchQuery) params.q = searchQuery
-    if (selectedGenre) params.genre = selectedGenre
-    if (developer) params.developer = developer
-    if (publisher) params.publisher = publisher
     if (minPrice) params.min_price = minPrice
     if (maxPrice) params.max_price = maxPrice
     if (minDiscount) params.min_discount = minDiscount
-    if (minMetacritic) params.min_metacritic = minMetacritic
-    if (minReviewScore) params.min_review_score = minReviewScore
-    if (onSale) params.on_sale = 'true'
     params.sort_by = sortBy
     return params
   }
@@ -64,21 +44,10 @@ export function BrowsePage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const handleSearch = () => {
-    setSearchParams(buildParams())
-  }
-
   const clearFilters = () => {
-    setSearchQuery('')
-    setSelectedGenre('')
-    setDeveloper('')
-    setPublisher('')
     setMinPrice('')
     setMaxPrice('')
     setMinDiscount('')
-    setMinMetacritic('')
-    setMinReviewScore('')
-    setOnSale(false)
     setSortBy('name')
     setSearchParams({})
   }
@@ -99,32 +68,16 @@ export function BrowsePage() {
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6 flex gap-3">
-        <div className="flex-1 relative">
-          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Zoek op naam, developer, publisher, genre..."
-            className="w-full bg-[#111320] border border-[#1e2235] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-        <button
-          onClick={handleSearch}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors hidden sm:block"
-        >
-          Zoek
-        </button>
+      {/* Filter Toggle */}
+      <div className="mb-6 flex justify-end">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg transition-colors relative"
+          className="px-4 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg transition-colors relative flex items-center gap-2"
         >
           <Filter size={20} />
+          <span className="hidden sm:inline">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {activeFilterCount}
             </span>
           )}
@@ -148,46 +101,7 @@ export function BrowsePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Genre */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Genre</label>
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Alle Genres</option>
-                {GENRES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Developer */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Developer</label>
-              <input
-                type="text"
-                value={developer}
-                onChange={(e) => setDeveloper(e.target.value)}
-                placeholder="Bijv. Valve"
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            {/* Publisher */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Publisher</label>
-              <input
-                type="text"
-                value={publisher}
-                onChange={(e) => setPublisher(e.target.value)}
-                placeholder="Bijv. EA"
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Price Range */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Prijs (€)</label>
@@ -220,47 +134,10 @@ export function BrowsePage() {
                 className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
-
-            {/* Min Metacritic */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Min Metacritic</label>
-              <input
-                type="number"
-                value={minMetacritic}
-                onChange={(e) => setMinMetacritic(e.target.value)}
-                placeholder="Bijv. 80"
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            {/* Min Review Score */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Min Review Score (%)</label>
-              <input
-                type="number"
-                value={minReviewScore}
-                onChange={(e) => setMinReviewScore(e.target.value)}
-                placeholder="Bijv. 90"
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            {/* On Sale Toggle */}
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={onSale}
-                  onChange={(e) => setOnSale(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm text-gray-300">Alleen in de aanbieding</span>
-              </label>
-            </div>
           </div>
 
           <button
-            onClick={handleSearch}
+            onClick={() => setSearchParams(buildParams())}
             className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
             Filters Toepassen
@@ -311,13 +188,17 @@ export function BrowsePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {games.map((game) => {
-            const maxDiscount = Math.max(...(game.prices?.map((p) => p.discount_percent) || [0]))
-            const isOnSale = game.prices?.some((p) => p.is_on_sale) || false
+          {games.map((game: any) => {
+            // Support both Game objects (from DB) and CheapShark deals
+            const isCheapSharkDeal = 'sale_price' in game
+            const discount = isCheapSharkDeal ? game.discount_percent : Math.max(...(game.prices?.map((p: any) => p.discount_percent) || [0]))
+            const isOnSale = isCheapSharkDeal ? discount > 0 : game.prices?.some((p: any) => p.is_on_sale) || false
+            const bestPrice = isCheapSharkDeal ? game.sale_price : game.best_price
+            const storeName = isCheapSharkDeal ? game.store_name : game.best_store
 
             return (
               <div
-                key={game.id}
+                key={game.steam_appid || game.id}
                 className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group relative"
               >
                 {/* Quick View Button */}
@@ -340,10 +221,10 @@ export function BrowsePage() {
                       className="w-full aspect-[460/215] object-cover"
                       loading="lazy"
                     />
-                    {isOnSale && maxDiscount > 0 && (
+                    {isOnSale && discount > 0 && (
                       <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
                         <Tag size={12} />
-                        -{maxDiscount}%
+                        -{discount}%
                       </div>
                     )}
                   </div>
@@ -371,9 +252,9 @@ export function BrowsePage() {
 
                     {/* Price */}
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-white">{fmt(game.best_price)}</span>
-                      {game.best_store && (
-                        <span className="text-xs text-gray-500">via {game.best_store}</span>
+                      <span className="text-2xl font-bold text-white">{fmt(bestPrice)}</span>
+                      {storeName && (
+                        <span className="text-xs text-gray-500">via {storeName}</span>
                       )}
                     </div>
                   </div>

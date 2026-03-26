@@ -316,59 +316,80 @@ export function BrowsePage() {
             const isOnSale = game.prices?.some((p) => p.is_on_sale) || false
 
             return (
-              <Link
+              <div
                 key={game.id}
-                to={`/game/${game.steam_appid}`}
-                className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group"
+                className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group relative"
               >
-                <div className="relative">
-                  <img
-                    src={game.header_image || ''}
-                    alt={game.name}
-                    className="w-full aspect-[460/215] object-cover"
-                    loading="lazy"
-                  />
-                  {isOnSale && maxDiscount > 0 && (
-                    <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                      <Tag size={12} />
-                      -{maxDiscount}%
+                {/* Quick View Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setQuickViewAppid(game.steam_appid)
+                  }}
+                  className="absolute top-2 left-2 z-10 p-2 bg-black/70 hover:bg-purple-600 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  title="Quick View"
+                >
+                  <Eye size={16} />
+                </button>
+
+                <Link to={`/game/${game.steam_appid}`}>
+                  <div className="relative">
+                    <img
+                      src={game.header_image || ''}
+                      alt={game.name}
+                      className="w-full aspect-[460/215] object-cover"
+                      loading="lazy"
+                    />
+                    {isOnSale && maxDiscount > 0 && (
+                      <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                        <Tag size={12} />
+                        -{maxDiscount}%
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                      {game.name}
+                    </h3>
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {game.metacritic_score && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Award size={12} className="text-yellow-400" />
+                          <span className="text-yellow-400 font-semibold">{game.metacritic_score}</span>
+                        </div>
+                      )}
+                      {game.steam_review_score && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Star size={12} className="text-blue-400" />
+                          <span className="text-blue-400 font-semibold">{game.steam_review_score}%</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div className="p-4">
-                  <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-                    {game.name}
-                  </h3>
-
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {game.metacritic_score && (
-                      <div className="flex items-center gap-1 text-xs">
-                        <Award size={12} className="text-yellow-400" />
-                        <span className="text-yellow-400 font-semibold">{game.metacritic_score}</span>
-                      </div>
-                    )}
-                    {game.steam_review_score && (
-                      <div className="flex items-center gap-1 text-xs">
-                        <Star size={12} className="text-blue-400" />
-                        <span className="text-blue-400 font-semibold">{game.steam_review_score}%</span>
-                      </div>
-                    )}
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-white">{fmt(game.best_price)}</span>
+                      {game.best_store && (
+                        <span className="text-xs text-gray-500">via {game.best_store}</span>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-white">{fmt(game.best_price)}</span>
-                    {game.best_store && (
-                      <span className="text-xs text-gray-500">via {game.best_store}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             )
           })}
         </div>
+      )}
+
+      {/* Quick View Modal */}
+      {quickViewAppid && (
+        <QuickViewModal
+          steamAppid={quickViewAppid}
+          onClose={() => setQuickViewAppid(null)}
+        />
       )}
     </div>
   )

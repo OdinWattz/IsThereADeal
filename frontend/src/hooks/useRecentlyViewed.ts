@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 const STORAGE_KEY = 'recently_viewed_games'
 const MAX_ITEMS = 12
@@ -27,7 +27,7 @@ export function useRecentlyViewed() {
     }
   }, [])
 
-  const addToRecentlyViewed = (game: { steam_appid: string; name: string; header_image?: string }) => {
+  const addToRecentlyViewed = useCallback((game: { steam_appid: string; name: string; header_image?: string }) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       let existing: RecentlyViewedGame[] = stored ? JSON.parse(stored) : []
@@ -53,16 +53,16 @@ export function useRecentlyViewed() {
     } catch (error) {
       console.error('Failed to save recently viewed:', error)
     }
-  }
+  }, [])
 
-  const clearRecentlyViewed = () => {
+  const clearRecentlyViewed = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY)
       setRecentlyViewed([])
     } catch (error) {
       console.error('Failed to clear recently viewed:', error)
     }
-  }
+  }, [])
 
   return {
     recentlyViewed,

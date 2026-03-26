@@ -12,6 +12,7 @@ import { WishlistPage } from './pages/WishlistPage'
 import { AlertsPage } from './pages/AlertsPage'
 import { CollectionsPage } from './pages/CollectionsPage'
 import { CollectionDetailPage } from './pages/CollectionDetailPage'
+import { FollowedGamesPage } from './pages/FollowedGamesPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -29,7 +30,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div style={{ minHeight: '100vh', width: '100%', backgroundColor: '#0a0c14' }}>
+        <div style={{ minHeight: '100vh', width: '100%' }}>
           <Navbar />
           <main style={{ width: '100%' }}>
             <Routes>
@@ -43,6 +44,7 @@ function App() {
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/collections" element={<CollectionsPage />} />
               <Route path="/collections/:id" element={<CollectionDetailPage />} />
+              <Route path="/followed" element={<FollowedGamesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -53,9 +55,9 @@ function App() {
           position="bottom-right"
           toastOptions={{
             style: {
-              background: '#1e2235',
-              color: '#e2e8f0',
-              border: '1px solid #2a2d3e',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-primary)',
             },
           }}
         />

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore } from '../store/themeStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Sun, Moon, Gift, FolderOpen } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Sun, Moon, Gift, FolderOpen, Star } from 'lucide-react'
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
@@ -81,6 +81,13 @@ export function Navbar() {
                   className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
                 >
                   <Heart size={20} />
+                </Link>
+                <Link
+                  to="/followed"
+                  title="Followed Games"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <Star size={20} />
                 </Link>
                 <Link
                   to="/collections"
@@ -192,6 +199,14 @@ export function Navbar() {
                 >
                   <Heart size={20} />
                   <span>Verlanglijst</span>
+                </Link>
+                <Link
+                  to="/followed"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <Star size={20} />
+                  <span>Gevolgde Games</span>
                 </Link>
                 <Link
                   to="/collections"

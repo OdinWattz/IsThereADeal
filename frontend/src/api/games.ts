@@ -242,3 +242,32 @@ export const removeGameFromCollection = (collectionId: number, itemId: number) =
 
 export const updateCollectionItemNotes = (collectionId: number, itemId: number, notes: string) =>
   api.patch(`/collections/${collectionId}/items/${itemId}/notes`, null, { params: { notes } })
+
+// ── Followed Games ────────────────────────────────────────────────────────────
+
+export interface FollowedGame {
+  id: number
+  game_id: number
+  followed_at: string
+  notify_on_sale: boolean
+  notify_on_release: boolean
+  game: Game
+}
+
+export const getFollowedGames = () =>
+  api.get<FollowedGame[]>('/followed').then((r) => r.data)
+
+export const followGame = (gameIdOrAppid: number | string, notifyOnSale = true, notifyOnRelease = false) => {
+  const payload = typeof gameIdOrAppid === 'string'
+    ? { steam_appid: gameIdOrAppid, notify_on_sale: notifyOnSale, notify_on_release: notifyOnRelease }
+    : { game_id: gameIdOrAppid, notify_on_sale: notifyOnSale, notify_on_release: notifyOnRelease }
+  return api.post<FollowedGame>('/followed', payload).then((r) => r.data)
+}
+
+export const unfollowGame = (id: number) =>
+  api.delete(`/followed/${id}`)
+
+export const updateFollowNotifications = (id: number, notifyOnSale: boolean, notifyOnRelease: boolean) =>
+  api.patch(`/followed/${id}/notifications`, null, {
+    params: { notify_on_sale: notifyOnSale, notify_on_release: notifyOnRelease }
+  })

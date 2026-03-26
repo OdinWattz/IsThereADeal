@@ -23,7 +23,6 @@ class User(Base):
     wishlist_items = relationship("WishlistItem", back_populates="user", cascade="all, delete-orphan")
     price_alerts = relationship("PriceAlert", back_populates="user", cascade="all, delete-orphan")
     collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
-    followed_games = relationship("FollowedGame", back_populates="user", cascade="all, delete-orphan")
 
 
 class Game(Base):
@@ -165,23 +164,4 @@ class CollectionItem(Base):
 
     __table_args__ = (
         UniqueConstraint("collection_id", "game_id", name="uq_collection_game"),
-    )
-
-
-class FollowedGame(Base):
-    """Games that users follow for updates (lighter than wishlist)"""
-    __tablename__ = "followed_games"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
-    followed_at = Column(DateTime, default=utcnow)
-    notify_on_sale = Column(Boolean, default=True)  # Notify when game goes on sale
-    notify_on_release = Column(Boolean, default=False)  # Notify when game releases (if unreleased)
-
-    user = relationship("User", back_populates="followed_games")
-    game = relationship("Game")
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "game_id", name="uq_user_game_follow"),
     )

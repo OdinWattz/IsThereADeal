@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar'
 import { HomePage } from './pages/HomePage'
 import { GamePage } from './pages/GamePage'
 import { BrowsePage } from './pages/BrowsePage'
+import { ComparePage } from './pages/ComparePage'
 import { FreeGamesPage } from './pages/FreeGamesPage'
 import { SearchPage } from './pages/SearchPage'
 import { WishlistPage } from './pages/WishlistPage'
@@ -35,6 +36,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/browse" element={<BrowsePage />} />
+              <Route path="/compare" element={<ComparePage />} />
               <Route path="/free" element={<FreeGamesPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/game/:appid" element={<GamePage />} />

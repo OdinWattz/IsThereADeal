@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from contextlib import asynccontextmanager
-from sqlalchemy import text
 import os
 
 from app.config import settings
@@ -17,29 +16,6 @@ _is_vercel = os.environ.get("VERCEL") == "1"
 async def lifespan(app: FastAPI):
     try:
         await init_db()
-
-        # TODO: REMOVE THIS AUTO-MIGRATION AFTER NEXT DEPLOY (when columns exist in prod)
-        # Auto-migrate: Add missing columns for Phase 3 features
-        from app.database import _get_engine
-        try:
-            engine, _ = _get_engine()
-            async with engine.begin() as conn:
-                await conn.execute(text("""
-                    ALTER TABLE games
-                    ADD COLUMN IF NOT EXISTS historic_low_price FLOAT,
-                    ADD COLUMN IF NOT EXISTS historic_low_date TIMESTAMP,
-                    ADD COLUMN IF NOT EXISTS metacritic_score INTEGER,
-                    ADD COLUMN IF NOT EXISTS steam_review_score INTEGER,
-                    ADD COLUMN IF NOT EXISTS steam_review_count INTEGER,
-                    ADD COLUMN IF NOT EXISTS player_count_current INTEGER,
-                    ADD COLUMN IF NOT EXISTS player_count_peak INTEGER
-                """))
-            print("✅ Database migration: Added missing game columns")
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Migration warning: {e}")
-        # END TODO: Remove auto-migration block above
-
     except Exception as e:
         # Don't crash the whole app if DB is unreachable at startup.
         import logging

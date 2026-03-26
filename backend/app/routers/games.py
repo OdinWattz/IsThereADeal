@@ -58,17 +58,21 @@ async def browse_games(
     min_review_score: Optional[int] = None,
     on_sale: Optional[bool] = None,
     sort_by: str = "name",  # name, price, discount, metacritic, reviews
-    limit: int = Query(50, le=100),
+    limit: int = Query(50, le=200),
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
     """
     Advanced search/browse with filters.
     Search in local database with multiple filter options.
+    Returns games with prices by default.
     """
-    from sqlalchemy import or_, and_, desc
+    from sqlalchemy import or_, and_, desc, func
 
-    query = select(Game).options(selectinload(Game.prices))
+    # Start with games that have prices (active games)
+    query = select(Game).options(selectinload(Game.prices)).where(
+        Game.prices.any()
+    )
 
     # Text search (name, developers, publishers, genres)
     if q:

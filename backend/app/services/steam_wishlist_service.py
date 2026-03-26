@@ -70,17 +70,42 @@ async def fetch_steam_wishlist(steam_id: str) -> List[str]:
     """
     url = f"https://store.steampowered.com/wishlist/profiles/{steam_id}/wishlistdata/"
 
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
         try:
-            resp = await client.get(url)
+            resp = await client.get(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+
+            print(f"[Steam Wishlist] Status: {resp.status_code}, URL: {url}")
+            print(f"[Steam Wishlist] Response length: {len(resp.text)}")
+
+            if resp.status_code == 403:
+                print(f"[Steam Wishlist] 403 Forbidden - Profile or wishlist is private")
+                return []
+
             resp.raise_for_status()
+
+            # Check if response is valid JSON
+            if not resp.text or resp.text.strip() == "[]" or resp.text.strip() == "{}":
+                print(f"[Steam Wishlist] Empty response - wishlist is empty or private")
+                return []
+
             data = resp.json()
 
             # Wishlist data is a dict with app IDs as keys
-            app_ids = list(data.keys())
-            return app_ids
+            if isinstance(data, dict):
+                app_ids = list(data.keys())
+                print(f"[Steam Wishlist] Found {len(app_ids)} games")
+                return app_ids
+            else:
+                print(f"[Steam Wishlist] Unexpected response format: {type(data)}")
+                return []
+
+        except httpx.HTTPStatusError as e:
+            print(f"[Steam Wishlist] HTTP error {e.response.status_code}: {e}")
+            return []
         except Exception as e:
-            print(f"[Steam Wishlist] Failed to fetch: {e}")
+            print(f"[Steam Wishlist] Failed to fetch: {type(e).__name__}: {e}")
             return []
 
 
@@ -116,7 +141,7 @@ async def import_steam_wishlist(user_input: str) -> Dict[str, Any]:
         return {
             "success": False,
             "steam_id": steam_id,
-            "error": "Kon wishlist niet ophalen. Je WISHLIST moet publiek zijn (niet alleen je profile). Ga naar Steam → Profile → Edit Profile → Privacy Settings → 'My wishlist' → Public."
+            "error": "Kon wishlist niet ophalen. Mogelijke oorzaken: 1) Wishlist is leeg, 2) Wishlist privacy staat op Private/Friends Only (moet Public zijn), 3) Verkeerd Steam ID. Check je privacy instellingen: steamcommunity.com/my/edit/settings → Game Details → My wishlist → Public"
         }
 
     return {

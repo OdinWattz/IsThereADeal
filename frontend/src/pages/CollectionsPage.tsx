@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getCollections, createCollection, deleteCollection, Collection } from '../api/games'
+import { getCollections, createCollection, deleteCollection } from '../api/games'
+import type { Collection } from '../api/games'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FolderOpen, Plus, Trash2, Edit, ChevronRight } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export function CollectionsPage() {

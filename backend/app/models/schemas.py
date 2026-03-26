@@ -187,6 +187,27 @@ class CollectionOut(BaseModel):
         from_attributes = True
 
 
+# ── Followed Games ────────────────────────────────────────────────────────────
+
+class FollowedGameCreate(BaseModel):
+    game_id: Optional[int] = None
+    steam_appid: Optional[str] = None
+    notify_on_sale: bool = True
+    notify_on_release: bool = False
+
+
+class FollowedGameOut(BaseModel):
+    id: int
+    game_id: int
+    followed_at: datetime
+    notify_on_sale: bool
+    notify_on_release: bool
+    game: GameOut
+
+    class Config:
+        from_attributes = True
+
+
 # ── Search ────────────────────────────────────────────────────────────────────
 
 class SearchResult(BaseModel):

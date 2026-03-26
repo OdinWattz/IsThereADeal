@@ -66,7 +66,12 @@ async def get_prices_for_game(steam_appid: str) -> List[Dict[str, Any]]:
         return []
 
     # ITAD v3 uses POST with a JSON array of game IDs and returns [{id, deals}]
-    rows = await _post("/games/prices/v3", {"country": "NL"}, [game_id])
+    try:
+        rows = await _post("/games/prices/v3", {"country": "NL"}, [game_id])
+    except Exception:
+        # API failure - return empty but don't cache
+        return []
+
     if not rows or not isinstance(rows, list):
         return []
 
@@ -110,18 +115,21 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
         return cached
 
     # Step 1 – get DLC appids from Steam
-    async with httpx.AsyncClient(timeout=6) as client:
-        try:
+    try:
+        async with httpx.AsyncClient(timeout=6) as client:
             resp = await client.get(
                 "https://store.steampowered.com/api/appdetails",
                 params={"appids": steam_appid, "filters": "basic,dlc"},
             )
             game_data = resp.json().get(str(steam_appid), {}).get("data", {})
             dlc_appids = [str(a) for a in game_data.get("dlc", [])]
-        except Exception:
-            return []
+    except Exception:
+        # Steam API failure - don't cache
+        return []
 
     if not dlc_appids:
+        # No DLC available - cache empty result for shorter time
+        _cache.set(cache_key, [], ttl=600)  # 10 min
         return []
 
     dlc_appids = dlc_appids[:15]  # cap at 15 to keep request time reasonable
@@ -136,11 +144,17 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
     lookups = await asyncio.gather(*[lookup_dlc(a) for a in dlc_appids])
     valid = [l for l in lookups if l]
     if not valid:
+        # Couldn't resolve DLC IDs - don't cache (might be ITAD issue)
         return []
 
     # Step 3 – batch price fetch
     itad_ids = [l["itad_id"] for l in valid]
-    rows = await _post("/games/prices/v3", {"country": "NL"}, itad_ids)
+    try:
+        rows = await _post("/games/prices/v3", {"country": "NL"}, itad_ids)
+    except Exception:
+        # ITAD API failure - don't cache
+        return []
+
     if not rows or not isinstance(rows, list):
         return []
 
@@ -168,7 +182,9 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
         })
 
     results.sort(key=lambda x: x.get("sale_price") or 999)
-    _cache.set(cache_key, results)
+    # Only cache if we have results
+    if results:
+        _cache.set(cache_key, results)
     return results
 
 
@@ -181,6 +197,8 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
 
     game_id = await get_game_id_by_appid(steam_appid)
     if not game_id:
+        # Cache "not found" for shorter time (5 min) to allow retries
+        _cache.set(cache_key, [], ttl=300)
         return []
 
     # Request 2 years of history
@@ -190,6 +208,7 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     # Flat list: [{timestamp, shop, deal: {price, regular, cut}}]
     entries = await _get("/games/history/v2", {"id": game_id, "country": "NL", "since": since})
     if not entries or not isinstance(entries, list):
+        # Don't cache API failures - allow immediate retry
         return []
 
     results = []
@@ -206,5 +225,9 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
             "currency": price_info.get("currency", "EUR"),
             "recorded_at": entry.get("timestamp", ""),  # timestamp is on root entry
         })
-    _cache.set(cache_key, results)
+
+    # Only cache successful results with data
+    if results:
+        _cache.set(cache_key, results)
+
     return results

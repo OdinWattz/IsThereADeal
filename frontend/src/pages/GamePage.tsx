@@ -46,7 +46,8 @@ export function GamePage() {
     queryKey: ['game', appid, showKeyResellers],
     queryFn: () => getGame(appid!, false, showKeyResellers),
     enabled: !!appid,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,  // 10 minutes
+    gcTime: 1000 * 60 * 30,     // Keep in cache for 30 minutes
   })
 
   const { data: history = [] } = useQuery({

@@ -75,6 +75,14 @@ async def get_game(
         refresh: Force refresh from APIs
         include_key_resellers: Include key reseller prices (slower, opt-in)
     """
+    # Check in-memory cache first for non-refresh requests
+    from app.services import cache as _cache
+    cache_key = f"game_full:{steam_appid}"
+    if not refresh:
+        cached = _cache.get(cache_key, ttl=300)  # 5 min cache
+        if cached is not None:
+            return cached
+
     game = None
     try:
         result = await db.execute(
@@ -135,7 +143,9 @@ async def get_game(
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    return _enrich_game(game)
+    result = _enrich_game(game)
+    _cache.set(cache_key, result)
+    return result
 
 
 @router.get("/{steam_appid}/history", response_model=List[PriceHistoryPoint])

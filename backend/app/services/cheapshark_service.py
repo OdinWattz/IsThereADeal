@@ -36,7 +36,7 @@ STORE_NAMES: Dict[str, str] = {
 
 async def get_deals_for_title(game_title: str) -> List[Dict[str, Any]]:
     """Search CheapShark for deals by exact or fuzzy title."""
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=6) as client:
         try:
             resp = await client.get(
                 f"{CHEAPSHARK_BASE}/deals",
@@ -75,7 +75,7 @@ async def get_trending_deals(page: int = 0, limit: int = 20) -> List[Dict[str, A
     Always returns fresh data with Steam appids so the frontend can link
     directly to our /game/:appid route.
     """
-    async with httpx.AsyncClient(timeout=12) as client:
+    async with httpx.AsyncClient(timeout=6) as client:
         try:
             resp = await client.get(
                 f"{CHEAPSHARK_BASE}/deals",
@@ -126,7 +126,7 @@ async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:
 
     if not game_id:
         # First API call: lookup gameID by steam_appid
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=6) as client:
             try:
                 resp = await client.get(
                     f"{CHEAPSHARK_BASE}/games",
@@ -148,7 +148,7 @@ async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:
         _cache.set(cache_key, game_id)
 
     # Second API call: get deals using gameID (always needed, but faster if cached)
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=6) as client:
         try:
             resp = await client.get(
                 f"{CHEAPSHARK_BASE}/games",

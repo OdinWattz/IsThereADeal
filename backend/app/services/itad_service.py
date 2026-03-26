@@ -19,7 +19,7 @@ async def _get(path: str, params: dict) -> Optional[Any]:
     if not _has_key():
         return None
     params["key"] = settings.ITAD_API_KEY
-    async with httpx.AsyncClient(timeout=8) as client:
+    async with httpx.AsyncClient(timeout=5) as client:
         try:
             resp = await client.get(f"{ITAD_BASE}{path}", params=params)
             resp.raise_for_status()
@@ -32,7 +32,7 @@ async def _post(path: str, params: dict, body: Any) -> Optional[Any]:
     if not _has_key():
         return None
     params["key"] = settings.ITAD_API_KEY
-    async with httpx.AsyncClient(timeout=8) as client:
+    async with httpx.AsyncClient(timeout=5) as client:
         try:
             resp = await client.post(f"{ITAD_BASE}{path}", params=params, json=body)
             resp.raise_for_status()
@@ -110,7 +110,7 @@ async def get_dlc_deals_for_game(steam_appid: str) -> List[Dict[str, Any]]:
         return cached
 
     # Step 1 – get DLC appids from Steam
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=6) as client:
         try:
             resp = await client.get(
                 "https://store.steampowered.com/api/appdetails",

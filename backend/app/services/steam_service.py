@@ -15,7 +15,7 @@ async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
     url = f"{STEAM_STORE_BASE}/appdetails"
     params = {"appids": appid, "cc": "nl", "l": "en"}
 
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=8) as client:
         try:
             resp = await client.get(url, params=params)
             resp.raise_for_status()

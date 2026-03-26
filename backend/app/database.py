@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase
 from urllib.parse import urlparse, urlunparse
 import asyncpg
@@ -65,7 +64,10 @@ def _get_engine():
             _engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_creator,
-                poolclass=NullPool,
+                pool_size=10,
+                max_overflow=20,
+                pool_pre_ping=True,
+                pool_recycle=3600,
                 echo=settings.APP_ENV == "development",
             )
         _session_factory = async_sessionmaker(

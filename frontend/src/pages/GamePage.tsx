@@ -172,6 +172,60 @@ export function GamePage() {
             )}
           </div>
 
+          {/* Review Scores & Player Count */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            {game.metacritic_score && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                backgroundColor: game.metacritic_score >= 75 ? 'rgba(34,197,94,0.15)' : game.metacritic_score >= 50 ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)',
+                border: `1px solid ${game.metacritic_score >= 75 ? 'rgba(34,197,94,0.3)' : game.metacritic_score >= 50 ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: game.metacritic_score >= 75 ? '#4ade80' : game.metacritic_score >= 50 ? '#eab308' : '#ef4444' }}>
+                  {game.metacritic_score}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Metacritic</span>
+              </div>
+            )}
+
+            {game.steam_review_count && game.steam_review_count > 0 && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(99,102,241,0.15)',
+                border: '1px solid rgba(99,102,241,0.3)',
+              }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#818cf8' }}>
+                  {game.steam_review_count.toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>reviews</span>
+              </div>
+            )}
+
+            {game.player_count_current !== undefined && game.player_count_current !== null && game.player_count_current > 0 && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(168,85,247,0.15)',
+                border: '1px solid rgba(168,85,247,0.3)',
+              }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a855f7' }}>
+                  {game.player_count_current.toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>spelers nu</span>
+              </div>
+            )}
+          </div>
+
           {game.short_description && (
             <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '20px' }}>
               {game.short_description}

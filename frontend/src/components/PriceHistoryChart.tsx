@@ -14,11 +14,37 @@ const COLORS = [
   '#c084fc', '#6ee7b7', '#93c5fd', '#fbbf24', '#fb923c',
 ]
 
+// Custom tooltip to show store name for best price view
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div style={{
+        background: '#1a1d2e',
+        border: '1px solid #2a2d3e',
+        borderRadius: 8,
+        padding: '8px 12px'
+      }}>
+        <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.75rem', marginBottom: '4px' }}>{label}</p>
+        <p style={{ color: '#34d399', margin: 0, fontWeight: 600 }}>
+          €{Number(payload[0].value).toFixed(2).replace('.', ',')}
+        </p>
+        {data.storeName && (
+          <p style={{ color: '#64748b', margin: 0, fontSize: '0.7rem', marginTop: '2px' }}>
+            via {data.storeName}
+          </p>
+        )}
+      </div>
+    )
+  }
+  return null
+}
+
 export function PriceHistoryChart({ history }: Props) {
   const [showAllStores, setShowAllStores] = useState(false)
 
   const { bestPriceData, allStoresData, stores } = useMemo(() => {
-    // Best price view: one line with lowest price per day
+    // Best price view: one line with lowest price per day + store name in tooltip
     const byDateBest = new Map<string, { lowestPrice: number; storeName: string }>()
 
     for (const h of history) {
@@ -31,7 +57,11 @@ export function PriceHistoryChart({ history }: Props) {
     }
 
     const sortedBest = [...byDateBest.entries()].sort(([a], [b]) => a.localeCompare(b))
-    const bestPriceData = sortedBest.map(([date, { lowestPrice }]) => ({ date, price: lowestPrice }))
+    const bestPriceData = sortedBest.map(([date, { lowestPrice, storeName }]) => ({
+      date,
+      price: lowestPrice,
+      storeName
+    }))
 
     // All stores view: one line per store
     const byDateStore = new Map<string, Record<string, number>>()
@@ -93,9 +123,10 @@ export function PriceHistoryChart({ history }: Props) {
             tickFormatter={(v) => `€${v}`}
           />
           <Tooltip
-            contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
-            labelStyle={{ color: '#94a3b8' }}
-            formatter={(value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name]}
+            content={showAllStores ? undefined : <CustomTooltip />}
+            contentStyle={showAllStores ? { background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 } : undefined}
+            labelStyle={showAllStores ? { color: '#94a3b8' } : undefined}
+            formatter={showAllStores ? (value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name] : undefined}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
 

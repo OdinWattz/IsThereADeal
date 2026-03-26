@@ -29,6 +29,11 @@ export interface Game {
   best_store?: string
   historic_low_price?: number
   historic_low_date?: string
+  metacritic_score?: number
+  steam_review_score?: number
+  steam_review_count?: number
+  player_count_current?: number
+  player_count_peak?: number
 }
 
 export interface PriceHistoryPoint {

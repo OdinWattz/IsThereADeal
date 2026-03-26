@@ -39,6 +39,10 @@ class Game(Base):
     steam_url = Column(String(500))
     last_updated = Column(DateTime, default=utcnow, onupdate=utcnow)
 
+    # Historical low tracking
+    historic_low_price = Column(Float, nullable=True)
+    historic_low_date = Column(DateTime, nullable=True)
+
     prices = relationship("GamePrice", back_populates="game", cascade="all, delete-orphan")
     price_history = relationship("PriceHistory", back_populates="game", cascade="all, delete-orphan")
     wishlist_items = relationship("WishlistItem", back_populates="game")

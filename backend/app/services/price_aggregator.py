@@ -189,6 +189,21 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str, include_key
 
     await db.flush()
 
+    # Update historic low if current price is lower
+    valid_prices = [p for p in prices if (p.get("sale_price") or p.get("regular_price"))]
+    if valid_prices:
+        current_low = min(valid_prices, key=lambda x: x.get("sale_price") or x.get("regular_price") or 999)
+        current_low_price = current_low.get("sale_price") or current_low.get("regular_price")
+
+        if current_low_price:
+            # Check if this is a new historic low
+            if game.historic_low_price is None or current_low_price < game.historic_low_price:
+                game.historic_low_price = current_low_price
+                game.historic_low_date = utcnow()
+                print(f"[Historic Low] New low for {game.name}: €{current_low_price} (was: €{game.historic_low_price or 'N/A'})")
+
+    await db.flush()
+
     # Eagerly load prices relationship before returning to avoid N+1 queries
     await db.refresh(game, ["prices"])
 

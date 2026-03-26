@@ -27,6 +27,8 @@ export interface Game {
   prices: GamePrice[]
   best_price?: number
   best_store?: string
+  historic_low_price?: number
+  historic_low_date?: string
 }
 
 export interface PriceHistoryPoint {

@@ -5,6 +5,7 @@ import type { DlcDeal } from '../api/games'
 import { Link } from 'react-router-dom'
 import { PriceTable } from '../components/PriceTable'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
+import { HistoricLowBadge } from '../components/HistoricLowBadge'
 import { useAuthStore } from '../store/authStore'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -173,7 +174,15 @@ export function GamePage() {
               padding: '16px 20px',
               marginBottom: '20px',
             }}>
-              <p style={{ fontSize: '0.7rem', color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Beste prijs</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <p style={{ fontSize: '0.7rem', color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Beste prijs</p>
+                <HistoricLowBadge
+                  currentPrice={game.best_price}
+                  historicLowPrice={game.historic_low_price}
+                  historicLowDate={game.historic_low_date}
+                  size="sm"
+                />
+              </div>
               <p style={{ fontSize: '2.2rem', fontWeight: 700, color: '#4ade80', lineHeight: 1 }}>
                 {formatPrice(game.best_price)}
               </p>

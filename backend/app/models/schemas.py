@@ -81,6 +81,8 @@ class GameOut(BaseModel):
     prices: List[GamePriceOut] = []
     best_price: Optional[float] = None
     best_store: Optional[str] = None
+    historic_low_price: Optional[float] = None
+    historic_low_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True

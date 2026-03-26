@@ -67,12 +67,10 @@ async def browse_games(
     Search in local database with multiple filter options.
     Returns games with prices by default.
     """
-    from sqlalchemy import or_, and_, desc, func
+    from sqlalchemy import or_, and_, desc, func, exists
 
-    # Start with games that have prices (active games)
-    query = select(Game).options(selectinload(Game.prices)).where(
-        Game.prices.any()
-    )
+    # Start with base query
+    query = select(Game).options(selectinload(Game.prices))
 
     # Text search (name, developers, publishers, genres)
     if q:
@@ -106,13 +104,17 @@ async def browse_games(
     if min_review_score is not None:
         query = query.where(Game.steam_review_score >= min_review_score)
 
-    # Execute query
-    result = await db.execute(query)
+    # Execute query with limit
+    result = await db.execute(query.limit(500))
     games = result.scalars().all()
 
     # Enrich with prices and apply price/discount filters
     enriched_games = []
     for game in games:
+        # Skip games without prices
+        if not game.prices:
+            continue
+
         enriched = _enrich_game(game)
 
         # Price filters

@@ -78,18 +78,42 @@ async def create_alert(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Game)
-        .where(Game.id == payload.game_id)
-        .options(selectinload(Game.prices))
-    )
-    game = result.scalar_one_or_none()
-    if not game:
-        raise HTTPException(status_code=404, detail="Game not found")
+    game = None
+
+    # Support both game_id and steam_appid
+    if payload.steam_appid:
+        # Try to find existing game by steam_appid
+        result = await db.execute(
+            select(Game).where(Game.steam_appid == payload.steam_appid).options(selectinload(Game.prices))
+        )
+        game = result.scalar_one_or_none()
+
+        # If not found, fetch and save it automatically
+        if not game:
+            from app.services.price_aggregator import upsert_game_and_prices
+            game = await upsert_game_and_prices(db, payload.steam_appid, include_key_resellers=False)
+            if not game:
+                raise HTTPException(status_code=404, detail="Game not found")
+            await db.commit()
+            # Reload with prices
+            result = await db.execute(
+                select(Game).where(Game.id == game.id).options(selectinload(Game.prices))
+            )
+            game = result.scalar_one()
+    elif payload.game_id:
+        # Legacy: support game_id directly
+        result = await db.execute(
+            select(Game).where(Game.id == payload.game_id).options(selectinload(Game.prices))
+        )
+        game = result.scalar_one_or_none()
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
+    else:
+        raise HTTPException(status_code=400, detail="Either game_id or steam_appid required")
 
     alert = PriceAlert(
         user_id=current_user.id,
-        game_id=payload.game_id,
+        game_id=game.id,
         target_price=payload.target_price,
         notify_email=payload.notify_email,
     )

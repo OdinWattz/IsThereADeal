@@ -101,7 +101,8 @@ class PriceHistoryPoint(BaseModel):
 # ── Wishlist ──────────────────────────────────────────────────────────────────
 
 class WishlistItemCreate(BaseModel):
-    game_id: int
+    game_id: Optional[int] = None
+    steam_appid: Optional[str] = None
     target_price: Optional[float] = None
 
 
@@ -119,7 +120,8 @@ class WishlistItemOut(BaseModel):
 # ── Price Alerts ──────────────────────────────────────────────────────────────
 
 class PriceAlertCreate(BaseModel):
-    game_id: int
+    game_id: Optional[int] = None
+    steam_appid: Optional[str] = None
     target_price: float
     notify_email: bool = True
 

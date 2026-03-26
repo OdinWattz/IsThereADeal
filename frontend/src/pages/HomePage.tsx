@@ -31,9 +31,9 @@ export function HomePage() {
             { icon: <Zap size={15} />, label: 'Live price alerts' },
             { icon: <BarChart2 size={15} />, label: 'Price history charts' },
           ].map(({ icon, label }) => (
-            <div key={label} className="flex items-center gap-2 bg-[#111320] border border-[#1e2235] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm text-gray-400">
+            <div key={label} className="flex items-center justify-center gap-2 bg-[#111320] border border-[#1e2235] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm text-gray-400">
               <span className="text-purple-400">{icon}</span>
-              {label}
+              <span className="text-center">{label}</span>
             </div>
           ))}
         </div>

@@ -65,12 +65,8 @@ export function GamePage() {
 
   const wishlistMutation = useMutation({
     mutationFn: async () => {
-      // If game not yet in DB (id=0), save it first via refresh
-      if (game!.id === 0) {
-        const saved = await getGame(appid!, true)
-        return addToWishlist(saved.id)
-      }
-      return addToWishlist(game!.id)
+      // Use steam_appid directly - backend will handle saving if needed
+      return addToWishlist(appid!)
     },
     onSuccess: () => { toast.success('Toegevoegd aan verlanglijst!'); qc.invalidateQueries({ queryKey: ['wishlist'] }) },
     onError: (e: unknown) => toast.error((e as {response?: {data?: {detail?: string}}})?.response?.data?.detail ?? 'Mislukt'),
@@ -78,12 +74,7 @@ export function GamePage() {
 
   const alertMutation = useMutation({
     mutationFn: async (price: number) => {
-      // If game not yet in DB (id=0), save it first via refresh
-      if (game!.id === 0) {
-        const saved = await getGame(appid!, true)
-        return createAlert(saved.id, price)
-      }
-      return createAlert(game!.id, price)
+      return createAlert(appid!, price)
     },
     onSuccess: () => {
       toast.success('Prijsalert ingesteld!')

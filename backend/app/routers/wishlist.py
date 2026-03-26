@@ -49,17 +49,36 @@ async def add_to_wishlist(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        # Ensure game exists
-        result = await db.execute(select(Game).where(Game.id == payload.game_id))
-        game = result.scalar_one_or_none()
-        if not game:
-            raise HTTPException(status_code=404, detail="Game not found")
+        game = None
+
+        # Support both game_id and steam_appid
+        if payload.steam_appid:
+            # Try to find existing game by steam_appid
+            result = await db.execute(
+                select(Game).where(Game.steam_appid == payload.steam_appid)
+            )
+            game = result.scalar_one_or_none()
+
+            # If not found, fetch and save it automatically
+            if not game:
+                game = await upsert_game_and_prices(db, payload.steam_appid, include_key_resellers=False)
+                if not game:
+                    raise HTTPException(status_code=404, detail="Game not found")
+                await db.commit()
+        elif payload.game_id:
+            # Legacy: support game_id directly
+            result = await db.execute(select(Game).where(Game.id == payload.game_id))
+            game = result.scalar_one_or_none()
+            if not game:
+                raise HTTPException(status_code=404, detail="Game not found")
+        else:
+            raise HTTPException(status_code=400, detail="Either game_id or steam_appid required")
 
         # Check duplicate
         existing = await db.execute(
             select(WishlistItem).where(
                 WishlistItem.user_id == current_user.id,
-                WishlistItem.game_id == payload.game_id,
+                WishlistItem.game_id == game.id,
             )
         )
         if existing.scalar_one_or_none():
@@ -67,7 +86,7 @@ async def add_to_wishlist(
 
         item = WishlistItem(
             user_id=current_user.id,
-            game_id=payload.game_id,
+            game_id=game.id,
             target_price=payload.target_price,
         )
         db.add(item)

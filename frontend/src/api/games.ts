@@ -147,8 +147,12 @@ export const getMe = () =>
 export const getWishlist = () =>
   api.get<WishlistItem[]>('/wishlist').then((r) => r.data)
 
-export const addToWishlist = (game_id: number, target_price?: number) =>
-  api.post<WishlistItem>('/wishlist', { game_id, target_price }).then((r) => r.data)
+export const addToWishlist = (gameIdOrAppid: number | string, target_price?: number) => {
+  const payload = typeof gameIdOrAppid === 'string'
+    ? { steam_appid: gameIdOrAppid, target_price }
+    : { game_id: gameIdOrAppid, target_price }
+  return api.post<WishlistItem>('/wishlist', payload).then((r) => r.data)
+}
 
 export const removeFromWishlist = (id: number) =>
   api.delete(`/wishlist/${id}`)
@@ -163,8 +167,12 @@ export const updateTargetPrice = (id: number, target_price: number) =>
 export const getAlerts = () =>
   api.get<PriceAlert[]>('/alerts').then((r) => r.data)
 
-export const createAlert = (game_id: number, target_price: number, notify_email = true) =>
-  api.post<PriceAlert>('/alerts', { game_id, target_price, notify_email }).then((r) => r.data)
+export const createAlert = (gameIdOrAppid: number | string, target_price: number, notify_email = true) => {
+  const payload = typeof gameIdOrAppid === 'string'
+    ? { steam_appid: gameIdOrAppid, target_price, notify_email }
+    : { game_id: gameIdOrAppid, target_price, notify_email }
+  return api.post<PriceAlert>('/alerts', payload).then((r) => r.data)
+}
 
 export const deleteAlert = (id: number) =>
   api.delete(`/alerts/${id}`)

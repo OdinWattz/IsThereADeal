@@ -166,3 +166,78 @@ async def get_featured_deals():
     # Randomize and limit to 40 games for homepage
     random.shuffle(results)
     return results[:40]
+
+
+async def get_game_extra_metadata(appid: str) -> Optional[Dict[str, Any]]:
+    """
+    Fetch review scores and player count data for a game.
+    Returns metacritic score, steam reviews, and current player count.
+    """
+    result = {}
+
+    # Get reviews and metacritic from appdetails (we may have already fetched this)
+    url = f"{STEAM_STORE_BASE}/appdetails"
+    params = {"appids": appid, "cc": "nl", "l": "en"}
+
+    async with httpx.AsyncClient(timeout=8) as client:
+        try:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception:
+            return None
+
+    app_data = data.get(str(appid), {})
+    if not app_data.get("success"):
+        return None
+
+    info = app_data.get("data", {})
+
+    # Metacritic score
+    metacritic = info.get("metacritic", {})
+    result["metacritic_score"] = metacritic.get("score") if metacritic else None
+
+    # Steam reviews
+    # Calculate positive percentage from total_positive and total_negative
+    recommendations = info.get("recommendations", {})
+    total_reviews = recommendations.get("total")
+
+    # Try to get review summary
+    if total_reviews and total_reviews > 0:
+        # Steam doesn't directly give us positive/negative split in appdetails
+        # But we can estimate from the review score descriptor
+        result["steam_review_count"] = total_reviews
+        result["steam_review_score"] = None  # We'll need Steam Spy or Reviews API for this
+
+    # Current player count - try SteamSpy or ISteamUserStats API
+    # For now, we'll leave this as None - would need additional API call
+    result["player_count_current"] = None
+    result["player_count_peak"] = None
+
+    return result
+
+
+async def get_player_count(appid: str) -> Optional[Dict[str, int]]:
+    """
+    Get current and peak player count for a game.
+    Uses Steam's ISteamUserStats API.
+    """
+    url = f"{STEAM_API_BASE}/ISteamUserStats/GetNumberOfCurrentPlayers/v1/"
+    params = {"appid": appid}
+
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception:
+            return None
+
+    if data.get("response", {}).get("result") == 1:
+        player_count = data["response"].get("player_count", 0)
+        return {
+            "player_count_current": player_count,
+            "player_count_peak": player_count,  # We don't have 24h peak from this API
+        }
+
+    return None

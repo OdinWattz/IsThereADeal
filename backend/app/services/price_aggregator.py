@@ -204,6 +204,30 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str, include_key
 
     await db.flush()
 
+    # Fetch and update extra metadata (reviews, player count) in background
+    try:
+        from app.services.steam_service import get_game_extra_metadata, get_player_count
+
+        metadata = await get_game_extra_metadata(steam_appid)
+        if metadata:
+            if metadata.get("metacritic_score"):
+                game.metacritic_score = metadata["metacritic_score"]
+            if metadata.get("steam_review_count"):
+                game.steam_review_count = metadata["steam_review_count"]
+            if metadata.get("steam_review_score"):
+                game.steam_review_score = metadata["steam_review_score"]
+
+        # Get player count
+        player_data = await get_player_count(steam_appid)
+        if player_data:
+            game.player_count_current = player_data.get("player_count_current")
+            game.player_count_peak = player_data.get("player_count_peak")
+
+        await db.flush()
+    except Exception as e:
+        # Don't fail the whole request if extra metadata fails
+        print(f"[Metadata] Failed to fetch extra data for {steam_appid}: {e}")
+
     # Eagerly load prices relationship before returning to avoid N+1 queries
     await db.refresh(game, ["prices"])
 

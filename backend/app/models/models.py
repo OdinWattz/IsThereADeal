@@ -45,6 +45,13 @@ class Game(Base):
     historic_low_price = Column(Float, nullable=True)
     historic_low_date = Column(DateTime, nullable=True)
 
+    # Review scores and player data
+    metacritic_score = Column(Integer, nullable=True)  # 0-100
+    steam_review_score = Column(Integer, nullable=True)  # Positive review percentage
+    steam_review_count = Column(Integer, nullable=True)
+    player_count_current = Column(Integer, nullable=True)  # Current concurrent players
+    player_count_peak = Column(Integer, nullable=True)  # 24h peak
+
     prices = relationship("GamePrice", back_populates="game", cascade="all, delete-orphan")
     price_history = relationship("PriceHistory", back_populates="game", cascade="all, delete-orphan")
     wishlist_items = relationship("WishlistItem", back_populates="game")

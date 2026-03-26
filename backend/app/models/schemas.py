@@ -83,6 +83,11 @@ class GameOut(BaseModel):
     best_store: Optional[str] = None
     historic_low_price: Optional[float] = None
     historic_low_date: Optional[datetime] = None
+    metacritic_score: Optional[int] = None
+    steam_review_score: Optional[int] = None
+    steam_review_count: Optional[int] = None
+    player_count_current: Optional[int] = None
+    player_count_peak: Optional[int] = None
 
     class Config:
         from_attributes = True

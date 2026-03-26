@@ -246,8 +246,8 @@ async def browse_all_deals(
     store_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Browse all deals with custom filters (for browse page).
-    No quality filtering - shows everything including adult games.
+    Browse all deals with custom filters and quality filtering.
+    Filters out shovelware, adult content, and low-quality deals.
     Returns dict with 'items' and 'has_more' for pagination.
 
     Args:
@@ -309,7 +309,26 @@ async def browse_all_deals(
         normal = float(deal.get("normalPrice") or 0)
         savings = float(deal.get("savings") or 0)
 
-        # Apply user-specified discount filter
+        # Quality filters to remove shovelware/junk games
+        if sale < 1.0:  # Skip extremely cheap games (often broken/removed)
+            continue
+        if savings < 10:  # Skip tiny discounts (<10%)
+            continue
+        if normal > 200:  # Skip overpriced special editions
+            continue
+
+        # Filter out adult/shovelware keywords
+        name_lower = name.lower()
+        skip_keywords = [
+            'hentai', 'anime girl', 'waifu', 'ecchi', 'adult only',
+            'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex',
+            'soundtrack', 'artbook', 'wallpaper', 'OST', 'anime schoolgirl',
+            'dating sim', 'visual novel bundle'
+        ]
+        if any(kw in name_lower for kw in skip_keywords):
+            continue
+
+        # Apply user-specified discount filter (after quality filters)
         if savings < min_discount:
             continue
 

@@ -18,8 +18,9 @@ export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
-  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
+  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '10')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
+  const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [quickViewAppid, setQuickViewAppid] = useState<string | null>(null)
 
@@ -35,7 +36,7 @@ export function BrowsePage() {
 
   const params = buildParams()
 
-  const { data: games = [], isLoading } = useQuery({
+  const { data: allGames = [], isLoading } = useQuery({
     queryKey: ['browse', params],
     queryFn: async () => {
       const response = await api.get<Game[]>('/games/browse', { params })
@@ -44,15 +45,23 @@ export function BrowsePage() {
     staleTime: 1000 * 60 * 5,
   })
 
+  // Client-side filter for text search (CheapShark API doesn't support it)
+  const games = searchQuery
+    ? allGames.filter((game: any) =>
+        game.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allGames
+
   const clearFilters = () => {
     setMinPrice('')
     setMaxPrice('')
-    setMinDiscount('')
+    setMinDiscount('10')
     setSortBy('name')
+    setSearchQuery('')
     setSearchParams({})
   }
 
-  const activeFilterCount = Object.values(buildParams()).filter(v => v && v !== 'name').length
+  const activeFilterCount = Object.values(buildParams()).filter(v => v && v !== 'name').length + (searchQuery ? 1 : 0)
   const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
 
   return (
@@ -68,8 +77,18 @@ export function BrowsePage() {
         </p>
       </div>
 
-      {/* Filter Toggle */}
-      <div className="mb-6 flex justify-end">
+      {/* Search Bar + Filters */}
+      <div className="mb-6 flex gap-3">
+        <div className="flex-1 relative">
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Zoek op naam..."
+            className="w-full bg-[#111320] border border-[#1e2235] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="px-4 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg transition-colors relative flex items-center gap-2"

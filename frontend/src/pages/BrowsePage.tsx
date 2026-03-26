@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Filter, Search, Tag, Award, Star, X } from 'lucide-react'
+import { Filter, Search, Tag, Award, Star, X, Eye } from 'lucide-react'
 import type { Game } from '../api/games'
 import api from '../api/client'
+import { QuickViewModal } from '../components/QuickViewModal'
 
 const GENRES = [
   'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports',
@@ -33,6 +34,7 @@ export function BrowsePage() {
   const [onSale, setOnSale] = useState(searchParams.get('on_sale') === 'true')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [showFilters, setShowFilters] = useState(true)
+  const [quickViewAppid, setQuickViewAppid] = useState<string | null>(null)
 
   // Build query params
   const buildParams = () => {

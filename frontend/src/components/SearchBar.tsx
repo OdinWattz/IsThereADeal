@@ -4,7 +4,12 @@ import { Search } from 'lucide-react'
 import { searchGames } from '../api/games'
 import type { SearchResult } from '../api/games'
 
-export function SearchBar() {
+interface SearchBarProps {
+  onSelectGame?: (result: SearchResult) => void
+  placeholder?: string
+}
+
+export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: SearchBarProps = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -43,7 +48,11 @@ export function SearchBar() {
   const handleSelect = (result: SearchResult) => {
     setOpen(false)
     setQuery('')
-    navigate(`/game/${result.steam_appid}`)
+    if (onSelectGame) {
+      onSelectGame(result)
+    } else {
+      navigate(`/game/${result.steam_appid}`)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,7 +73,7 @@ export function SearchBar() {
             value={query}
             onChange={handleChange}
             onFocus={() => results.length > 0 && setOpen(true)}
-            placeholder="Search games..."
+            placeholder={placeholder}
             style={{
               width: '100%',
               backgroundColor: '#191c2a',

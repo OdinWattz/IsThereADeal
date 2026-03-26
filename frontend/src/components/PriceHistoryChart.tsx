@@ -3,29 +3,54 @@ import {
   Legend, ResponsiveContainer,
 } from 'recharts'
 import type { PriceHistoryPoint } from '../api/games'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 interface Props {
   history: PriceHistoryPoint[]
 }
 
-export function PriceHistoryChart({ history }: Props) {
-  const chartData = useMemo(() => {
-    const byDate = new Map<string, { lowestPrice: number; storeName: string }>()
+const COLORS = [
+  '#34d399', '#a78bfa', '#60a5fa', '#f59e0b', '#f87171',
+  '#c084fc', '#6ee7b7', '#93c5fd', '#fbbf24', '#fb923c',
+]
 
-    // For each date, find the lowest price across all stores
+export function PriceHistoryChart({ history }: Props) {
+  const [showAllStores, setShowAllStores] = useState(false)
+
+  const { bestPriceData, allStoresData, stores } = useMemo(() => {
+    // Best price view: one line with lowest price per day
+    const byDateBest = new Map<string, { lowestPrice: number; storeName: string }>()
+
     for (const h of history) {
       const date = h.recorded_at.split('T')[0]
-      const existing = byDate.get(date)
+      const existing = byDateBest.get(date)
 
       if (!existing || h.price < existing.lowestPrice) {
-        byDate.set(date, { lowestPrice: h.price, storeName: h.store_name })
+        byDateBest.set(date, { lowestPrice: h.price, storeName: h.store_name })
       }
     }
 
-    const sorted = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))
-    return sorted.map(([date, { lowestPrice }]) => ({ date, price: lowestPrice }))
+    const sortedBest = [...byDateBest.entries()].sort(([a], [b]) => a.localeCompare(b))
+    const bestPriceData = sortedBest.map(([date, { lowestPrice }]) => ({ date, price: lowestPrice }))
+
+    // All stores view: one line per store
+    const byDateStore = new Map<string, Record<string, number>>()
+    const storeSet = new Set<string>()
+
+    for (const h of history) {
+      const date = h.recorded_at.split('T')[0]
+      storeSet.add(h.store_name)
+      if (!byDateStore.has(date)) byDateStore.set(date, {})
+      byDateStore.get(date)![h.store_name] = h.price
+    }
+
+    const sortedAll = [...byDateStore.entries()].sort(([a], [b]) => a.localeCompare(b))
+    const allStoresData = sortedAll.map(([date, prices]) => ({ date, ...prices }))
+
+    return { bestPriceData, allStoresData, stores: [...storeSet] }
   }, [history])
+
+  const chartData = showAllStores ? allStoresData : bestPriceData
 
   if (chartData.length === 0) {
     return (
@@ -36,37 +61,72 @@ export function PriceHistoryChart({ history }: Props) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e2235" />
-        <XAxis
-          dataKey="date"
-          tick={{ fill: '#64748b', fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: '#1e2235' }}
-        />
-        <YAxis
-          tick={{ fill: '#64748b', fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: '#1e2235' }}
-          tickFormatter={(v) => `€${v}`}
-        />
-        <Tooltip
-          contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
-          labelStyle={{ color: '#94a3b8' }}
-          formatter={(value) => [`€${Number(value).toFixed(2).replace('.', ',')}`, 'Beste Prijs']}
-        />
-        <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
-        <Line
-          type="monotone"
-          dataKey="price"
-          name="Beste Prijs"
-          stroke="#34d399"
-          strokeWidth={2.5}
-          dot={false}
-          activeDot={{ r: 5 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div>
+      {/* Toggle Button */}
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => setShowAllStores(!showAllStores)}
+          className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+          style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderColor: 'var(--border-primary)',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          {showAllStores ? '📊 Toon Beste Prijs' : '🏪 Toon Alle Winkels'}
+        </button>
+      </div>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e2235" />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: '#1e2235' }}
+          />
+          <YAxis
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: '#1e2235' }}
+            tickFormatter={(v) => `€${v}`}
+          />
+          <Tooltip
+            contentStyle={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 }}
+            labelStyle={{ color: '#94a3b8' }}
+            formatter={(value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name]}
+          />
+          <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
+
+          {showAllStores ? (
+            // Multiple lines - one per store
+            stores.map((store, i) => (
+              <Line
+                key={store}
+                type="monotone"
+                dataKey={store}
+                stroke={COLORS[i % COLORS.length]}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                connectNulls
+              />
+            ))
+          ) : (
+            // Single line - best price
+            <Line
+              type="monotone"
+              dataKey="price"
+              name="Beste Prijs"
+              stroke="#34d399"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 5 }}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

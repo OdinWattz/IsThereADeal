@@ -15,6 +15,12 @@ interface BrowseGame {
   deal_rating: number
 }
 
+interface BrowseResponse {
+  items: BrowseGame[]
+  has_more: boolean
+  total_fetched: number
+}
+
 const STORES = [
   { id: '', name: 'Alle winkels' },
   { id: '1', name: 'Steam' },
@@ -43,7 +49,7 @@ export function BrowsePage() {
   const [storeId, setStoreId] = useState('')
   const [showFilters, setShowFilters] = useState(true)
 
-  const { data: games = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['browse', page, minPrice, maxPrice, minDiscount, sortBy, storeId],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -56,11 +62,14 @@ export function BrowsePage() {
       })
       if (storeId) params.append('store_id', storeId)
 
-      const response = await api.get<BrowseGame[]>(`/games/browse?${params}`)
+      const response = await api.get<BrowseResponse>(`/games/browse?${params}`)
       return response.data
     },
     staleTime: 1000 * 60 * 5,
   })
+
+  const games = data?.items || []
+  const hasMore = data?.has_more || false
 
   const resetFilters = () => {
     setMinPrice(0)
@@ -305,7 +314,7 @@ export function BrowsePage() {
                 <span className="text-gray-400 text-sm">Pagina {page + 1}</span>
                 <button
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={games.length < 60}
+                  disabled={!hasMore}
                   className="px-4 py-2 bg-[#111320] border border-[#1e2235] rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
                 >
                   Volgende

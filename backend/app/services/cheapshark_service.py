@@ -161,42 +161,60 @@ async def browse_all_deals(
     min_discount: int = 0,
     sort_by: str = "DealRating",
     store_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Browse all deals with custom filters (for browse page).
     No quality filtering - shows everything including adult games.
+    Returns dict with 'items' and 'has_more' for pagination.
 
     Args:
         page: Page number
-        limit: Results per page (max 60)
+        limit: Results per page (we'll fetch multiple CheapShark pages if needed)
         min_price: Minimum price filter
         max_price: Maximum price filter
         min_discount: Minimum discount percentage (0-100)
         sort_by: Sort method (DealRating, Price, Savings, Recent, etc.)
         store_id: Filter by specific store ID
     """
-    params = {
-        "sortBy": sort_by,
-        "onSale": 1,
-        "lowerPrice": min_price,
-        "upperPrice": max_price,
-        "pageNumber": page,
-        "pageSize": min(limit, 60),  # CheapShark max is 60
-    }
+    import asyncio
 
-    if store_id:
-        params["storeID"] = store_id
+    # CheapShark has max 60 per page, so we need to fetch multiple pages
+    # To get 60 results after filtering, fetch up to 3 pages (180 deals)
+    pages_to_fetch = 3
+    all_deals = []
 
-    async with httpx.AsyncClient(timeout=6) as client:
-        try:
-            resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
-            resp.raise_for_status()
-            deals = resp.json()
-        except Exception:
-            return []
+    async def fetch_page(page_num: int):
+        params = {
+            "sortBy": sort_by,
+            "onSale": 1,
+            "lowerPrice": min_price,
+            "upperPrice": max_price,
+            "pageNumber": page_num,
+            "pageSize": 60,
+        }
+        if store_id:
+            params["storeID"] = store_id
 
+        async with httpx.AsyncClient(timeout=6) as client:
+            try:
+                resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception:
+                return []
+
+    # Fetch multiple pages in parallel
+    tasks = [fetch_page(page * pages_to_fetch + i) for i in range(pages_to_fetch)]
+    pages_data = await asyncio.gather(*tasks)
+
+    # Combine all pages
+    for deals in pages_data:
+        if deals:
+            all_deals.extend(deals)
+
+    # Process and filter results
     results = []
-    for deal in deals:
+    for deal in all_deals:
         steam_appid = str(deal.get("steamAppID") or "").strip()
         if not steam_appid or steam_appid.lower() == "none":
             continue
@@ -222,7 +240,15 @@ async def browse_all_deals(
             "deal_rating": float(deal.get("dealRating") or 0),
         })
 
-    return results
+    # Return paginated results with has_more indicator
+    # If we got close to full capacity, there's likely more
+    has_more = len(results) >= limit
+
+    return {
+        "items": results[:limit],
+        "has_more": has_more,
+        "total_fetched": len(results)
+    }
 
 
 async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:

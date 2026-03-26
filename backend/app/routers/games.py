@@ -77,12 +77,19 @@ async def browse_games(
 
     Query params:
         page: Page number (default: 0)
-        limit: Results per page, max 60 (default: 60)
+        limit: Results per page (default: 60)
         min_price: Minimum price in USD (default: 0)
         max_price: Maximum price in USD (default: 999)
         min_discount: Minimum discount percentage 0-100 (default: 0)
         sort_by: Sort method - DealRating, Price, Savings, Recent (default: DealRating)
         store_id: Filter by store ID (1=Steam, 7=GOG, 11=Humble, etc.)
+
+    Returns:
+        {
+            "items": [...],  # Game objects
+            "has_more": bool,  # Whether there are more pages
+            "total_fetched": int  # Total games fetched before pagination
+        }
     """
     from app.services.cheapshark_service import browse_all_deals
     return await browse_all_deals(page, limit, min_price, max_price, min_discount, sort_by, store_id)

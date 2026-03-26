@@ -104,7 +104,9 @@ async def get_trending_deals(page: int = 0, limit: int = 20, apply_quality_filte
         except Exception:
             return []
 
-    results = []
+    # Deduplicate and process results (keep best price per game)
+    game_dict = {}
+
     for deal in deals:
         steam_appid = str(deal.get("steamAppID") or "").strip()
         if not steam_appid or steam_appid.lower() == "none":
@@ -135,16 +137,33 @@ async def get_trending_deals(page: int = 0, limit: int = 20, apply_quality_filte
             if any(kw in name_lower for kw in skip_keywords):
                 continue
 
-        results.append({
-            "steam_appid": steam_appid,
-            "name": name,
-            "sale_price": round(sale, 2),
-            "regular_price": round(normal, 2),
-            "discount_percent": min(round(savings), 100),
-            "store_name": STORE_NAMES.get(store_id, f"Store #{store_id}"),
-            "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
-            "deal_rating": float(deal.get("dealRating") or 0),
-        })
+        # Deduplicate: only keep the best price per game
+        if steam_appid in game_dict:
+            if sale < game_dict[steam_appid]["sale_price"]:
+                game_dict[steam_appid] = {
+                    "steam_appid": steam_appid,
+                    "name": name,
+                    "sale_price": round(sale, 2),
+                    "regular_price": round(normal, 2),
+                    "discount_percent": min(round(savings), 100),
+                    "store_name": STORE_NAMES.get(store_id, f"Store #{store_id}"),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
+                    "deal_rating": float(deal.get("dealRating") or 0),
+                }
+        else:
+            game_dict[steam_appid] = {
+                "steam_appid": steam_appid,
+                "name": name,
+                "sale_price": round(sale, 2),
+                "regular_price": round(normal, 2),
+                "discount_percent": min(round(savings), 100),
+                "store_name": STORE_NAMES.get(store_id, f"Store #{store_id}"),
+                "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
+                "deal_rating": float(deal.get("dealRating") or 0),
+            }
+
+    # Convert to list
+    results = list(game_dict.values())
 
     # Randomize before limiting (only on homepage/deals)
     if apply_quality_filter:
@@ -212,8 +231,9 @@ async def browse_all_deals(
         if deals:
             all_deals.extend(deals)
 
-    # Process and filter results
-    results = []
+    # Process and deduplicate results (keep best price per game)
+    game_dict = {}  # steam_appid -> best deal
+
     for deal in all_deals:
         steam_appid = str(deal.get("steamAppID") or "").strip()
         if not steam_appid or steam_appid.lower() == "none":
@@ -229,16 +249,34 @@ async def browse_all_deals(
         if savings < min_discount:
             continue
 
-        results.append({
-            "steam_appid": steam_appid,
-            "name": name,
-            "sale_price": round(sale, 2),
-            "regular_price": round(normal, 2),
-            "discount_percent": min(round(savings), 100),
-            "store_name": STORE_NAMES.get(store_id_result, f"Store #{store_id_result}"),
-            "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
-            "deal_rating": float(deal.get("dealRating") or 0),
-        })
+        # Deduplicate: only keep the best price per game
+        if steam_appid in game_dict:
+            # Keep the deal with the lowest price
+            if sale < game_dict[steam_appid]["sale_price"]:
+                game_dict[steam_appid] = {
+                    "steam_appid": steam_appid,
+                    "name": name,
+                    "sale_price": round(sale, 2),
+                    "regular_price": round(normal, 2),
+                    "discount_percent": min(round(savings), 100),
+                    "store_name": STORE_NAMES.get(store_id_result, f"Store #{store_id_result}"),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
+                    "deal_rating": float(deal.get("dealRating") or 0),
+                }
+        else:
+            game_dict[steam_appid] = {
+                "steam_appid": steam_appid,
+                "name": name,
+                "sale_price": round(sale, 2),
+                "regular_price": round(normal, 2),
+                "discount_percent": min(round(savings), 100),
+                "store_name": STORE_NAMES.get(store_id_result, f"Store #{store_id_result}"),
+                "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
+                "deal_rating": float(deal.get("dealRating") or 0),
+            }
+
+    # Convert to list
+    results = list(game_dict.values())
 
     # Return paginated results with has_more indicator
     # If we got close to full capacity, there's likely more

@@ -55,6 +55,7 @@ export function GamePage() {
     queryFn: () => getPriceHistory(appid!),
     enabled: !!appid,
     staleTime: 1000 * 60 * 30,
+    retry: 2,  // Retry twice on failure
   })
 
   const { data: dlcDeals = [] } = useQuery({

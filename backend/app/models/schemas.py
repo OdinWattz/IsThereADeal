@@ -45,6 +45,11 @@ class PasswordChange(BaseModel):
     new_password: str = Field(..., min_length=6)
 
 
+class DeleteAccount(BaseModel):
+    """Schema for deleting account."""
+    current_password: str
+
+
 # ── Game ──────────────────────────────────────────────────────────────────────
 
 class GamePriceOut(BaseModel):

@@ -1,19 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { getFeaturedDeals, getDeals, type TrendingDeal } from '../api/games'
+import { getFeaturedDeals } from '../api/games'
 import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function HomePage() {
-  const { data: featured = [], isLoading: featuredLoading } = useQuery({
+  const { data: featured = [], isLoading } = useQuery({
     queryKey: ['featured'],
     queryFn: getFeaturedDeals,
     staleTime: 1000 * 60 * 15,
-  })
-
-  const { data: dbDeals = [], isLoading: dealsLoading } = useQuery({
-    queryKey: ['deals'],
-    queryFn: () => getDeals(0, 12),
-    staleTime: 1000 * 60 * 10,
   })
 
   return (
@@ -33,25 +27,25 @@ export function HomePage() {
         {/* Feature pills */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {[
-            { icon: <TrendingDown size={15} />, label: '30+ stores' },
-            { icon: <Zap size={15} />, label: 'Live alerts' },
-            { icon: <BarChart2 size={15} />, label: 'Price history' },
+            { icon: <TrendingDown size={15} />, label: '30+ stores compared' },
+            { icon: <Zap size={15} />, label: 'Live price alerts' },
+            { icon: <BarChart2 size={15} />, label: 'Price history charts' },
           ].map(({ icon, label }) => (
             <div key={label} className="flex items-center gap-2 bg-[#111320] border border-[#1e2235] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm text-gray-400">
               <span className="text-purple-400">{icon}</span>
-              <span className="hidden sm:inline">{label}</span>
+              {label}
             </div>
           ))}
         </div>
       </div>
 
       {/* Steam Featured Deals */}
-      <section className="mb-10 sm:mb-14">
+      <section>
         <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-5 flex items-center gap-2">
           <TrendingDown size={20} className="text-green-400" />
           Steam Featured Deals
         </h2>
-        {featuredLoading ? (
+        {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="bg-[#111320] rounded-xl h-48 sm:h-56 animate-pulse" />
@@ -97,62 +91,6 @@ export function HomePage() {
           </div>
         )}
       </section>
-
-      {/* Best Deals Right Now */}
-      {dbDeals.length > 0 && (
-        <section>
-          <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-5 flex items-center gap-2">
-            <Zap size={20} className="text-purple-400" />
-            Best Deals Right Now
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {dealsLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-[#111320] rounded-xl h-48 sm:h-56 animate-pulse" />
-                ))
-              : dbDeals.map((d: TrendingDeal) => (
-                  <Link
-                    key={`${d.steam_appid}-${d.store_name}`}
-                    to={`/game/${d.steam_appid}`}
-                    className="block bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    <div className="relative">
-                      <img
-                        src={d.header_image}
-                        alt={d.name}
-                        className="w-full h-24 sm:h-28 object-cover"
-                      />
-                      {d.discount_percent > 0 && (
-                        <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded">
-                          -{d.discount_percent}%
-                        </div>
-                      )}
-                      {d.store_name && d.store_name !== 'Steam' && (
-                        <div className="absolute top-2 right-2 bg-purple-600/90 text-white text-[10px] px-1.5 py-0.5 rounded">
-                          {d.store_name}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-2 sm:p-3">
-                      <p className="text-xs sm:text-sm text-gray-200 mb-1 sm:mb-2 truncate">
-                        {d.name}
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-green-400 font-bold text-sm sm:text-base">
-                          ${d.sale_price.toFixed(2)}
-                        </span>
-                        {d.regular_price > d.sale_price && (
-                          <span className="text-xs text-gray-500 line-through">
-                            ${d.regular_price.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-          </div>
-        </section>
-      )}
     </div>
   )
 }

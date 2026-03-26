@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.database import get_db
 from app.models.models import User
-from app.models.schemas import UserCreate, UserLogin, UserOut, Token, UserUpdate, PasswordChange
+from app.models.schemas import UserCreate, UserLogin, UserOut, Token, UserUpdate, PasswordChange, DeleteAccount
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -110,13 +110,13 @@ async def change_password(
 
 @router.delete("/me")
 async def delete_account(
-    current_password: str,
+    data: DeleteAccount,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete user account (requires password confirmation). Cascade deletes wishlist and alerts."""
     # Verify password before deletion
-    if not verify_password(current_password, current_user.hashed_password):
+    if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Password is incorrect",

@@ -85,7 +85,7 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
   })
 
 export const deleteAccount = (password: string) =>
-  api.delete('/auth/me', { data: { current_password: password } })
+  api.delete('/auth/me', { data: { current_password: password } }).then(r => r.data)
 
 // ── Games ────────────────────────────────────────────────────────────────────
 

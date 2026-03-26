@@ -3,6 +3,7 @@ import { getFeaturedDeals } from '../api/games'
 import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DealOfTheDay } from '../components/DealOfTheDay'
+import { RecentlyViewed } from '../components/RecentlyViewed'
 
 export function HomePage() {
   const { data: featured = [], isLoading } = useQuery({
@@ -42,6 +43,9 @@ export function HomePage() {
 
       {/* Deal of the Day */}
       <DealOfTheDay />
+
+      {/* Recently Viewed */}
+      <RecentlyViewed />
 
       {/* Steam Featured Deals */}
       <section>

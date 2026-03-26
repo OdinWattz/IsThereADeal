@@ -7,7 +7,8 @@ import { PriceTable } from '../components/PriceTable'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
 import { HistoricLowBadge } from '../components/HistoricLowBadge'
 import { useAuthStore } from '../store/authStore'
-import { useState } from 'react'
+import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
 
@@ -39,6 +40,7 @@ export function GamePage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { isAuthenticated } = useAuthStore()
+  const { addToRecentlyViewed } = useRecentlyViewed()
   const [alertPrice, setAlertPrice] = useState('')
   const [showAlertForm, setShowAlertForm] = useState(false)
   const [showKeyResellers, setShowKeyResellers] = useState(false)
@@ -50,6 +52,17 @@ export function GamePage() {
     staleTime: 1000 * 60 * 10,  // 10 minutes
     gcTime: 1000 * 60 * 30,     // Keep in cache for 30 minutes
   })
+
+  // Add to recently viewed when game loads
+  useEffect(() => {
+    if (game && game.id !== 0) {
+      addToRecentlyViewed({
+        steam_appid: game.steam_appid,
+        name: game.name,
+        header_image: game.header_image,
+      })
+    }
+  }, [game, addToRecentlyViewed])
 
   const { data: history = [] } = useQuery({
     queryKey: ['history', appid],

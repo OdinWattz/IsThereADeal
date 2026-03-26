@@ -265,13 +265,13 @@ async def browse_all_deals(
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
     # Low discount (0-25%): 5 pages = 300 deals
     # Medium discount (25-50%): 8 pages = 480 deals
-    # High discount (50-75%): 12 pages = 720 deals
-    # Very high discount (75-90%): 20 pages = 1200 deals
-    # Extreme discount (90-100%): 30 pages = 1800 deals (for free games at 100%)
-    if min_discount >= 90:
-        pages_to_fetch = 30
-    elif min_discount >= 75:
-        pages_to_fetch = 20
+    # High discount (50-70%): 12 pages = 720 deals
+    # Very high discount (70-85%): 25 pages = 1500 deals
+    # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
+    if min_discount >= 85:
+        pages_to_fetch = 40
+    elif min_discount >= 70:
+        pages_to_fetch = 25
     elif min_discount >= 50:
         pages_to_fetch = 12
     elif min_discount >= 25:
@@ -325,11 +325,21 @@ async def browse_all_deals(
         savings = float(deal.get("savings") or 0)
 
         # Quality filters to remove shovelware/junk games
-        # Allow free games (€0) if user wants 100% discount, otherwise skip very cheap
-        if min_discount < 100 and sale < 0.5:  # Skip extremely cheap games (often broken/removed)
+        # For high discount searches, allow cheaper games (they're discounted heavily)
+        if min_discount < 50:
+            # Low discount search: skip very cheap games (likely broken/removed)
+            if sale < 0.5:
+                continue
+        elif min_discount < 75:
+            # Medium discount search: allow cheaper games
+            if sale < 0.25:
+                continue
+        # For 75%+ discount: no price filter (high discount deals can be very cheap)
+
+        # Only show free games if user wants very high discounts
+        if sale == 0 and min_discount < 95:
             continue
-        if sale == 0 and min_discount < 95:  # Only show free games if user wants very high discounts
-            continue
+
         if normal > 200:  # Skip overpriced special editions
             continue
 
@@ -385,10 +395,10 @@ async def browse_all_deals(
     has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
 
     # For high discount filters, return more results (since there are fewer matches)
-    if min_discount >= 90:
-        effective_limit = min(limit * 3, 180)  # 90%+: show up to 180 results
-    elif min_discount >= 75:
-        effective_limit = min(limit * 2, 120)  # 75%+: show up to 120 results
+    if min_discount >= 85:
+        effective_limit = min(limit * 4, 240)  # 85%+: show up to 240 results
+    elif min_discount >= 70:
+        effective_limit = min(limit * 3, 180)  # 70%+: show up to 180 results
     elif min_discount >= 50:
         effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
     else:

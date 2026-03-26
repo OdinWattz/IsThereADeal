@@ -145,6 +145,7 @@ async def get_deal_of_the_day():
     from app.services.cheapshark_service import get_trending_deals
     from datetime import datetime
     import random
+    import httpx
 
     # Get top deals
     deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
@@ -152,16 +153,56 @@ async def get_deal_of_the_day():
     if not deals:
         return None
 
+    # Filter to only include games with valid Steam data
+    valid_deals = []
+    for deal in deals:
+        # Skip games with obviously invalid appids
+        appid = str(deal.get("steam_appid", ""))
+        if not appid or not appid.isdigit():
+            continue
+
+        # Skip games with very low deal ratings
+        if deal.get("deal_rating", 0) < 5.0:
+            continue
+
+        # Skip games that are too cheap (often broken/removed)
+        if deal.get("sale_price", 0) < 1.0:
+            continue
+
+        valid_deals.append(deal)
+
+    if not valid_deals:
+        return None
+
     # Use today's date as seed for deterministic daily selection
     today = datetime.utcnow().date()
     seed = int(today.strftime("%Y%m%d"))
     random.seed(seed)
 
-    # Select a deal from top 50 (ensures quality but still variety)
-    top_deals = deals[:min(50, len(deals))]
-    selected = random.choice(top_deals)
+    # Select from top 30 valid deals
+    top_deals = valid_deals[:min(30, len(valid_deals))]
 
-    return selected
+    # Try up to 5 times to find a game with a valid image
+    for attempt in range(5):
+        selected = random.choice(top_deals)
+
+        # Quick check if Steam header image exists (fast HEAD request)
+        try:
+            async with httpx.AsyncClient(timeout=2) as client:
+                img_url = selected.get("header_image", "")
+                resp = await client.head(img_url)
+                if resp.status_code == 200:
+                    return selected  # Found a valid one!
+        except:
+            pass  # Try next one
+
+        # Remove this deal and try again
+        top_deals.remove(selected)
+        if not top_deals:
+            break
+
+    # Fallback: return first deal even if image might be broken
+    return valid_deals[0] if valid_deals else None
 
 
 @router.get("/deals")

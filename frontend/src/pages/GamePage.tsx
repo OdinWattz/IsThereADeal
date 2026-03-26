@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals, followGame } from '../api/games'
+import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals } from '../api/games'
 import type { DlcDeal } from '../api/games'
 import { Link } from 'react-router-dom'
 import { PriceTable } from '../components/PriceTable'
@@ -10,7 +10,7 @@ import { useAuthStore } from '../store/authStore'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft, Star } from 'lucide-react'
+import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
 
 const cardStyle: React.CSSProperties = {
   backgroundColor: '#111320',
@@ -97,17 +97,6 @@ export function GamePage() {
       setShowAlertForm(false)
       setAlertPrice('')
       qc.invalidateQueries({ queryKey: ['alerts'] })
-    },
-    onError: (e: unknown) => toast.error((e as {response?: {data?: {detail?: string}}})?.response?.data?.detail ?? 'Mislukt'),
-  })
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      return followGame(appid!, true, false)
-    },
-    onSuccess: () => {
-      toast.success('Game gevolgd!')
-      qc.invalidateQueries({ queryKey: ['followed'] })
     },
     onError: (e: unknown) => toast.error((e as {response?: {data?: {detail?: string}}})?.response?.data?.detail ?? 'Mislukt'),
   })
@@ -242,15 +231,6 @@ export function GamePage() {
                   onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7c3aed')}
                 >
                   <Heart size={14} /> Verlanglijst
-                </button>
-                <button
-                  onClick={() => followMutation.mutate()}
-                  disabled={followMutation.isPending}
-                  style={{ ...actionBtn('#eab308'), opacity: followMutation.isPending ? 0.5 : 1 }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#ca8a04')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#eab308')}
-                >
-                  <Star size={14} /> Volgen
                 </button>
                 <button
                   onClick={() => setShowAlertForm(!showAlertForm)}

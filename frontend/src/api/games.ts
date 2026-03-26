@@ -271,3 +271,30 @@ export const updateFollowNotifications = (id: number, notifyOnSale: boolean, not
   api.patch(`/followed/${id}/notifications`, null, {
     params: { notify_on_sale: notifyOnSale, notify_on_release: notifyOnRelease }
   })
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+export interface UserSavings {
+  total_wishlist_games: number
+  games_on_sale: number
+  games_at_target_price: number
+  total_regular_price: number
+  total_sale_price: number
+  potential_savings: number
+  target_price_savings: number
+  savings_percentage: number
+  active_alerts: number
+  recent_alert_triggers: number
+}
+
+export interface UserActivity {
+  wishlist_count: number
+  active_alerts_count: number
+  recent_wishlist_additions: number
+}
+
+export const getUserSavings = () =>
+  api.get<UserSavings>('/stats/savings').then((r) => r.data)
+
+export const getUserActivity = () =>
+  api.get<UserActivity>('/stats/activity').then((r) => r.data)

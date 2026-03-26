@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore } from '../store/themeStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Sun, Moon, Gift, FolderOpen, Star } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Sun, Moon, Gift, FolderOpen, TrendingDown } from 'lucide-react'
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
@@ -51,12 +51,6 @@ export function Navbar() {
               Browse
             </Link>
             <Link
-              to="/deals"
-              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
-            >
-              Deals
-            </Link>
-            <Link
               to="/free"
               className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors flex items-center gap-1"
             >
@@ -83,13 +77,6 @@ export function Navbar() {
                   <Heart size={20} />
                 </Link>
                 <Link
-                  to="/followed"
-                  title="Followed Games"
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
-                >
-                  <Star size={20} />
-                </Link>
-                <Link
                   to="/collections"
                   title="Collections"
                   className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
@@ -102,6 +89,13 @@ export function Navbar() {
                   className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
                 >
                   <Bell size={20} />
+                </Link>
+                <Link
+                  to="/stats"
+                  title="Savings Stats"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <TrendingDown size={20} />
                 </Link>
                 <div className="flex items-center gap-2 ml-2 pl-3 border-l border-[#1a1d2e]">
                   <Link
@@ -166,13 +160,6 @@ export function Navbar() {
               <span>Browse Games</span>
             </Link>
             <Link
-              to="/deals"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
-            >
-              Deals
-            </Link>
-            <Link
               to="/free"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
@@ -201,14 +188,6 @@ export function Navbar() {
                   <span>Verlanglijst</span>
                 </Link>
                 <Link
-                  to="/followed"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
-                >
-                  <Star size={20} />
-                  <span>Gevolgde Games</span>
-                </Link>
-                <Link
                   to="/collections"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
@@ -223,6 +202,14 @@ export function Navbar() {
                 >
                   <Bell size={20} />
                   <span>Price Alerts</span>
+                </Link>
+                <Link
+                  to="/stats"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                >
+                  <TrendingDown size={20} />
+                  <span>Besparingen</span>
                 </Link>
                 <Link
                   to="/profile"

@@ -279,8 +279,9 @@ async def browse_all_deals(
     results = list(game_dict.values())
 
     # Return paginated results with has_more indicator
-    # If we got close to full capacity, there's likely more
-    has_more = len(results) >= limit
+    # Check if we got full pages from CheapShark (means there's likely more)
+    # If we fetched close to 180 deals (3 full pages), there's probably more
+    has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
 
     return {
         "items": results[:limit],

@@ -197,6 +197,7 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
 
     game_id = await get_game_id_by_appid(steam_appid)
     if not game_id:
+        print(f"[ITAD] History: Game {steam_appid} not found in ITAD")
         # Cache "not found" for shorter time (5 min) to allow retries
         _cache.set(cache_key, [], ttl=300)
         return []
@@ -209,6 +210,7 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     entries = await _get("/games/history/v2", {"id": game_id, "country": "NL", "since": since})
     if not entries or not isinstance(entries, list):
         # Don't cache API failures - allow immediate retry
+        print(f"[ITAD] History: Failed to fetch history for {steam_appid} (game_id: {game_id})")
         return []
 
     results = []
@@ -229,5 +231,8 @@ async def get_price_history(steam_appid: str) -> List[Dict[str, Any]]:
     # Only cache successful results with data
     if results:
         _cache.set(cache_key, results)
+        print(f"[ITAD] History: Cached {len(results)} history points for {steam_appid}")
+    else:
+        print(f"[ITAD] History: No history data for {steam_appid} (game_id: {game_id})")
 
     return results

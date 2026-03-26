@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Filter, ChevronDown, Search, Tag, Award, Star, X } from 'lucide-react'
+import { Filter, Search, Tag, Award, Star, X } from 'lucide-react'
 import type { Game } from '../api/games'
 import api from '../api/client'
 

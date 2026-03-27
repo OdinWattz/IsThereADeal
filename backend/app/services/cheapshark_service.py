@@ -354,10 +354,8 @@ async def browse_all_deals(
         if any(kw in name_lower for kw in skip_keywords):
             continue
 
-        # Apply minimum discount filter
-        # Use either user-specified min_discount OR default 5% (whichever is higher)
-        effective_min_discount = max(min_discount, 5)
-        if savings < effective_min_discount:
+        # Apply minimum discount filter - use user's exact requirement
+        if savings < min_discount:
             continue
 
         # Deduplicate: only keep the best price per game

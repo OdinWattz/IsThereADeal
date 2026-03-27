@@ -169,14 +169,19 @@ async def import_from_steam(
     Accepts Steam ID, profile URL, or vanity name.
     """
     user_input = steam_input.get("steam_input", "").strip()
+    print(f"[Import] Received request from user {current_user.username}: '{user_input}'")
+
     if not user_input:
         raise HTTPException(status_code=400, detail="Steam ID, profile URL, or vanity name required")
 
     # Import wishlist from Steam
     result = await import_steam_wishlist(user_input)
+    print(f"[Import] Steam wishlist result: {result}")
 
     if not result["success"]:
-        raise HTTPException(status_code=400, detail=result.get("error", "Failed to import wishlist"))
+        error_msg = result.get("error", "Failed to import wishlist")
+        print(f"[Import] Failed: {error_msg}")
+        raise HTTPException(status_code=400, detail=error_msg)
 
     app_ids = result.get("app_ids", [])
     if not app_ids:
@@ -239,11 +244,19 @@ async def import_from_steam(
 
     await db.commit()
 
+    message = f"✅ {imported} games toegevoegd"
+    if skipped > 0:
+        message += f", {skipped} overgeslagen (al in wishlist)"
+    if failed > 0:
+        message += f", {failed} mislukt"
+
+    print(f"[Import] Complete: {message}")
+
     return {
         "success": True,
         "imported": imported,
         "skipped": skipped,
         "failed": failed,
         "total": len(app_ids),
-        "message": f"{imported} games geïmporteerd, {skipped} overgeslagen (al in wishlist), {failed} mislukt."
+        "message": message
     }

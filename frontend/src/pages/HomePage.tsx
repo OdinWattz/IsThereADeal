@@ -15,9 +15,9 @@ export function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
       {/* Hero */}
-      <div className="text-center mb-12 sm:mb-16">
+      <div className="text-center mb-12 sm:mb-16 flex flex-col items-center">
         <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight text-center"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight text-center w-full"
           style={{ color: 'var(--text-primary)' }}
         >
           Find the{' '}

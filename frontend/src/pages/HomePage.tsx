@@ -17,7 +17,7 @@ export function HomePage() {
       {/* Hero */}
       <div className="text-center mb-12 sm:mb-16">
         <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight text-center"
           style={{ color: 'var(--text-primary)' }}
         >
           Find the{' '}

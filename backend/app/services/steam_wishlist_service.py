@@ -11,11 +11,12 @@ async def get_steam_id_from_vanity_url(vanity_url: str) -> Optional[str]:
     """
     Convert Steam vanity URL to Steam ID.
     Example: "gabelogannewell" -> "76561197960287930"
+
+    Note: This API endpoint works without authentication.
     """
     api_url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/"
     params = {
         "vanityurl": vanity_url,
-        "key": "YOUR_STEAM_API_KEY"  # Optional - works without key for vanity URL
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
@@ -24,9 +25,16 @@ async def get_steam_id_from_vanity_url(vanity_url: str) -> Optional[str]:
             resp.raise_for_status()
             data = resp.json()
 
+            print(f"[Steam Vanity] Resolved '{vanity_url}' -> Success: {data.get('response', {}).get('success')}")
+
             if data.get("response", {}).get("success") == 1:
-                return data["response"]["steamid"]
-        except Exception:
+                steam_id = data["response"]["steamid"]
+                print(f"[Steam Vanity] Found Steam ID: {steam_id}")
+                return steam_id
+            else:
+                print(f"[Steam Vanity] Failed to resolve: {data}")
+        except Exception as e:
+            print(f"[Steam Vanity] Error: {e}")
             pass
 
     return None

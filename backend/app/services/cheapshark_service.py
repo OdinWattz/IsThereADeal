@@ -325,30 +325,39 @@ async def browse_all_deals(
         savings = float(deal.get("savings") or 0)
 
         # Quality filters to remove shovelware/junk games
-        # Skip only extremely cheap games that are likely broken/removed
-        # Allow most discounted games through
-        if sale > 0 and sale < 0.10:  # Only filter games cheaper than €0.10
-            continue
+        # For high discount searches, allow cheaper games (they're discounted heavily)
+        if min_discount < 50:
+            # Low discount search: skip very cheap games (likely broken/removed)
+            if sale < 0.5:
+                continue
+        elif min_discount < 75:
+            # Medium discount search: allow cheaper games
+            if sale < 0.25:
+                continue
+        # For 75%+ discount: no price filter (high discount deals can be very cheap)
 
-        # Only show free games if user wants 100% discount
+        # Only show free games if user wants 100% discount (changed from 95% to 100%)
         if sale == 0 and min_discount < 100:
             continue
 
         if normal > 200:  # Skip overpriced special editions
             continue
 
-        # Filter out adult/shovelware keywords (conservative list to avoid over-filtering)
+        # Filter out adult/shovelware keywords
         name_lower = name.lower()
         skip_keywords = [
-            'hentai', 'adult only', '+18', 'nsfw', 'xxx',
-            'soundtrack only', 'ost -'
+            'hentai', 'anime girl', 'waifu', 'ecchi', 'adult only',
+            'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex',
+            'soundtrack', 'artbook', 'wallpaper', 'OST', 'anime schoolgirl',
+            'dating sim', 'visual novel bundle'
         ]
         if any(kw in name_lower for kw in skip_keywords):
             continue
 
         # Apply minimum discount filter
-        # Only apply user-specified min_discount (no forced minimum)
-        if savings < min_discount:
+        # Use either user-specified min_discount OR default 5% (whichever is higher)
+        effective_min_discount = max(min_discount, 5)
+        if savings < effective_min_discount:
             continue
 
         # Deduplicate: only keep the best price per game

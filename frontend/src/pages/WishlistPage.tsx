@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWishlist, removeFromWishlist, updateTargetPrice, importSteamWishlist } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 import { Navigate, Link } from 'react-router-dom'
-import { Heart, Trash2, Target, Filter, ArrowUpDown, ExternalLink, Tag, Download, X } from 'lucide-react'
+import { Heart, Trash2, Target, Filter, ArrowUpDown, ExternalLink, Tag, Download, X, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type SortOption = 'price-low' | 'price-high' | 'date-new' | 'date-old' | 'name' | 'discount'
@@ -21,10 +21,17 @@ export function WishlistPage() {
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['wishlist'],
     queryFn: getWishlist,
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
   })
+
+  const handleRefresh = async () => {
+    toast.loading('Prijzen verversen...', { id: 'wishlist-refresh' })
+    await refetch()
+    toast.success('Prijzen bijgewerkt!', { id: 'wishlist-refresh' })
+  }
 
   const removeMutation = useMutation({
     mutationFn: (id: number) => removeFromWishlist(id),
@@ -128,13 +135,24 @@ export function WishlistPage() {
             )}
           </p>
         </div>
-        <button
-          onClick={() => setShowSteamImport(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1b2838] hover:bg-[#2a3f5f] text-white rounded-lg transition-colors font-medium text-sm"
-        >
-          <Download size={18} />
-          <span className="hidden sm:inline">Steam Import</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefetching}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+            title="Prijzen verversen"
+          >
+            <RefreshCw size={18} className={isRefetching ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Ververs</span>
+          </button>
+          <button
+            onClick={() => setShowSteamImport(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1b2838] hover:bg-[#2a3f5f] text-white rounded-lg transition-colors font-medium text-sm"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Steam Import</span>
+          </button>
+        </div>
       </div>
 
       {/* Target Met Banner */}

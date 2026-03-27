@@ -335,9 +335,10 @@ async def browse_all_deals(
             if sale < 0.25:
                 continue
         # For 75%+ discount: no price filter (high discount deals can be very cheap)
+        # For 100% discount: allow free games (sale == 0)
 
-        # Only show free games if user wants very high discounts
-        if sale == 0 and min_discount < 95:
+        # Only show free games if user wants 100% discount
+        if sale == 0 and min_discount < 100:
             continue
 
         if normal > 200:  # Skip overpriced special editions

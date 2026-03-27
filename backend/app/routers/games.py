@@ -128,16 +128,20 @@ async def get_deal_of_the_day():
         return None
 
     # Use today's date as seed for deterministic daily selection
+    # But rotate through different deals by using day of year as index
     today = datetime.utcnow().date()
-    seed = int(today.strftime("%Y%m%d"))
-    random.seed(seed)
+    day_of_year = today.timetuple().tm_yday
 
-    # Select from top 30 valid deals
-    top_deals = valid_deals[:min(30, len(valid_deals))]
+    # Select from top 50 valid deals for more variety
+    top_deals = valid_deals[:min(50, len(valid_deals))]
 
-    # Try up to 5 times to find a game with a valid image
-    for attempt in range(5):
-        selected = random.choice(top_deals)
+    # Use day of year to pick different deals each day (cycles through the list)
+    selected_index = day_of_year % len(top_deals)
+
+    # Try up to 10 times to find a game with a valid image
+    for attempt in range(10):
+        # Rotate through the list instead of pure random
+        selected = top_deals[(selected_index + attempt) % len(top_deals)]
 
         # Quick check if Steam header image exists (fast HEAD request)
         try:
@@ -147,12 +151,7 @@ async def get_deal_of_the_day():
                 if resp.status_code == 200:
                     return selected  # Found a valid one!
         except:
-            pass  # Try next one
-
-        # Remove this deal and try again
-        top_deals.remove(selected)
-        if not top_deals:
-            break
+            pass  # Try next one (will continue with next index in rotation)
 
     # Fallback: return first deal even if image might be broken
     return valid_deals[0] if valid_deals else None

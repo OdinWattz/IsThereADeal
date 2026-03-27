@@ -26,7 +26,7 @@ export function HomePage() {
           </span>
         </h1>
         <p
-          className="text-base sm:text-lg max-w-xl mx-auto mb-6 sm:mb-8 px-4"
+          className="text-base sm:text-lg max-w-xl mx-auto mb-6 sm:mb-8 px-4 text-center"
           style={{ color: 'var(--text-secondary)' }}
         >
           Compare prices across Steam, GOG, Humble, Fanatical, key resellers and more.

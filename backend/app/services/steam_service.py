@@ -134,14 +134,21 @@ async def get_featured_deals():
                 if original > 150:  # Skip overpriced bundles/editions
                     continue
 
-                # Filter out common adult/shovelware keywords
+                # Filter out common adult/shovelware keywords (expanded list)
                 name_lower = name.lower()
                 skip_keywords = [
                     'hentai', 'anime girl', 'waifu', 'ecchi', 'adult only',
-                    'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex',
-                    'soundtrack only', 'artbook', 'wallpaper'
+                    'sexual', 'erotic', '+18', 'nsfw', 'nude', 'sex', 'porn',
+                    'sexy', 'harem', 'dating sim', 'lewd', 'r18', 'xxx',
+                    'visual novel', 'vn ', 'anime schoolgirl', 'fan service',
+                    'soundtrack only', 'artbook', 'wallpaper', 'ost',
+                    'coming soon', 'unreleased', 'pre-purchase'
                 ]
                 if any(kw in name_lower for kw in skip_keywords):
+                    continue
+
+                # Skip games with "coming soon" or unreleased status
+                if item.get("coming_soon", False):
                     continue
 
                 seen_ids.add(appid)

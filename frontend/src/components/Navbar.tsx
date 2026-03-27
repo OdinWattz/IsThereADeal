@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { useThemeStore } from '../store/themeStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Sun, Moon, Gift, FolderOpen, TrendingDown } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Gift, FolderOpen, TrendingDown } from 'lucide-react'
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
-  const { theme, toggleTheme } = useThemeStore()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -57,15 +55,6 @@ export function Navbar() {
               <Gift size={16} className="text-green-400" />
               <span>Free</span>
             </Link>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
 
             {isAuthenticated() ? (
               <>
@@ -167,15 +156,6 @@ export function Navbar() {
               <Gift size={20} className="text-green-400" />
               <span>Gratis Games</span>
             </Link>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors text-left"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-            </button>
 
             {isAuthenticated() ? (
               <>

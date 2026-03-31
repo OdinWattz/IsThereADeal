@@ -3,6 +3,7 @@ import { getDeals, getFeaturedDeals, type TrendingDeal } from '../api/games'
 import { useState } from 'react'
 import { TrendingDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 
 export function DealsPage() {
   const [page, setPage] = useState(0)
@@ -64,6 +65,13 @@ export function DealsPage() {
   )
 
   return (
+    <>
+      <SEO
+        title="Beste Game Deals | Trending Aanbiedingen"
+        description="Ontdek de beste game deals van dit moment. Bekijk trending aanbiedingen gesorteerd op kwaliteit van Steam, GOG, Humble Bundle en meer."
+        keywords="game deals, beste game aanbiedingen, trending games, game kortingen, steam sale, gog sale"
+        url="https://serpodin.nl/deals"
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
         <TrendingDown size={28} className="text-green-400" />
@@ -157,5 +165,6 @@ export function DealsPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

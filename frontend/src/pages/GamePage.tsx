@@ -11,6 +11,7 @@ import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
+import SEO from '../components/SEO'
 
 const cardStyle: React.CSSProperties = {
   backgroundColor: '#111320',
@@ -134,6 +135,17 @@ export function GamePage() {
   const steamPrice = game.prices.find((p) => p.store_name === 'Steam')
 
   return (
+    <>
+      {game && (
+        <SEO
+          title={`${game.name} Prijzen & Deals`}
+          description={`Vergelijk prijzen voor ${game.name} van 30+ winkels. ${game.short_description || 'Vind de beste deals en kortingen.'}`}
+          keywords={`${game.name}, ${game.name} prijs, ${game.name} deal, ${game.name} korting, ${game.genres || 'game'}`}
+          image={game.header_image}
+          url={`https://serpodin.nl/game/${appid}`}
+          type="article"
+        />
+      )}
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
       {/* Back button */}
@@ -417,5 +429,6 @@ export function GamePage() {
         </div>
       )}
     </div>
+    </>
   )
 }

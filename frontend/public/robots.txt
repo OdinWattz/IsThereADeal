@@ -1,0 +1,29 @@
+# robots.txt for serpodin.nl
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /profile
+Disallow: /wishlist
+Disallow: /alerts
+
+# Sitemap location
+Sitemap: https://serpodin.nl/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Specific bot rules
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /profile
+Disallow: /wishlist
+Disallow: /alerts
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /profile
+Disallow: /wishlist
+Disallow: /alerts

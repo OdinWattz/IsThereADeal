@@ -1,0 +1,21 @@
+{
+  "name": "Serpodin - Game Prijsvergelijking",
+  "short_name": "Serpodin",
+  "description": "Vergelijk game prijzen van 30+ winkels. Vind de beste game deals en kortingen.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1e",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "entertainment", "games"],
+  "lang": "nl",
+  "dir": "ltr"
+}

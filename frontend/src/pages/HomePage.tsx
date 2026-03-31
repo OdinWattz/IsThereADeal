@@ -4,6 +4,7 @@ import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DealOfTheDay } from '../components/DealOfTheDay'
 import { RecentlyViewed } from '../components/RecentlyViewed'
+import SEO from '../components/SEO'
 
 export function HomePage() {
   const { data: featured = [], isLoading } = useQuery({
@@ -13,6 +14,9 @@ export function HomePage() {
   })
 
   return (
+    <>
+      <SEO />
+
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
       {/* Hero */}
       <div className="text-center mb-12 sm:mb-16 flex flex-col items-center">
@@ -131,5 +135,6 @@ export function HomePage() {
         )}
       </section>
     </div>
+    </>
   )
 }

@@ -211,36 +211,48 @@ async def import_from_steam(
         return {
             "success": True,
             "imported": 0,
-            "skipped": 0,
             "failed": 0,
+            "total": 0,
+            "already_imported": 0,
+            "remaining": 0,
+            "batch_size": 0,
             "message": "Je Steam wishlist is leeg of kon niet worden opgehaald."
         }
 
+    # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s limit)
+    # Process max 15 games per run to avoid timeout
+    BATCH_SIZE = 15
+    total_games = len(app_ids)
+
+    # Find games already in wishlist to skip them
+    existing_check = await db.execute(
+        select(Game.steam_appid)
+        .join(WishlistItem)
+        .where(WishlistItem.user_id == current_user.id)
+    )
+    existing_appids = {row[0] for row in existing_check.all()}
+
+    # Filter out already imported games
+    new_app_ids = [aid for aid in app_ids if aid not in existing_appids]
+    already_imported = len(app_ids) - len(new_app_ids)
+
+    # Take only first BATCH_SIZE games to process
+    app_ids_to_process = new_app_ids[:BATCH_SIZE]
+    remaining = len(new_app_ids) - len(app_ids_to_process)
+
+    print(f"[Import] Total: {total_games}, Already imported: {already_imported}, "
+          f"To process now: {len(app_ids_to_process)}, Remaining: {remaining}")
+
     # Import games into user's wishlist
     imported = 0
-    skipped = 0
     failed = 0
     failed_games = []  # Track which games failed
 
-    print(f"[Import] Processing {len(app_ids)} games from Steam wishlist")
+    print(f"[Import] Processing batch of {len(app_ids_to_process)} games")
 
-    for app_id in app_ids:
+    for app_id in app_ids_to_process:
         try:
-            # Check if already in wishlist
-            existing = await db.execute(
-                select(WishlistItem)
-                .join(Game)
-                .where(
-                    WishlistItem.user_id == current_user.id,
-                    Game.steam_appid == app_id
-                )
-            )
-            if existing.scalar_one_or_none():
-                print(f"[Import] Skipping {app_id} - already in wishlist")
-                skipped += 1
-                continue
-
-            # Try to find or create game
+            # Try to find or create game (no need to check wishlist, already pre-filtered)
             game_result = await db.execute(
                 select(Game).where(Game.steam_appid == app_id)
             )
@@ -285,19 +297,26 @@ async def import_from_steam(
     if failed_games:
         print(f"[Import] Failed games: {', '.join(failed_games[:10])}{'...' if len(failed_games) > 10 else ''}")
 
+    # Build message
     message = f"✅ {imported} games toegevoegd"
-    if skipped > 0:
-        message += f", {skipped} overgeslagen (al in wishlist)"
+    if already_imported > 0:
+        message += f", {already_imported} al geïmporteerd"
     if failed > 0:
         message += f", {failed} mislukt"
+
+    # If there are more games to import, tell user to run again
+    if remaining > 0:
+        message += f"\n\n🔄 Nog {remaining} games over! Klik opnieuw op 'Importeren' om door te gaan."
 
     print(f"[Import] Complete: {message}")
 
     return {
         "success": True,
         "imported": imported,
-        "skipped": skipped,
         "failed": failed,
-        "total": len(app_ids),
+        "total": total_games,
+        "already_imported": already_imported,
+        "remaining": remaining,
+        "batch_size": BATCH_SIZE,
         "message": message
     }

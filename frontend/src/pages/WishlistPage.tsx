@@ -53,9 +53,20 @@ export function WishlistPage() {
   const steamImportMutation = useMutation({
     mutationFn: (input: string) => importSteamWishlist(input),
     onSuccess: (data) => {
-      toast.success(data.message, { duration: 5000 })
-      setShowSteamImport(false)
-      setSteamInput('')
+      console.log('Steam import success:', data)
+
+      // Show success message with longer duration if there are more games to import
+      const duration = data.remaining > 0 ? 8000 : 5000
+      toast.success(data.message, { duration })
+
+      // Keep modal open if there are more games to import
+      if (data.remaining > 0) {
+        // Don't close modal or clear input - user can click import again
+      } else {
+        setShowSteamImport(false)
+        setSteamInput('')
+      }
+
       qc.invalidateQueries({ queryKey: ['wishlist'] })
     },
     onError: (error: any) => {
@@ -413,8 +424,11 @@ export function WishlistPage() {
             />
 
             <div className="bg-blue-950/30 border border-blue-900/50 rounded-lg p-3 mb-4">
-              <p className="text-blue-400 text-xs">
+              <p className="text-blue-400 text-xs mb-2">
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
+              </p>
+              <p className="text-blue-300 text-xs">
+                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (15 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
             </div>
 

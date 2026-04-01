@@ -4,7 +4,9 @@ Fetches a user's public Steam wishlist and imports games.
 """
 import httpx
 import re
+import json
 from typing import List, Dict, Any, Optional
+from bs4 import BeautifulSoup
 
 
 async def get_steam_id_from_vanity_url(vanity_url: str) -> Optional[str]:
@@ -143,9 +145,96 @@ async def fetch_steam_wishlist(steam_id: str) -> List[str]:
                 print(f"[Steam Wishlist] Error with {url}: {type(e).__name__}: {e}")
                 continue
 
-        # If we get here, all methods failed
-        print(f"[Steam Wishlist] All fetch methods failed")
+        # If we get here, all API methods failed - try HTML scraping as fallback
+        print(f"[Steam Wishlist] JSON API failed, trying HTML scraping...")
+        html_app_ids = await fetch_wishlist_from_html(steam_id)
+        if html_app_ids:
+            return html_app_ids
+
+        print(f"[Steam Wishlist] All fetch methods failed (both JSON and HTML)")
         return []
+
+
+async def fetch_wishlist_from_html(steam_id: str) -> List[str]:
+    """
+    Fallback method: Scrape the HTML wishlist page to extract app IDs.
+    This works even when the JSON API is blocked.
+    """
+    url = f"https://steamcommunity.com/profiles/{steam_id}/wishlist/"
+
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+        try:
+            resp = await client.get(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': f'https://steamcommunity.com/profiles/{steam_id}/',
+            }, cookies={
+                'birthtime': '0',
+                'lastagecheckage': '1-0-1990',
+                'wants_mature_content': '1',
+            })
+
+            print(f"[Steam HTML] Status: {resp.status_code}")
+
+            if resp.status_code != 200:
+                print(f"[Steam HTML] Failed with status {resp.status_code}")
+                return []
+
+            # Parse HTML
+            soup = BeautifulSoup(resp.text, 'html.parser')
+
+            # Method 1: Look for wishlist items in data attributes
+            app_ids = []
+
+            # Find all elements with data-appid
+            items = soup.find_all(attrs={'data-appid': True})
+            for item in items:
+                app_id = item.get('data-appid')
+                if app_id and app_id not in app_ids:
+                    app_ids.append(str(app_id))
+
+            if app_ids:
+                print(f"[Steam HTML] ✓ Found {len(app_ids)} games via HTML scraping: {app_ids[:10]}")
+                return app_ids
+
+            # Method 2: Look for JavaScript variables containing wishlist data
+            scripts = soup.find_all('script')
+            for script in scripts:
+                if script.string and 'g_rgWishlistData' in script.string:
+                    # Extract the wishlist data from JavaScript
+                    match = re.search(r'g_rgWishlistData\s*=\s*(\[.*?\]);', script.string, re.DOTALL)
+                    if match:
+                        try:
+                            wishlist_data = json.loads(match.group(1))
+                            app_ids = [str(item.get('appid')) for item in wishlist_data if item.get('appid')]
+                            if app_ids:
+                                print(f"[Steam HTML] ✓ Found {len(app_ids)} games via JS variable: {app_ids[:10]}")
+                                return app_ids
+                        except:
+                            pass
+
+            # Method 3: Look for app links in the page
+            links = soup.find_all('a', href=re.compile(r'store\.steampowered\.com/app/(\d+)'))
+            for link in links:
+                match = re.search(r'/app/(\d+)', link['href'])
+                if match:
+                    app_id = match.group(1)
+                    if app_id not in app_ids:
+                        app_ids.append(app_id)
+
+            if app_ids:
+                print(f"[Steam HTML] ✓ Found {len(app_ids)} games via app links: {app_ids[:10]}")
+                return app_ids
+
+            print(f"[Steam HTML] No wishlist items found in HTML")
+            return []
+
+        except Exception as e:
+            print(f"[Steam HTML] Error: {type(e).__name__}: {e}")
+            import traceback
+            print(f"[Steam HTML] Traceback: {traceback.format_exc()}")
+            return []
 
 
 async def import_steam_wishlist(user_input: str) -> Dict[str, Any]:

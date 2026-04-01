@@ -219,10 +219,11 @@ async def import_from_steam(
             "message": "Je Steam wishlist is leeg of kon niet worden opgehaald."
         }
 
-    # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s limit)
-    # Process max 10 games per run to avoid timeout (was 15, but too slow)
-    # Each game needs: Steam API + ITAD + CheapShark = ~2-3s per game
-    BATCH_SIZE = 10
+    # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
+    # Process max 5 games per run to avoid timeout (was 10, still too slow)
+    # Each game needs: Steam API + ITAD + CheapShark = ~3-5s per game
+    # 5 games = 15-25s = Safe for Vercel's 30s limit with overhead
+    BATCH_SIZE = 5
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them

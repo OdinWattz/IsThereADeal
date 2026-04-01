@@ -259,9 +259,14 @@ export function CollectionDetailPage() {
                   </h3>
                 </Link>
 
-                {item.game.best_price !== undefined && (
+                {item.game.best_price != null && (
                   <p className="text-sm text-green-400 font-semibold mb-2">
                     €{item.game.best_price.toFixed(2).replace('.', ',')}
+                  </p>
+                )}
+                {item.game.best_price == null && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    Prijs ophalen...
                   </p>
                 )}
 

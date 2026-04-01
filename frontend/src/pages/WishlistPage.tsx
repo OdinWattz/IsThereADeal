@@ -105,8 +105,9 @@ export function WishlistPage() {
     if (steamImportMutation.isPending && importStartTime) {
       const interval = setInterval(() => {
         const elapsed = Date.now() - importStartTime
-        // Progress up to 95% over 28 seconds (just before 30s timeout)
-        const progress = Math.min((elapsed / 28000) * 100, 95)
+        // Progress up to 95% over 25 seconds (Vercel has 30s hard limit)
+        // With 5 games batch, should complete in 15-25s
+        const progress = Math.min((elapsed / 25000) * 100, 95)
         setImportProgress(progress)
       }, 100)
 
@@ -468,7 +469,7 @@ export function WishlistPage() {
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
               <p className="text-blue-300 text-xs">
-                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (10 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
+                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (5 games per keer vanwege Vercel's 30s limiet). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
             </div>
 
@@ -478,7 +479,7 @@ export function WishlistPage() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Importeren...</span>
                   <span className="text-xs text-gray-500">
-                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~28s`}
+                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / max 30s (Vercel limit)`}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-[#1e2235] rounded-full overflow-hidden">

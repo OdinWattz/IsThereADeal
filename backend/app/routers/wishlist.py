@@ -252,8 +252,8 @@ async def import_from_steam(
     # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
     # Optimized but sequential (DB session issues prevent true parallel)
     # Each game: ~2-3s (APIs already parallel within upsert_game_and_prices)
-    # 10 games = ~20-25s (safe for 30s limit)
-    BATCH_SIZE = 10
+    # With rate limiting delays: 5 games = ~15-18s (safe buffer for 30s limit)
+    BATCH_SIZE = 5
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them

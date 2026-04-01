@@ -73,12 +73,33 @@ async def extract_steam_id_from_input(user_input: str) -> Optional[str]:
 
 async def fetch_steam_wishlist(steam_id: str) -> List[str]:
     """
-    Fetch a user's public Steam wishlist.
+    Fetch a user's public Steam wishlist using Steam Web API.
     Returns list of app IDs.
 
     Note: Steam wishlist must be public for this to work.
     """
-    # Try multiple URL formats - Steam has different endpoints
+    # FIRST: Try the official Steam Web API (most reliable)
+    api_url = f"https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid={steam_id}"
+
+    async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
+        try:
+            print(f"[Steam API] Trying Steam Web API: {api_url}")
+            resp = await client.get(api_url)
+
+            if resp.status_code == 200:
+                data = resp.json()
+                items = data.get("response", {}).get("items", [])
+                if items:
+                    app_ids = [str(item["appid"]) for item in items if "appid" in item]
+                    print(f"[Steam API] ✓ SUCCESS! Found {len(app_ids)} games via Web API")
+                    return app_ids
+                else:
+                    print(f"[Steam API] Web API returned empty items list")
+
+        except Exception as e:
+            print(f"[Steam API] Web API failed: {type(e).__name__}: {e}")
+
+    # FALLBACK: Try the JSON wishlistdata endpoint
     urls = [
         f"https://store.steampowered.com/wishlist/profiles/{steam_id}/wishlistdata/?p=0",
         f"https://store.steampowered.com/wishlist/profiles/{steam_id}/wishlistdata/",

@@ -505,8 +505,11 @@ export function WishlistPage() {
               <p className="text-blue-400 text-xs mb-2">
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
-              <p className="text-blue-300 text-xs">
-                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (5 games per keer). Elke game haalt prijzen op van meerdere APIs. Klik meerdere keren op "Importeren" om alle games binnen te halen.
+              <p className="text-blue-300 text-xs mb-2">
+                ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (5 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
+              </p>
+              <p className="text-green-400 text-xs">
+                🚀 <strong>Anti rate-limit:</strong> Je wishlist wordt 10 min gecached. Daarna kun je onbeperkt importeren zonder Steam opnieuw te vragen!
               </p>
             </div>
 

@@ -5,8 +5,23 @@ Fetches a user's public Steam wishlist and imports games.
 import httpx
 import re
 import json
+import time
 from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
+
+# Simple in-memory cache for Steam wishlist data
+# Format: {steam_id: {"app_ids": [...], "timestamp": float}}
+_wishlist_cache: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL = 600  # 10 minutes
+
+
+def _cache_wishlist(steam_id: str, app_ids: List[str]) -> None:
+    """Cache wishlist data to prevent rate limiting."""
+    _wishlist_cache[steam_id] = {
+        "app_ids": app_ids,
+        "timestamp": time.time()
+    }
+    print(f"[Steam Cache] Cached {len(app_ids)} games for {CACHE_TTL}s")
 
 
 async def get_steam_id_from_vanity_url(vanity_url: str) -> Optional[str]:
@@ -71,14 +86,30 @@ async def extract_steam_id_from_input(user_input: str) -> Optional[str]:
     return await get_steam_id_from_vanity_url(user_input)
 
 
-async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]:
+async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0, use_cache: bool = True) -> List[str]:
     """
     Fetch a user's public Steam wishlist using Steam Web API.
     Returns list of app IDs.
 
     Note: Steam wishlist must be public for this to work.
+
+    Args:
+        steam_id: The Steam user ID
+        retry_count: Current retry attempt (for internal use)
+        use_cache: If True, use cached data if available (prevents rate limiting)
     """
     MAX_RETRIES = 3
+
+    # CHECK CACHE FIRST (prevents Steam rate limiting on repeated imports)
+    if use_cache and steam_id in _wishlist_cache:
+        cached_data = _wishlist_cache[steam_id]
+        age = time.time() - cached_data["timestamp"]
+        if age < CACHE_TTL:
+            print(f"[Steam API] Using cached wishlist (age: {age:.0f}s / {CACHE_TTL}s)")
+            return cached_data["app_ids"]
+        else:
+            print(f"[Steam API] Cache expired (age: {age:.0f}s), fetching fresh data")
+            del _wishlist_cache[steam_id]
 
     # FIRST: Try the official Steam Web API (most reliable)
     api_url = f"https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid={steam_id}"
@@ -99,7 +130,7 @@ async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]
                     print(f"[Steam API] RATE LIMITED (429)! Waiting {wait_time}s before retry...")
                     import asyncio
                     await asyncio.sleep(wait_time)
-                    return await fetch_steam_wishlist(steam_id, retry_count + 1)
+                    return await fetch_steam_wishlist(steam_id, retry_count + 1, use_cache)
                 else:
                     print(f"[Steam API] Max retries reached after rate limiting")
                     return []
@@ -114,6 +145,7 @@ async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]
                 if items:
                     app_ids = [str(item["appid"]) for item in items if "appid" in item]
                     print(f"[Steam API] ✓ SUCCESS! Found {len(app_ids)} games via Web API")
+                    _cache_wishlist(steam_id, app_ids)
                     return app_ids
                 else:
                     # Empty response might be soft rate limiting
@@ -123,7 +155,7 @@ async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]
                         print(f"[Steam API] Retrying after {wait_time}s delay...")
                         import asyncio
                         await asyncio.sleep(wait_time)
-                        return await fetch_steam_wishlist(steam_id, retry_count + 1)
+                        return await fetch_steam_wishlist(steam_id, retry_count + 1, use_cache)
                     print(f"[Steam API] Full response: {data}")
 
         except Exception as e:
@@ -192,6 +224,7 @@ async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]
                 if isinstance(data, dict) and len(data) > 0:
                     app_ids = list(data.keys())
                     print(f"[Steam Wishlist] ✓ Found {len(app_ids)} games: {app_ids[:10]}")
+                    _cache_wishlist(steam_id, app_ids)
                     return app_ids
 
             except Exception as e:
@@ -249,6 +282,7 @@ async def fetch_wishlist_from_html(steam_id: str) -> List[str]:
 
             if app_ids:
                 print(f"[Steam HTML] ✓ Found {len(app_ids)} games via HTML scraping: {app_ids[:10]}")
+                _cache_wishlist(steam_id, app_ids)
                 return app_ids
 
             # Method 2: Look for JavaScript variables containing wishlist data
@@ -263,6 +297,7 @@ async def fetch_wishlist_from_html(steam_id: str) -> List[str]:
                             app_ids = [str(item.get('appid')) for item in wishlist_data if item.get('appid')]
                             if app_ids:
                                 print(f"[Steam HTML] ✓ Found {len(app_ids)} games via JS variable: {app_ids[:10]}")
+                                _cache_wishlist(steam_id, app_ids)
                                 return app_ids
                         except:
                             pass
@@ -278,6 +313,7 @@ async def fetch_wishlist_from_html(steam_id: str) -> List[str]:
 
             if app_ids:
                 print(f"[Steam HTML] ✓ Found {len(app_ids)} games via app links: {app_ids[:10]}")
+                _cache_wishlist(steam_id, app_ids)
                 return app_ids
 
             print(f"[Steam HTML] No wishlist items found in HTML")

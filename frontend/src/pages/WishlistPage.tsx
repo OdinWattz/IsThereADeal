@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWishlist, removeFromWishlist, updateTargetPrice, importSteamWishlist } from '../api/games'
 import { useAuthStore } from '../store/authStore'
@@ -18,6 +18,8 @@ export function WishlistPage() {
   const [filterTargetMet, setFilterTargetMet] = useState(false)
   const [showSteamImport, setShowSteamImport] = useState(false)
   const [steamInput, setSteamInput] = useState('')
+  const [importProgress, setImportProgress] = useState(0)
+  const [importStartTime, setImportStartTime] = useState<number | null>(null)
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />
 
@@ -50,9 +52,28 @@ export function WishlistPage() {
     },
   })
 
+  // Progress timer effect
+  useEffect(() => {
+    if (steamImportMutation.isPending && importStartTime) {
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - importStartTime
+        const progress = Math.min((elapsed / 25000) * 100, 95) // Max 95% before completion
+        setImportProgress(progress)
+      }, 100)
+
+      return () => clearInterval(interval)
+    } else {
+      setImportProgress(0)
+    }
+  }, [steamImportMutation.isPending, importStartTime])
+
   const steamImportMutation = useMutation({
-    mutationFn: (input: string) => importSteamWishlist(input),
+    mutationFn: (input: string) => {
+      setImportStartTime(Date.now())
+      return importSteamWishlist(input)
+    },
     onSuccess: (data) => {
+      setImportProgress(100)
       console.log('Steam import success:', data)
 
       // Show success message with longer duration if there are more games to import
@@ -68,11 +89,27 @@ export function WishlistPage() {
       }
 
       qc.invalidateQueries({ queryKey: ['wishlist'] })
+
+      // Reset timer
+      setTimeout(() => setImportStartTime(null), 500)
     },
     onError: (error: any) => {
-      const errorMsg = error.response?.data?.detail || 'Import mislukt'
       console.error('Steam import error:', error)
-      toast.error(errorMsg, { duration: 8000 })
+      setImportStartTime(null)
+
+      // Check if this is a timeout error but some games were imported
+      // In that case, refresh the wishlist and show partial success
+      const errorMsg = error.response?.data?.detail || error.message || 'Import mislukt'
+
+      if (errorMsg.includes('timeout') || errorMsg.includes('timed out') || error.code === 'ECONNABORTED') {
+        toast.loading('Timeout - controleren of games zijn toegevoegd...', { duration: 2000 })
+        setTimeout(() => {
+          qc.invalidateQueries({ queryKey: ['wishlist'] })
+          toast.success('Check je wishlist - sommige games kunnen zijn toegevoegd. Klik opnieuw op Import om door te gaan.', { duration: 8000 })
+        }, 2000)
+      } else {
+        toast.error(errorMsg, { duration: 8000 })
+      }
     },
   })
 
@@ -431,6 +468,27 @@ export function WishlistPage() {
                 ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (15 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
             </div>
+
+            {/* Progress Bar */}
+            {steamImportMutation.isPending && (
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Importeren...</span>
+                  <span className="text-xs text-gray-500">
+                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s`}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-[#1e2235] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Games worden opgehaald en prijzen worden verzameld...
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button

@@ -220,10 +220,10 @@ async def import_from_steam(
         }
 
     # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
-    # With PARALLEL processing: All games fetched at once!
-    # 15 games fetched in parallel = ~3-5s (one API round-trip)
-    # + DB operations ~2-3s = ~8s total (well under 30s limit)
-    BATCH_SIZE = 15
+    # Optimized but sequential (DB session issues prevent true parallel)
+    # Each game: ~2-3s (APIs already parallel within upsert_game_and_prices)
+    # 10 games = ~20-25s (safe for 30s limit)
+    BATCH_SIZE = 10
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them
@@ -260,40 +260,38 @@ async def import_from_steam(
     existing_games = {g.steam_appid: g for g in existing_games_result.scalars().all()}
     print(f"[Import] Found {len(existing_games)} games already in database")
 
-    # Step 2: Fetch missing games in PARALLEL
+    # Step 2: Fetch missing games SEQUENTIALLY
+    # (Each game's APIs are already parallel within upsert_game_and_prices)
     missing_app_ids = [aid for aid in app_ids_to_process if aid not in existing_games]
 
     if missing_app_ids:
-        print(f"[Import] Fetching {len(missing_app_ids)} new games in parallel...")
+        print(f"[Import] Fetching {len(missing_app_ids)} new games...")
 
-        # Create coroutines for all games
-        fetch_tasks = [
-            upsert_game_and_prices(db, app_id, include_key_resellers=False)
-            for app_id in missing_app_ids
-        ]
+        for app_id in missing_app_ids:
+            try:
+                game = await upsert_game_and_prices(db, app_id, include_key_resellers=False)
 
-        # Execute ALL in parallel with asyncio.gather
-        import asyncio
-        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+                if game is None:
+                    print(f"[Import] Game {app_id} not found on Steam")
+                    failed_games.append(app_id)
+                    failed += 1
+                else:
+                    existing_games[app_id] = game
+                    print(f"[Import] Fetched {game.name}")
 
-        # Process results
-        for app_id, result in zip(missing_app_ids, results):
-            if isinstance(result, Exception):
-                print(f"[Import] Failed to fetch {app_id}: {result}")
+            except Exception as e:
+                print(f"[Import] Error fetching {app_id}: {type(e).__name__}: {e}")
                 failed_games.append(app_id)
                 failed += 1
-            elif result is None:
-                print(f"[Import] Game {app_id} not found")
-                failed_games.append(app_id)
-                failed += 1
-            else:
-                existing_games[app_id] = result
-                print(f"[Import] Fetched {result.name}")
 
         # Batch commit all new games at once
         if len(existing_games) > len(existing_games_result.scalars().all()):
-            await db.commit()
-            print(f"[Import] Committed {len(missing_app_ids) - failed} new games to database")
+            try:
+                await db.commit()
+                print(f"[Import] Committed {len(missing_app_ids) - failed} new games to database")
+            except Exception as e:
+                print(f"[Import] Error committing games: {e}")
+                await db.rollback()
 
     # Step 3: Add all games to wishlist in batch
     for app_id in app_ids_to_process:

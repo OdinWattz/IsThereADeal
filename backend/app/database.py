@@ -40,7 +40,10 @@ def _get_engine():
             url = _strip_query(raw_url)
             p = urlparse(url)
             _host = p.hostname
-            _port = p.port or 5432
+            # Force port 5432 for direct connection (bypass pgbouncer on 6543)
+            # Supabase: 6543 = pgbouncer (incompatible with prepared statements)
+            #           5432 = direct connection (supports prepared statements)
+            _port = 5432
             _user = p.username
             _password = p.password
             _database = p.path.lstrip("/")
@@ -51,37 +54,26 @@ def _get_engine():
             ssl_mode = "require"
 
             async def _creator():
-                conn = await asyncpg.connect(
+                return await asyncpg.connect(
                     host=_host,
                     port=_port,
                     user=_user,
                     password=_password,
                     database=_database,
                     ssl=ssl_mode,
-                    statement_cache_size=0,
                     server_settings={
-                        'jit': 'off',
                         'application_name': 'IsThereADeal'
                     }
                 )
-                # Disable prepared statements at connection level
-                await conn.execute("DEALLOCATE ALL")
-                return conn
 
             _engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_creator,
-                pool_size=1,  # Vercel serverless: 1 connection per instance
-                max_overflow=0,  # No overflow for serverless
-                pool_pre_ping=False,  # Disable pre-ping to avoid extra queries
-                pool_recycle=300,  # Recycle every 5 min (pgbouncer friendly)
+                pool_size=5,  # Direct connection can handle more
+                max_overflow=10,
+                pool_pre_ping=True,
+                pool_recycle=3600,
                 echo=settings.APP_ENV == "development",
-                connect_args={
-                    "prepared_statement_cache_size": 0,
-                },
-                execution_options={
-                    "compiled_cache": None,  # Disable SQLAlchemy query cache
-                }
             )
         _session_factory = async_sessionmaker(
             _engine,

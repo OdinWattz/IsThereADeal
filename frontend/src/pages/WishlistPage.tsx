@@ -20,12 +20,14 @@ export function WishlistPage() {
   const [steamInput, setSteamInput] = useState('')
   const [importProgress, setImportProgress] = useState(0)
   const [importStartTime, setImportStartTime] = useState<number | null>(null)
+  const [page, setPage] = useState(0)
+  const ITEMS_PER_PAGE = 50
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />
 
   const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['wishlist'],
-    queryFn: () => getWishlist(50, 0), // Load max 50 games to avoid timeout
+    queryKey: ['wishlist', page],
+    queryFn: () => getWishlist(ITEMS_PER_PAGE, page * ITEMS_PER_PAGE),
     staleTime: 0, // Always fetch fresh data (no caching for now)
     refetchOnMount: 'always', // Force refetch every time
     refetchOnWindowFocus: false,
@@ -77,6 +79,7 @@ export function WishlistPage() {
       }
 
       qc.invalidateQueries({ queryKey: ['wishlist'] })
+      setPage(0) // Go back to first page after import
 
       // Reset timer
       setTimeout(() => setImportStartTime(null), 500)
@@ -163,6 +166,11 @@ export function WishlistPage() {
     return filtered
   }, [items, sortBy, filterOnSale, filterTargetMet])
 
+  // Reset to page 1 when filters or sort changes
+  useEffect(() => {
+    setPage(0)
+  }, [sortBy, filterOnSale, filterTargetMet])
+
   const targetMetCount = items.filter((item) => {
     const best = item.game.best_price
     const target = item.target_price
@@ -187,8 +195,7 @@ export function WishlistPage() {
             Verlanglijst
           </h1>
           <p className="text-gray-400 text-sm sm:text-base">
-            {items.length} game{items.length !== 1 ? 's' : ''} getoond
-            {items.length >= 50 && <span className="ml-2 text-yellow-400">• Eerste 50 games getoond (performance)</span>}
+            {items.length} game{items.length !== 1 ? 's' : ''} getoond (pagina {page + 1})
             {targetMetCount > 0 && (
               <span className="ml-2 text-green-400">• {targetMetCount} op doelprijs!</span>
             )}
@@ -428,6 +435,31 @@ export function WishlistPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!isLoading && items.length > 0 && (
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0 || isRefetching}
+            className="px-4 py-2 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Vorige
+          </button>
+
+          <span className="text-gray-400 text-sm">
+            Pagina {page + 1}
+          </span>
+
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={items.length < ITEMS_PER_PAGE || isRefetching}
+            className="px-4 py-2 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Volgende →
+          </button>
         </div>
       )}
 

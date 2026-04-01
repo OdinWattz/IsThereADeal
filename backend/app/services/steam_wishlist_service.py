@@ -81,14 +81,21 @@ async def fetch_steam_wishlist(steam_id: str) -> List[str]:
     async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
         try:
             resp = await client.get(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
             })
 
             print(f"[Steam Wishlist] Status: {resp.status_code}, URL: {url}")
             print(f"[Steam Wishlist] Response length: {len(resp.text)}")
+            print(f"[Steam Wishlist] Response preview: {resp.text[:200]}")
 
             if resp.status_code == 403:
                 print(f"[Steam Wishlist] 403 Forbidden - Profile or wishlist is private")
+                return []
+
+            if resp.status_code == 404:
+                print(f"[Steam Wishlist] 404 Not Found - Invalid Steam ID or profile not found")
                 return []
 
             resp.raise_for_status()
@@ -98,12 +105,18 @@ async def fetch_steam_wishlist(steam_id: str) -> List[str]:
                 print(f"[Steam Wishlist] Empty response - wishlist is empty or private")
                 return []
 
-            data = resp.json()
+            # Try to parse JSON
+            try:
+                data = resp.json()
+            except Exception as json_err:
+                print(f"[Steam Wishlist] Failed to parse JSON: {json_err}")
+                print(f"[Steam Wishlist] Response: {resp.text[:500]}")
+                return []
 
             # Wishlist data is a dict with app IDs as keys
             if isinstance(data, dict):
                 app_ids = list(data.keys())
-                print(f"[Steam Wishlist] Found {len(app_ids)} games")
+                print(f"[Steam Wishlist] Found {len(app_ids)} games: {app_ids[:10]}")
                 return app_ids
             else:
                 print(f"[Steam Wishlist] Unexpected response format: {type(data)}")
@@ -114,6 +127,8 @@ async def fetch_steam_wishlist(steam_id: str) -> List[str]:
             return []
         except Exception as e:
             print(f"[Steam Wishlist] Failed to fetch: {type(e).__name__}: {e}")
+            import traceback
+            print(f"[Steam Wishlist] Traceback: {traceback.format_exc()}")
             return []
 
 
@@ -143,15 +158,18 @@ async def import_steam_wishlist(user_input: str) -> Dict[str, Any]:
         }
 
     # Fetch wishlist
+    print(f"[Import] Fetching wishlist for Steam ID: {steam_id}")
     app_ids = await fetch_steam_wishlist(steam_id)
 
     if not app_ids:
+        print(f"[Import] No games found in wishlist for Steam ID: {steam_id}")
         return {
             "success": False,
             "steam_id": steam_id,
-            "error": "Kon wishlist niet ophalen. Mogelijke oorzaken: 1) Wishlist is leeg, 2) Wishlist privacy staat op Private/Friends Only (moet Public zijn), 3) Verkeerd Steam ID. Check je privacy instellingen: steamcommunity.com/my/edit/settings → Game Details → My wishlist → Public"
+            "error": f"Kon geen games vinden in je Steam wishlist (Steam ID: {steam_id}). Mogelijke oorzaken:\n\n1) Je wishlist is leeg\n2) Je wishlist privacy staat op 'Private' of 'Friends Only' (moet 'Public' zijn)\n3) Verkeerd Steam ID/profiel\n\nControleer je privacy instellingen op:\nsteamcommunity.com/my/edit/settings → Game Details → My wishlist → Public"
         }
 
+    print(f"[Import] Successfully found {len(app_ids)} games in wishlist")
     return {
         "success": True,
         "steam_id": steam_id,

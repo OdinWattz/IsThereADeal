@@ -198,6 +198,9 @@ async def import_from_steam(
     imported = 0
     skipped = 0
     failed = 0
+    failed_games = []  # Track which games failed
+
+    print(f"[Import] Processing {len(app_ids)} games from Steam wishlist")
 
     for app_id in app_ids:
         try:
@@ -211,6 +214,7 @@ async def import_from_steam(
                 )
             )
             if existing.scalar_one_or_none():
+                print(f"[Import] Skipping {app_id} - already in wishlist")
                 skipped += 1
                 continue
 
@@ -222,12 +226,16 @@ async def import_from_steam(
 
             if not game:
                 # Fetch game data from Steam
+                print(f"[Import] Fetching game data for {app_id}")
                 game = await upsert_game_and_prices(db, app_id, include_key_resellers=False)
                 if not game:
+                    print(f"[Import] Failed to fetch game {app_id} - game not found on Steam")
+                    failed_games.append(app_id)
                     failed += 1
                     continue
                 # Commit the new game immediately
                 await db.commit()
+                print(f"[Import] Successfully added game {game.name} ({app_id}) to database")
 
             # Add to wishlist
             wishlist_item = WishlistItem(
@@ -238,14 +246,22 @@ async def import_from_steam(
             db.add(wishlist_item)
             # Commit each wishlist item immediately to prevent loss on error
             await db.commit()
+            print(f"[Import] Added {game.name} to wishlist")
             imported += 1
 
         except Exception as e:
-            print(f"[Steam Import] Failed to import {app_id}: {e}")
+            print(f"[Steam Import] ERROR importing {app_id}: {type(e).__name__}: {e}")
+            failed_games.append(app_id)
             # Rollback the failed transaction
-            await db.rollback()
+            try:
+                await db.rollback()
+            except:
+                pass
             failed += 1
             continue
+
+    if failed_games:
+        print(f"[Import] Failed games: {', '.join(failed_games[:10])}{'...' if len(failed_games) > 10 else ''}")
 
     message = f"✅ {imported} games toegevoegd"
     if skipped > 0:

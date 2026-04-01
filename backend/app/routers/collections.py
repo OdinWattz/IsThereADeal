@@ -182,6 +182,8 @@ async def add_game_to_collection(
             game = await upsert_game_and_prices(db, item_data.steam_appid, include_key_resellers=False)
             if not game:
                 raise HTTPException(status_code=404, detail="Game not found")
+            # Commit the new game immediately so it's available for the collection item
+            await db.commit()
         game_id = game.id
 
     if not game_id:

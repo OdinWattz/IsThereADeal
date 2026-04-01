@@ -53,13 +53,15 @@ export function WishlistPage() {
   const steamImportMutation = useMutation({
     mutationFn: (input: string) => importSteamWishlist(input),
     onSuccess: (data) => {
-      toast.success(data.message)
+      toast.success(data.message, { duration: 5000 })
       setShowSteamImport(false)
       setSteamInput('')
       qc.invalidateQueries({ queryKey: ['wishlist'] })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Import mislukt')
+      const errorMsg = error.response?.data?.detail || 'Import mislukt'
+      console.error('Steam import error:', error)
+      toast.error(errorMsg, { duration: 8000 })
     },
   })
 

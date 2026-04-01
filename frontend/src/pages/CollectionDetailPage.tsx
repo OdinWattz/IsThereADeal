@@ -34,8 +34,9 @@ export function CollectionDetailPage() {
       setSearchResults([])
     },
     onError: (error: any) => {
+      console.error('Add game to collection error:', error)
       const message = error.response?.data?.detail || 'Kon game niet toevoegen'
-      toast.error(message)
+      toast.error(message, { duration: 5000 })
     },
   })
 

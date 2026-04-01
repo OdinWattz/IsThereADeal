@@ -20,6 +20,10 @@ async def get_wishlist(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    import time
+    start_time = time.time()
+    print(f"[Wishlist] Fetching wishlist for user {current_user.id} ({current_user.username})")
+
     result = await db.execute(
         select(WishlistItem)
         .where(WishlistItem.user_id == current_user.id)
@@ -29,6 +33,9 @@ async def get_wishlist(
         .order_by(WishlistItem.added_at.desc())
     )
     items = result.scalars().all()
+
+    query_time = time.time() - start_time
+    print(f"[Wishlist] Query took {query_time:.2f}s, found {len(items)} items")
 
     enriched = []
     for item in items:
@@ -40,6 +47,9 @@ async def get_wishlist(
             "game": _enrich_game(item.game),
         }
         enriched.append(WishlistItemOut(**item_dict))
+
+    total_time = time.time() - start_time
+    print(f"[Wishlist] Total processing time: {total_time:.2f}s for {len(enriched)} items")
     return enriched
 
 

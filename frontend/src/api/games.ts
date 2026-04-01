@@ -184,9 +184,11 @@ export const updateTargetPrice = (id: number, target_price: number) =>
 export interface SteamImportResult {
   success: boolean
   imported: number
-  skipped: number
   failed: number
   total: number
+  already_imported: number
+  remaining: number
+  batch_size: number
   message: string
 }
 

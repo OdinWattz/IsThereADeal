@@ -5,6 +5,7 @@ import { SearchBar } from '../components/SearchBar'
 import { ArrowLeftRight, X, Plus, ExternalLink, Award, Star, Users } from 'lucide-react'
 import type { Game } from '../api/games'
 import api from '../api/client'
+import SEO from '../components/SEO'
 
 export function ComparePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -43,6 +44,13 @@ export function ComparePage() {
   const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
 
   return (
+    <>
+      <SEO
+        title="Games Vergelijken - Vergelijk Prijzen en Specs"
+        description="Vergelijk tot 4 games naast elkaar. Zie prijzen, specs, reviews en scores in één overzicht. Vind de beste game voor jou."
+        keywords="games vergelijken, game comparison, vergelijk games, game specs, game prijzen vergelijken, compare games"
+        url="https://serpodin.nl/compare"
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
       <div className="mb-6">
@@ -221,5 +229,6 @@ export function ComparePage() {
         </div>
       )}
     </div>
+    </>
   )
 }

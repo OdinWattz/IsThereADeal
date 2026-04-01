@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getFreeGames } from '../api/games'
 import { Link } from 'react-router-dom'
 import { Gift, ExternalLink } from 'lucide-react'
+import SEO from '../components/SEO'
 
 export function FreeGamesPage() {
   const { data: freeGames = [], isLoading } = useQuery({
@@ -11,6 +12,13 @@ export function FreeGamesPage() {
   })
 
   return (
+    <>
+      <SEO
+        title="Gratis Games - Free-to-Play & Tijdelijke Gratis Aanbiedingen"
+        description="Ontdek gratis games van verschillende platforms. Free-to-play games en tijdelijke gratis aanbiedingen. Claim nu je gratis games!"
+        keywords="gratis games, free games, free to play, gratis pc games, free games steam, gratis game aanbiedingen, claim gratis games"
+        url="https://serpodin.nl/free"
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
@@ -129,5 +137,6 @@ export function FreeGamesPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

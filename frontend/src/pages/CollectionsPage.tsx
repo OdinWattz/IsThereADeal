@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FolderOpen, Plus, Trash2, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import SEO from '../components/SEO'
 
 export function CollectionsPage() {
   const queryClient = useQueryClient()
@@ -59,6 +60,13 @@ export function CollectionsPage() {
   }
 
   return (
+    <>
+      <SEO
+        title="Mijn Collecties - Organiseer je Game Library"
+        description="Maak custom game collecties en organiseer je library. Groepeer games per genre, serie of interesse."
+        keywords="game collecties, game library, organiseer games, game groepen"
+        url="https://serpodin.nl/collections"
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -305,5 +313,6 @@ export function CollectionsPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

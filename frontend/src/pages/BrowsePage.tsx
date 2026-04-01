@@ -5,6 +5,7 @@ import { Filter, Search, Tag, Award, Star, X, Eye } from 'lucide-react'
 import type { Game } from '../api/games'
 import api from '../api/client'
 import { QuickViewModal } from '../components/QuickViewModal'
+import SEO from '../components/SEO'
 
 const SORT_OPTIONS = [
   { value: 'name', label: 'Naam (A-Z)' },
@@ -65,6 +66,13 @@ export function BrowsePage() {
   const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
 
   return (
+    <>
+      <SEO
+        title="Browse Games - Ontdek Game Deals met Filters"
+        description="Doorzoek duizenden games met geavanceerde filters. Filter op prijs, korting, genre en score. Vind exact de game die je zoekt met de beste deals."
+        keywords="browse games, game filters, zoek games, games op prijs, games op korting, filter games, gratis games"
+        url="https://serpodin.nl/browse"
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
       <div className="mb-6">
@@ -317,5 +325,6 @@ export function BrowsePage() {
         />
       )}
     </div>
+    </>
   )
 }

@@ -211,7 +211,8 @@ async def import_from_steam(
     if not user_input:
         raise HTTPException(status_code=400, detail="Steam ID, profile URL, or vanity name required")
 
-    # RATE LIMIT PROTECTION: Add 3 second delay between imports
+    # RATE LIMIT PROTECTION: Add 1 second delay between imports
+    # (Cache makes this mostly unnecessary, but prevents spam)
     import asyncio
     import time
 
@@ -221,9 +222,9 @@ async def import_from_steam(
     last_import = import_from_steam._last_import_times.get(current_user.id, 0)
     time_since_last = time.time() - last_import
 
-    if time_since_last < 3:
-        wait_time = 3 - time_since_last
-        print(f"[Import] Rate limiting: waiting {wait_time:.1f}s before fetching Steam wishlist")
+    if time_since_last < 1:
+        wait_time = 1 - time_since_last
+        print(f"[Import] Cooldown: waiting {wait_time:.1f}s")
         await asyncio.sleep(wait_time)
 
     # Import wishlist from Steam
@@ -252,8 +253,8 @@ async def import_from_steam(
     # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
     # Optimized but sequential (DB session issues prevent true parallel)
     # Each game: ~2-3s (APIs already parallel within upsert_game_and_prices)
-    # With rate limiting delays: 5 games = ~15-18s (safe buffer for 30s limit)
-    BATCH_SIZE = 5
+    # With cache: 3s cooldown + (10 × 2.5s) = ~28s (safe for 30s limit)
+    BATCH_SIZE = 10
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them

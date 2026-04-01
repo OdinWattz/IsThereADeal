@@ -109,9 +109,9 @@ export function WishlistPage() {
     if (steamImportMutation.isPending && importStartTime) {
       const interval = setInterval(() => {
         const elapsed = Date.now() - importStartTime
-        // Progress up to 95% over 18 seconds
-        // 5 games sequentially with parallel APIs + rate limiting = ~15-18s
-        const progress = Math.min((elapsed / 18000) * 100, 95)
+        // Progress up to 95% over 25 seconds
+        // 10 games sequentially with parallel APIs + cache = ~22-25s
+        const progress = Math.min((elapsed / 25000) * 100, 95)
         setImportProgress(progress)
       }, 100)
 
@@ -506,7 +506,7 @@ export function WishlistPage() {
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
               <p className="text-blue-300 text-xs mb-2">
-                ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (5 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
+                ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (10 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
               <p className="text-green-400 text-xs">
                 🚀 <strong>Anti rate-limit:</strong> Je wishlist wordt 10 min gecached. Daarna kun je onbeperkt importeren zonder Steam opnieuw te vragen!
@@ -519,7 +519,7 @@ export function WishlistPage() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Importeren...</span>
                   <span className="text-xs text-gray-500">
-                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~18s max`}
+                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s max`}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-[#1e2235] rounded-full overflow-hidden">

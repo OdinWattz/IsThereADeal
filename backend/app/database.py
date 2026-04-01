@@ -59,15 +59,19 @@ def _get_engine():
                     database=_database,
                     ssl=ssl_mode,
                     statement_cache_size=0,
+                    server_settings={
+                        'jit': 'off',
+                        'application_name': 'IsThereADeal'
+                    }
                 )
 
             _engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_creator,
-                pool_size=10,
-                max_overflow=20,
+                pool_size=1,  # Vercel serverless: 1 connection per instance
+                max_overflow=0,  # No overflow for serverless
                 pool_pre_ping=True,
-                pool_recycle=3600,
+                pool_recycle=300,  # Recycle every 5 min (pgbouncer friendly)
                 echo=settings.APP_ENV == "development",
             )
         _session_factory = async_sessionmaker(

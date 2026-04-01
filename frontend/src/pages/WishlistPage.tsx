@@ -26,9 +26,10 @@ export function WishlistPage() {
   const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['wishlist'],
     queryFn: getWishlist,
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    refetchOnMount: true, // Always refetch on mount to avoid 0 games issue
-    refetchOnWindowFocus: false, // Don't refetch on every window focus
+    staleTime: 0, // Always fetch fresh data (no caching for now)
+    refetchOnMount: 'always', // Force refetch every time
+    refetchOnWindowFocus: false,
+    gcTime: 0, // Don't cache failed/empty responses (was cacheTime in older versions)
   })
 
   const handleRefresh = async () => {

@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { getCollection, addGameToCollection, removeGameFromCollection, searchGames } from '../api/games'
+import { getCollection, addGameToCollection, removeGameFromCollection, searchGames, getWishlist } from '../api/games'
 import { useState } from 'react'
-import { ArrowLeft, Plus, Trash2, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Search, Heart } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export function CollectionDetailPage() {
@@ -11,9 +11,11 @@ export function CollectionDetailPage() {
   const queryClient = useQueryClient()
 
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showWishlistModal, setShowWishlistModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searching, setSearching] = useState(false)
+  const [selectedWishlistGames, setSelectedWishlistGames] = useState<Set<string>>(new Set())
 
   const collectionId = parseInt(id || '0')
 
@@ -21,6 +23,11 @@ export function CollectionDetailPage() {
     queryKey: ['collection', collectionId],
     queryFn: () => getCollection(collectionId),
     enabled: collectionId > 0,
+  })
+
+  const { data: wishlistItems = [] } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: getWishlist,
   })
 
   const addGameMutation = useMutation({
@@ -74,6 +81,52 @@ export function CollectionDetailPage() {
     if (confirm(`"${gameName}" verwijderen uit deze collectie?`)) {
       removeGameMutation.mutate(itemId)
     }
+  }
+
+  const handleToggleWishlistGame = (steamAppid: string) => {
+    const newSelected = new Set(selectedWishlistGames)
+    if (newSelected.has(steamAppid)) {
+      newSelected.delete(steamAppid)
+    } else {
+      newSelected.add(steamAppid)
+    }
+    setSelectedWishlistGames(newSelected)
+  }
+
+  const handleAddSelectedWishlistGames = async () => {
+    if (selectedWishlistGames.size === 0) {
+      toast.error('Selecteer eerst games')
+      return
+    }
+
+    let added = 0
+    let failed = 0
+
+    for (const steamAppid of selectedWishlistGames) {
+      try {
+        await addGameToCollection(collectionId, steamAppid)
+        added++
+      } catch (error: any) {
+        if (error.response?.data?.detail?.includes('already in collection')) {
+          // Skip, already in collection
+        } else {
+          failed++
+        }
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['collection', collectionId] })
+    queryClient.invalidateQueries({ queryKey: ['collections'] })
+
+    if (added > 0) {
+      toast.success(`${added} game${added !== 1 ? 's' : ''} toegevoegd!`)
+    }
+    if (failed > 0) {
+      toast.error(`${failed} game${failed !== 1 ? 's' : ''} mislukt`)
+    }
+
+    setSelectedWishlistGames(new Set())
+    setShowWishlistModal(false)
   }
 
   if (isLoading) {
@@ -213,6 +266,113 @@ export function CollectionDetailPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Wishlist Import Modal */}
+      {showWishlistModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto border"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-primary)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                Games van Wishlist Toevoegen
+              </h2>
+              <button
+                onClick={() => {
+                  setShowWishlistModal(false)
+                  setSelectedWishlistGames(new Set())
+                }}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {wishlistItems.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)' }}>Je wishlist is leeg</p>
+            ) : (
+              <>
+                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                  Selecteer games om toe te voegen aan deze collectie ({selectedWishlistGames.size} geselecteerd)
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  {wishlistItems.map((item: any) => {
+                    const isSelected = selectedWishlistGames.has(item.game.steam_appid)
+                    const isInCollection = collection?.items.some((ci: any) => ci.game.steam_appid === item.game.steam_appid)
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => !isInCollection && handleToggleWishlistGame(item.game.steam_appid)}
+                        className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                          isInCollection
+                            ? 'opacity-50 cursor-not-allowed border-gray-600'
+                            : isSelected
+                            ? 'border-purple-500 cursor-pointer'
+                            : 'border-transparent hover:border-purple-400 cursor-pointer'
+                        }`}
+                      >
+                        <img
+                          src={item.game.header_image}
+                          alt={item.game.name}
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-2 bg-[#0d0f1a]">
+                          <p className="text-sm font-medium text-white line-clamp-1">
+                            {item.game.name}
+                          </p>
+                          {isInCollection && (
+                            <p className="text-xs text-gray-500 mt-1">Al in collectie</p>
+                          )}
+                        </div>
+                        {isSelected && !isInCollection && (
+                          <div className="absolute top-2 right-2 bg-purple-600 rounded-full p-1">
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowWishlistModal(false)
+                      setSelectedWishlistGames(new Set())
+                    }}
+                    className="flex-1 px-4 py-2 rounded-lg border transition-colors"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    onClick={handleAddSelectedWishlistGames}
+                    disabled={selectedWishlistGames.size === 0}
+                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {selectedWishlistGames.size} game{selectedWishlistGames.size !== 1 ? 's' : ''} toevoegen
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 

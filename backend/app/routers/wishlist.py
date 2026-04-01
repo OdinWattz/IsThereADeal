@@ -220,8 +220,9 @@ async def import_from_steam(
         }
 
     # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s limit)
-    # Process max 15 games per run to avoid timeout
-    BATCH_SIZE = 15
+    # Process max 10 games per run to avoid timeout (was 15, but too slow)
+    # Each game needs: Steam API + ITAD + CheapShark = ~2-3s per game
+    BATCH_SIZE = 10
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them

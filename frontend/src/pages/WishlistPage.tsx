@@ -27,6 +27,8 @@ export function WishlistPage() {
     queryKey: ['wishlist'],
     queryFn: getWishlist,
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    refetchOnMount: true, // Always refetch on mount to avoid 0 games issue
+    refetchOnWindowFocus: false, // Don't refetch on every window focus
   })
 
   const handleRefresh = async () => {
@@ -103,7 +105,8 @@ export function WishlistPage() {
     if (steamImportMutation.isPending && importStartTime) {
       const interval = setInterval(() => {
         const elapsed = Date.now() - importStartTime
-        const progress = Math.min((elapsed / 25000) * 100, 95) // Max 95% before completion
+        // Progress up to 95% over 28 seconds (just before 30s timeout)
+        const progress = Math.min((elapsed / 28000) * 100, 95)
         setImportProgress(progress)
       }, 100)
 
@@ -465,7 +468,7 @@ export function WishlistPage() {
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
               <p className="text-blue-300 text-xs">
-                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (15 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
+                ⚡ <strong>Let op:</strong> Grote wishlists worden in batches geïmporteerd (10 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
             </div>
 
@@ -475,7 +478,7 @@ export function WishlistPage() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Importeren...</span>
                   <span className="text-xs text-gray-500">
-                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s`}
+                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~28s`}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-[#1e2235] rounded-full overflow-hidden">

@@ -163,8 +163,8 @@ export const getMe = () =>
 
 // ── Wishlist ──────────────────────────────────────────────────────────────────
 
-export const getWishlist = () =>
-  api.get<WishlistItem[]>('/wishlist').then((r) => r.data)
+export const getWishlist = (limit = 100, offset = 0) =>
+  api.get<WishlistItem[]>('/wishlist', { params: { limit, offset } }).then((r) => r.data)
 
 export const addToWishlist = (gameIdOrAppid: number | string, target_price?: number) => {
   const payload = typeof gameIdOrAppid === 'string'

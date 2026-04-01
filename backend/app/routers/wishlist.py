@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -19,10 +19,12 @@ router = APIRouter(prefix="/api/wishlist", tags=["wishlist"])
 async def get_wishlist(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    limit: int = Query(100, ge=1, le=500, description="Max items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
 ):
     import time
     start_time = time.time()
-    print(f"[Wishlist] Fetching wishlist for user {current_user.id} ({current_user.username})")
+    print(f"[Wishlist] Fetching wishlist for user {current_user.id} ({current_user.username}), limit={limit}, offset={offset}")
 
     result = await db.execute(
         select(WishlistItem)
@@ -31,6 +33,8 @@ async def get_wishlist(
             selectinload(WishlistItem.game).selectinload(Game.prices)
         )
         .order_by(WishlistItem.added_at.desc())
+        .limit(limit)
+        .offset(offset)
     )
     items = result.scalars().all()
 

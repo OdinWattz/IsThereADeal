@@ -26,7 +26,7 @@ export function ProfilePage() {
 
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
-    queryFn: getWishlist,
+    queryFn: () => getWishlist(50, 0),
     staleTime: 0,
     gcTime: 0,
   })

@@ -25,7 +25,7 @@ export function WishlistPage() {
 
   const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['wishlist'],
-    queryFn: getWishlist,
+    queryFn: () => getWishlist(50, 0), // Load max 50 games to avoid timeout
     staleTime: 0, // Always fetch fresh data (no caching for now)
     refetchOnMount: 'always', // Force refetch every time
     refetchOnWindowFocus: false,
@@ -187,7 +187,8 @@ export function WishlistPage() {
             Verlanglijst
           </h1>
           <p className="text-gray-400 text-sm sm:text-base">
-            {items.length} game{items.length !== 1 ? 's' : ''} bijgehouden
+            {items.length} game{items.length !== 1 ? 's' : ''} getoond
+            {items.length >= 50 && <span className="ml-2 text-yellow-400">• Eerste 50 games getoond (performance)</span>}
             {targetMetCount > 0 && (
               <span className="ml-2 text-green-400">• {targetMetCount} op doelprijs!</span>
             )}

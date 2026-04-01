@@ -51,7 +51,7 @@ def _get_engine():
             ssl_mode = "require"
 
             async def _creator():
-                return await asyncpg.connect(
+                conn = await asyncpg.connect(
                     host=_host,
                     port=_port,
                     user=_user,
@@ -64,15 +64,24 @@ def _get_engine():
                         'application_name': 'IsThereADeal'
                     }
                 )
+                # Disable prepared statements at connection level
+                await conn.execute("DEALLOCATE ALL")
+                return conn
 
             _engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_creator,
                 pool_size=1,  # Vercel serverless: 1 connection per instance
                 max_overflow=0,  # No overflow for serverless
-                pool_pre_ping=True,
+                pool_pre_ping=False,  # Disable pre-ping to avoid extra queries
                 pool_recycle=300,  # Recycle every 5 min (pgbouncer friendly)
                 echo=settings.APP_ENV == "development",
+                connect_args={
+                    "prepared_statement_cache_size": 0,
+                },
+                execution_options={
+                    "compiled_cache": None,  # Disable SQLAlchemy query cache
+                }
             )
         _session_factory = async_sessionmaker(
             _engine,

@@ -190,13 +190,22 @@ export function CollectionDetailPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Game Toevoegen</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowWishlistModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <Heart size={20} />
+              <span className="hidden sm:inline">Van Wishlist</span>
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Game Toevoegen</span>
+            </button>
+          </div>
         </div>
       </div>
 

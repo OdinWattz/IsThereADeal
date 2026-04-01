@@ -159,6 +159,28 @@ async def update_target_price(
     )
 
 
+@router.post("/test-steam")
+async def test_steam_wishlist(
+    steam_input: Dict[str, Any],
+    _current_user: User = Depends(get_current_user),
+):
+    """Test if a Steam wishlist is accessible (for debugging)."""
+    user_input = steam_input.get("steam_input", "").strip()
+
+    if not user_input:
+        raise HTTPException(status_code=400, detail="Steam ID required")
+
+    result = await import_steam_wishlist(user_input)
+
+    return {
+        "test": True,
+        "input": user_input,
+        "result": result,
+        "accessible": result["success"],
+        "game_count": result.get("count", 0) if result["success"] else 0,
+    }
+
+
 @router.post("/import-steam")
 async def import_from_steam(
     steam_input: Dict[str, Any],

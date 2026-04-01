@@ -220,10 +220,10 @@ async def import_from_steam(
         }
 
     # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
-    # Process max 5 games per run to avoid timeout (was 10, still too slow)
-    # Each game needs: Steam API + ITAD + CheapShark = ~3-5s per game
-    # 5 games = 15-25s = Safe for Vercel's 30s limit with overhead
-    BATCH_SIZE = 5
+    # With PARALLEL processing: All games fetched at once!
+    # 15 games fetched in parallel = ~3-5s (one API round-trip)
+    # + DB operations ~2-3s = ~8s total (well under 30s limit)
+    BATCH_SIZE = 15
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them
@@ -246,55 +246,91 @@ async def import_from_steam(
           f"To process now: {len(app_ids_to_process)}, Remaining: {remaining}")
 
     # Import games into user's wishlist
+    # PARALLEL PROCESSING - fetch all games at once for speed!
     imported = 0
     failed = 0
     failed_games = []  # Track which games failed
 
-    print(f"[Import] Processing batch of {len(app_ids_to_process)} games")
+    print(f"[Import] Processing batch of {len(app_ids_to_process)} games IN PARALLEL")
 
+    # Step 1: Check which games already exist in DB (batch query)
+    existing_games_result = await db.execute(
+        select(Game).where(Game.steam_appid.in_(app_ids_to_process))
+    )
+    existing_games = {g.steam_appid: g for g in existing_games_result.scalars().all()}
+    print(f"[Import] Found {len(existing_games)} games already in database")
+
+    # Step 2: Fetch missing games in PARALLEL
+    missing_app_ids = [aid for aid in app_ids_to_process if aid not in existing_games]
+
+    if missing_app_ids:
+        print(f"[Import] Fetching {len(missing_app_ids)} new games in parallel...")
+
+        # Create coroutines for all games
+        fetch_tasks = [
+            upsert_game_and_prices(db, app_id, include_key_resellers=False)
+            for app_id in missing_app_ids
+        ]
+
+        # Execute ALL in parallel with asyncio.gather
+        import asyncio
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+
+        # Process results
+        for app_id, result in zip(missing_app_ids, results):
+            if isinstance(result, Exception):
+                print(f"[Import] Failed to fetch {app_id}: {result}")
+                failed_games.append(app_id)
+                failed += 1
+            elif result is None:
+                print(f"[Import] Game {app_id} not found")
+                failed_games.append(app_id)
+                failed += 1
+            else:
+                existing_games[app_id] = result
+                print(f"[Import] Fetched {result.name}")
+
+        # Batch commit all new games at once
+        if len(existing_games) > len(existing_games_result.scalars().all()):
+            await db.commit()
+            print(f"[Import] Committed {len(missing_app_ids) - failed} new games to database")
+
+    # Step 3: Add all games to wishlist in batch
     for app_id in app_ids_to_process:
-        try:
-            # Try to find or create game (no need to check wishlist, already pre-filtered)
-            game_result = await db.execute(
-                select(Game).where(Game.steam_appid == app_id)
-            )
-            game = game_result.scalar_one_or_none()
-
-            if not game:
-                # Fetch game data from Steam
-                print(f"[Import] Fetching game data for {app_id}")
-                game = await upsert_game_and_prices(db, app_id, include_key_resellers=False)
-                if not game:
-                    print(f"[Import] Failed to fetch game {app_id} - game not found on Steam")
-                    failed_games.append(app_id)
-                    failed += 1
-                    continue
-                # Commit the new game immediately
-                await db.commit()
-                print(f"[Import] Successfully added game {game.name} ({app_id}) to database")
-
-            # Add to wishlist
+        if app_id in existing_games:
+            game = existing_games[app_id]
             wishlist_item = WishlistItem(
                 user_id=current_user.id,
                 game_id=game.id,
                 target_price=None
             )
             db.add(wishlist_item)
-            # Commit each wishlist item immediately to prevent loss on error
-            await db.commit()
-            print(f"[Import] Added {game.name} to wishlist")
             imported += 1
 
-        except Exception as e:
-            print(f"[Steam Import] ERROR importing {app_id}: {type(e).__name__}: {e}")
-            failed_games.append(app_id)
-            # Rollback the failed transaction
-            try:
-                await db.rollback()
-            except:
-                pass
-            failed += 1
-            continue
+    # Final batch commit for all wishlist items
+    try:
+        await db.commit()
+        print(f"[Import] Added {imported} games to wishlist")
+    except Exception as e:
+        print(f"[Import] Error committing wishlist items: {e}")
+        await db.rollback()
+        # Try one by one as fallback
+        imported = 0
+        for app_id in app_ids_to_process:
+            if app_id in existing_games:
+                try:
+                    game = existing_games[app_id]
+                    wishlist_item = WishlistItem(
+                        user_id=current_user.id,
+                        game_id=game.id,
+                        target_price=None
+                    )
+                    db.add(wishlist_item)
+                    await db.commit()
+                    imported += 1
+                except:
+                    failed += 1
+                    failed_games.append(app_id)
 
     if failed_games:
         print(f"[Import] Failed games: {', '.join(failed_games[:10])}{'...' if len(failed_games) > 10 else ''}")

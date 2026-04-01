@@ -168,7 +168,10 @@ export function WishlistPage() {
     return best != null && target != null && best <= target
   }).length
 
-  const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
+  const fmt = (v?: number | null) => {
+    if (v == null || isNaN(v)) return '—'
+    return `€${v.toFixed(2).replace('.', ',')}`
+  }
 
   const getMaxDiscount = (prices: any[]) =>
     Math.max(...prices.map((p) => p.discount_percent || 0), 0)

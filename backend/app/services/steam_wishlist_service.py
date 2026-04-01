@@ -71,33 +71,65 @@ async def extract_steam_id_from_input(user_input: str) -> Optional[str]:
     return await get_steam_id_from_vanity_url(user_input)
 
 
-async def fetch_steam_wishlist(steam_id: str) -> List[str]:
+async def fetch_steam_wishlist(steam_id: str, retry_count: int = 0) -> List[str]:
     """
     Fetch a user's public Steam wishlist using Steam Web API.
     Returns list of app IDs.
 
     Note: Steam wishlist must be public for this to work.
     """
+    MAX_RETRIES = 3
+
     # FIRST: Try the official Steam Web API (most reliable)
     api_url = f"https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid={steam_id}"
 
-    async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
+    async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
         try:
-            print(f"[Steam API] Trying Steam Web API: {api_url}")
-            resp = await client.get(api_url)
+            print(f"[Steam API] Trying Steam Web API (attempt {retry_count + 1}/{MAX_RETRIES + 1}): {api_url}")
+            resp = await client.get(api_url, headers={
+                'User-Agent': 'IsThereADeal/1.0 (+https://github.com/your-repo)',
+            })
+
+            print(f"[Steam API] Status: {resp.status_code}, Response length: {len(resp.text)}")
+
+            # Handle rate limiting
+            if resp.status_code == 429:
+                if retry_count < MAX_RETRIES:
+                    wait_time = 2 ** (retry_count + 1)  # 2s, 4s, 8s
+                    print(f"[Steam API] RATE LIMITED (429)! Waiting {wait_time}s before retry...")
+                    import asyncio
+                    await asyncio.sleep(wait_time)
+                    return await fetch_steam_wishlist(steam_id, retry_count + 1)
+                else:
+                    print(f"[Steam API] Max retries reached after rate limiting")
+                    return []
 
             if resp.status_code == 200:
                 data = resp.json()
                 items = data.get("response", {}).get("items", [])
+
+                print(f"[Steam API] Response keys: {data.get('response', {}).keys()}")
+                print(f"[Steam API] Items count: {len(items)}")
+
                 if items:
                     app_ids = [str(item["appid"]) for item in items if "appid" in item]
                     print(f"[Steam API] ✓ SUCCESS! Found {len(app_ids)} games via Web API")
                     return app_ids
                 else:
-                    print(f"[Steam API] Web API returned empty items list")
+                    # Empty response might be soft rate limiting
+                    print(f"[Steam API] WARNING: Empty items list (possible soft rate limit)")
+                    if retry_count < MAX_RETRIES:
+                        wait_time = 2 ** (retry_count + 1)
+                        print(f"[Steam API] Retrying after {wait_time}s delay...")
+                        import asyncio
+                        await asyncio.sleep(wait_time)
+                        return await fetch_steam_wishlist(steam_id, retry_count + 1)
+                    print(f"[Steam API] Full response: {data}")
 
         except Exception as e:
             print(f"[Steam API] Web API failed: {type(e).__name__}: {e}")
+            import traceback
+            print(f"[Steam API] Traceback: {traceback.format_exc()}")
 
     # FALLBACK: Try the JSON wishlistdata endpoint
     urls = [
@@ -293,16 +325,16 @@ async def import_steam_wishlist(user_input: str) -> Dict[str, Any]:
             "success": False,
             "steam_id": steam_id,
             "error": f"Kon geen games vinden in je Steam wishlist (Steam ID: {steam_id}).\n\n"
-                     f"CONTROLEER DEZE 3 PRIVACY INSTELLINGEN:\n\n"
-                     f"1. Profiel Privacy → steamcommunity.com/my/edit/settings\n"
-                     f"   • My profile: Public\n"
-                     f"   • Game details: Public\n\n"
-                     f"2. Game Details Privacy → steamcommunity.com/my/edit/settings\n"
-                     f"   • My game details: Public\n\n"
-                     f"3. Wishlist Privacy → In je profiel settings\n"
-                     f"   • Wishlist must be visible\n\n"
-                     f"LET OP: Na het wijzigen van instellingen kan het 5-10 minuten duren voordat Steam de wijzigingen doorvoert!\n\n"
-                     f"Test of je wishlist publiek is: open https://steamcommunity.com/profiles/{steam_id}/wishlist/ in een incognito venster."
+                     f"MOGELIJKE OORZAKEN:\n\n"
+                     f"1. ⏱️ RATE LIMITING: Als je recent meerdere keren hebt geïmporteerd, blokkeert Steam tijdelijk je verzoeken.\n"
+                     f"   → OPLOSSING: Wacht 2-5 minuten en probeer opnieuw.\n\n"
+                     f"2. 🔒 PRIVACY: Je wishlist moet publiek zijn:\n"
+                     f"   • Ga naar steamcommunity.com/my/edit/settings\n"
+                     f"   • Zet 'My profile' op Public\n"
+                     f"   • Zet 'Game details' op Public\n"
+                     f"   • Wijzigingen kunnen 5-10 min duren\n\n"
+                     f"3. ✅ TEST: Open https://steamcommunity.com/profiles/{steam_id}/wishlist/ in incognito.\n"
+                     f"   Als je je wishlist ziet, is privacy OK en is het rate limiting."
         }
 
     print(f"[Import] Successfully found {len(app_ids)} games in wishlist")

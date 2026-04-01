@@ -211,7 +211,23 @@ async def import_from_steam(
     if not user_input:
         raise HTTPException(status_code=400, detail="Steam ID, profile URL, or vanity name required")
 
+    # RATE LIMIT PROTECTION: Add 3 second delay between imports
+    import asyncio
+    import time
+
+    if not hasattr(import_from_steam, '_last_import_times'):
+        import_from_steam._last_import_times = {}
+
+    last_import = import_from_steam._last_import_times.get(current_user.id, 0)
+    time_since_last = time.time() - last_import
+
+    if time_since_last < 3:
+        wait_time = 3 - time_since_last
+        print(f"[Import] Rate limiting: waiting {wait_time:.1f}s before fetching Steam wishlist")
+        await asyncio.sleep(wait_time)
+
     # Import wishlist from Steam
+    import_from_steam._last_import_times[current_user.id] = time.time()
     result = await import_steam_wishlist(user_input)
     print(f"[Import] Steam wishlist result: {result}")
 

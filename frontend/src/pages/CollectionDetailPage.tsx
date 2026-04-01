@@ -27,7 +27,7 @@ export function CollectionDetailPage() {
 
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
-    queryFn: getWishlist,
+    queryFn: () => getWishlist(50, 0),
   })
 
   const addGameMutation = useMutation({

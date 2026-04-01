@@ -91,7 +91,7 @@ async def add_to_wishlist(
             target_price=payload.target_price,
         )
         db.add(item)
-        await db.flush()
+        await db.commit()
 
         # Reload with relations
         result = await db.execute(
@@ -129,6 +129,7 @@ async def remove_from_wishlist(
     if not item:
         raise HTTPException(status_code=404, detail="Wishlist item not found")
     await db.delete(item)
+    await db.commit()
 
 
 @router.patch("/{item_id}/target-price", response_model=WishlistItemOut)
@@ -148,7 +149,7 @@ async def update_target_price(
         raise HTTPException(status_code=404, detail="Wishlist item not found")
 
     item.target_price = target_price
-    await db.flush()
+    await db.commit()
     return WishlistItemOut(
         id=item.id,
         game_id=item.game_id,
@@ -225,6 +226,7 @@ async def import_from_steam(
                 if not game:
                     failed += 1
                     continue
+                # Commit the new game immediately
                 await db.commit()
 
             # Add to wishlist
@@ -234,15 +236,16 @@ async def import_from_steam(
                 target_price=None
             )
             db.add(wishlist_item)
-            await db.flush()
+            # Commit each wishlist item immediately to prevent loss on error
+            await db.commit()
             imported += 1
 
         except Exception as e:
             print(f"[Steam Import] Failed to import {app_id}: {e}")
+            # Rollback the failed transaction
+            await db.rollback()
             failed += 1
             continue
-
-    await db.commit()
 
     message = f"✅ {imported} games toegevoegd"
     if skipped > 0:

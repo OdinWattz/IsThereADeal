@@ -26,7 +26,8 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
             hashed_password=hash_password(payload.password),
         )
         db.add(user)
-        await db.flush()
+        await db.commit()
+        await db.refresh(user)
         return user
     except HTTPException:
         raise
@@ -79,7 +80,8 @@ async def update_profile(
                 raise HTTPException(status_code=400, detail="Email already taken")
             current_user.email = update.email
 
-        await db.flush()
+        await db.commit()
+        await db.refresh(current_user)
         return current_user
     except HTTPException:
         raise
@@ -103,7 +105,7 @@ async def change_password(
 
     # Hash and update new password
     current_user.hashed_password = hash_password(data.new_password)
-    await db.flush()
+    await db.commit()
 
     return {"message": "Password changed successfully"}
 
@@ -124,6 +126,6 @@ async def delete_account(
 
     # Delete user (cascade will handle related records)
     await db.delete(current_user)
-    await db.flush()
+    await db.commit()
 
     return {"message": "Account deleted successfully"}

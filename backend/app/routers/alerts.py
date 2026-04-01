@@ -29,7 +29,7 @@ async def _check_and_fire_alert(alert: PriceAlert, db: AsyncSession) -> bool:
 
     alert.triggered_at = datetime.now(timezone.utc).replace(tzinfo=None)
     alert.is_active = False
-    await db.flush()
+    await db.commit()
 
     if alert.notify_email and alert.user and alert.user.email:
         await send_price_alert_email(
@@ -121,7 +121,8 @@ async def create_alert(
     alert.game = game
     alert.user = current_user
     db.add(alert)
-    await db.flush()
+    await db.commit()
+    await db.refresh(alert)
 
     # Immediate check: if the current price already meets the target, fire right away
     try:
@@ -213,7 +214,7 @@ async def toggle_alert(
     alert.is_active = not alert.is_active
     if alert.is_active:
         alert.triggered_at = None
-    await db.flush()
+    await db.commit()
 
     return PriceAlertOut(
         id=alert.id,

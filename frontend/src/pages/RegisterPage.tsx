@@ -21,8 +21,12 @@ function calculatePasswordStrength(password: string): { score: number; label: st
   if (/[0-9]/.test(password)) score += 1
   if (/[^a-zA-Z0-9]/.test(password)) score += 1
 
-  // Normalize to 0-4
-  score = Math.min(Math.floor(score / 2), 4)
+  // Map to 0-4 scale: 0-1pts=0, 2-3pts=1, 4pts=2, 5-6pts=3, 7pts=4
+  if (score <= 1) score = 0
+  else if (score <= 3) score = 1
+  else if (score === 4) score = 2
+  else if (score <= 6) score = 3
+  else score = 4
 
   const labels = ['', 'Zwak', 'Matig', 'Goed', 'Sterk']
   const colors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500']

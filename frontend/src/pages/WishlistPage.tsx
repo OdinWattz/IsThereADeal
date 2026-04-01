@@ -52,21 +52,6 @@ export function WishlistPage() {
     },
   })
 
-  // Progress timer effect
-  useEffect(() => {
-    if (steamImportMutation.isPending && importStartTime) {
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - importStartTime
-        const progress = Math.min((elapsed / 25000) * 100, 95) // Max 95% before completion
-        setImportProgress(progress)
-      }, 100)
-
-      return () => clearInterval(interval)
-    } else {
-      setImportProgress(0)
-    }
-  }, [steamImportMutation.isPending, importStartTime])
-
   const steamImportMutation = useMutation({
     mutationFn: (input: string) => {
       setImportStartTime(Date.now())
@@ -112,6 +97,21 @@ export function WishlistPage() {
       }
     },
   })
+
+  // Progress timer effect - must be after steamImportMutation declaration
+  useEffect(() => {
+    if (steamImportMutation.isPending && importStartTime) {
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - importStartTime
+        const progress = Math.min((elapsed / 25000) * 100, 95) // Max 95% before completion
+        setImportProgress(progress)
+      }, 100)
+
+      return () => clearInterval(interval)
+    } else {
+      setImportProgress(0)
+    }
+  }, [steamImportMutation.isPending, importStartTime])
 
   const processedItems = useMemo(() => {
     let filtered = [...items]

@@ -281,7 +281,13 @@ async def browse_all_deals(
 
     all_deals = []
 
-    async def fetch_page(page_num: int):
+    # NOTE: For high discount filters we fetch many CheapShark pages.
+    # Doing that fully in parallel can trigger timeouts / rate limiting and yield 0 results.
+    # Use bounded concurrency with a shared client for stability.
+    concurrency = 6 if pages_to_fetch >= 25 else 10
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def fetch_page(client: httpx.AsyncClient, page_num: int):
         params = {
             "sortBy": sort_by,
             "onSale": 1,
@@ -293,7 +299,7 @@ async def browse_all_deals(
         if store_id:
             params["storeID"] = store_id
 
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with semaphore:
             try:
                 resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
                 resp.raise_for_status()
@@ -301,9 +307,10 @@ async def browse_all_deals(
             except Exception:
                 return []
 
-    # Fetch multiple pages in parallel
-    tasks = [fetch_page(page * pages_to_fetch + i) for i in range(pages_to_fetch)]
-    pages_data = await asyncio.gather(*tasks)
+    # Fetch multiple pages with bounded parallelism
+    async with httpx.AsyncClient(timeout=15) as client:
+        tasks = [fetch_page(client, page * pages_to_fetch + i) for i in range(pages_to_fetch)]
+        pages_data = await asyncio.gather(*tasks)
 
     # Combine all pages
     for deals in pages_data:

@@ -15,12 +15,20 @@ const SORT_OPTIONS = [
   { value: 'reviews', label: 'Review Score' },
 ]
 
+const PAGE_SIZE = 100
+
+interface BrowseResponse {
+  items: Game[]
+  has_more: boolean
+}
+
 export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
   const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
+  const [page, setPage] = useState(Number(searchParams.get('page') || '0'))
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [quickViewAppid, setQuickViewAppid] = useState<string | null>(null)
@@ -32,19 +40,23 @@ export function BrowsePage() {
     if (maxPrice) params.max_price = maxPrice
     if (minDiscount) params.min_discount = minDiscount
     params.sort_by = sortBy
+    params.page = String(page)
+    params.limit = String(PAGE_SIZE)
     return params
   }
 
   const params = buildParams()
 
-  const { data: allGames = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['browse', params],
     queryFn: async () => {
-      const response = await api.get<Game[]>('/games/browse', { params })
+      const response = await api.get<BrowseResponse>('/games/browse', { params })
       return response.data
     },
     staleTime: 1000 * 60 * 5,
   })
+  const allGames = data?.items || []
+  const hasMore = data?.has_more || false
 
   // Client-side filter for text search (CheapShark API doesn't support it)
   const games = searchQuery
@@ -58,6 +70,7 @@ export function BrowsePage() {
     setMaxPrice('')
     setMinDiscount('')
     setSortBy('name')
+    setPage(0)
     setSearchQuery('')
     setSearchParams({})
   }
@@ -189,7 +202,10 @@ export function BrowsePage() {
           </div>
 
           <button
-            onClick={() => setSearchParams(buildParams())}
+            onClick={() => {
+              setPage(0)
+              setSearchParams({ ...buildParams(), page: '0', limit: String(PAGE_SIZE) })
+            }}
             className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
             Filters Toepassen
@@ -200,7 +216,7 @@ export function BrowsePage() {
       {/* Sort & Results Count */}
       <div className="mb-6 flex items-center justify-between">
         <p className="text-gray-400 text-sm">
-          {isLoading ? 'Laden...' : `${games.length} resultaten`}
+          {isLoading ? 'Laden...' : `${games.length} resultaten op pagina ${page + 1}`}
         </p>
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-400 hidden sm:inline">Sorteer:</label>
@@ -208,7 +224,8 @@ export function BrowsePage() {
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value)
-              setSearchParams({ ...buildParams(), sort_by: e.target.value })
+              setPage(0)
+              setSearchParams({ ...buildParams(), sort_by: e.target.value, page: '0', limit: String(PAGE_SIZE) })
             }}
             className="bg-[#111320] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
@@ -314,6 +331,34 @@ export function BrowsePage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {!isLoading && (page > 0 || hasMore) && (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button
+            disabled={page === 0}
+            onClick={() => {
+              const nextPage = Math.max(0, page - 1)
+              setPage(nextPage)
+              setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
+            }}
+            className="px-4 py-2 rounded-lg bg-[#111320] border border-[#1e2235] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+          >
+            Vorige
+          </button>
+          <span className="text-sm text-gray-400">Pagina {page + 1}</span>
+          <button
+            disabled={!hasMore}
+            onClick={() => {
+              const nextPage = page + 1
+              setPage(nextPage)
+              setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
+            }}
+            className="px-4 py-2 rounded-lg bg-[#111320] border border-[#1e2235] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+          >
+            Volgende
+          </button>
         </div>
       )}
 

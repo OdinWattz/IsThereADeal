@@ -48,7 +48,7 @@ async def search_games(
 @router.get("/browse")
 async def browse_games(
     page: int = 0,
-    limit: int = 60,
+    limit: int = Query(60, ge=1, le=100),
     min_price: float = 0,
     max_price: float = 999,
     min_discount: int = Query(0, ge=0, le=90),
@@ -78,9 +78,7 @@ async def browse_games(
         cs_sort = "Savings"
 
     result = await browse_all_deals(page, limit, min_price, max_price, min_discount, cs_sort)
-
-    # Return just the items list (frontend expects array of games)
-    return result.get("items", [])
+    return result
 
 
 @router.get("/featured", response_model=List[dict])

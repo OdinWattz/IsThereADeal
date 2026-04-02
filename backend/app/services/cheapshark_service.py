@@ -275,8 +275,9 @@ async def browse_all_deals(
     time_limit_s = 25.0
     start_time = time.monotonic()
 
-    # Always target requested page size (default 60).
-    effective_limit = limit
+    requested_limit = max(1, min(limit, 100))
+    # If we are in cooldown mode, keep payload smaller to reduce pressure.
+    effective_limit = 60 if cheapshark_cooldown and requested_limit > 60 else requested_limit
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
@@ -506,9 +507,11 @@ async def browse_all_deals(
 
             # If live had nothing, still return fallback.
             if not results:
+                start_idx = page * effective_limit
+                end_idx = start_idx + effective_limit
                 result = {
-                    "items": filtered_fallback[:effective_limit],
-                    "has_more": False,
+                    "items": filtered_fallback[start_idx:end_idx],
+                    "has_more": len(filtered_fallback) > end_idx,
                     "total_fetched": len(filtered_fallback)
                 }
                 _cache.set(cache_key, result)
@@ -516,9 +519,9 @@ async def browse_all_deals(
 
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
-    has_more = (
+    has_more = len(results) >= effective_limit or (
         fetched_pages >= pages_to_fetch
-        and len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
+        and len(all_deals) >= (pages_to_fetch * 60 * 0.9)
     )
 
     result = {

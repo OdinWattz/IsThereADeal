@@ -297,7 +297,7 @@ async def browse_all_deals(
     elif min_discount >= 25:
         pages_to_fetch = 2
     else:
-        pages_to_fetch = 1
+        pages_to_fetch = 2
 
     all_deals = []
     saw_429 = False
@@ -452,7 +452,17 @@ async def browse_all_deals(
 
     # If CheapShark is rate-limiting and live fetch returned empty, serve stale fallback.
     if saw_429 and not results:
-        fallback_items = _cache.get("cs_browse_last_success_items", ttl=6 * 3600) or []
+        is_default_browse = (
+            min_discount == 0
+            and min_price <= 0
+            and max_price >= 999
+            and not store_id
+        )
+        # Prefer a broad "default browse" cache to avoid tiny/random fallback sets.
+        if is_default_browse:
+            fallback_items = _cache.get("cs_browse_default_items", ttl=6 * 3600) or []
+        else:
+            fallback_items = _cache.get("cs_browse_last_success_items", ttl=6 * 3600) or []
         if fallback_items:
             filtered_fallback = []
             for item in fallback_items:
@@ -504,6 +514,8 @@ async def browse_all_deals(
     }
     if results:
         _cache.set("cs_browse_last_success_items", results[:400])
+        if min_discount == 0 and min_price <= 0 and max_price >= 999 and not store_id:
+            _cache.set("cs_browse_default_items", results[:400])
     _cache.set(cache_key, result)
     return result
 

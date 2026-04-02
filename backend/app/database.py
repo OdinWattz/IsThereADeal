@@ -69,8 +69,10 @@ def _get_engine():
             _engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_creator,
-                pool_size=5,  # Direct connection can handle more
-                max_overflow=10,
+                # Serverless-safe: keep DB connections extremely low to avoid
+                # Supabase/pgbouncer "max clients reached" under burst traffic.
+                pool_size=1,
+                max_overflow=0,
                 pool_pre_ping=True,
                 pool_recycle=3600,
                 echo=settings.APP_ENV == "development",

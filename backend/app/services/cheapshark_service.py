@@ -263,7 +263,7 @@ async def browse_all_deals(
     import time
 
     cache_key = f"cs_browse:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
-    cached = _cache.get(cache_key, ttl=60)
+    cached = _cache.get(cache_key, ttl=300)
     if cached is not None:
         return cached
 
@@ -279,17 +279,18 @@ async def browse_all_deals(
     # Very high discount (70-85%): 25 pages = 1500 deals
     # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
     if min_discount >= 85:
-        pages_to_fetch = 18
-    elif min_discount >= 70:
-        pages_to_fetch = 12
-    elif min_discount >= 50:
-        pages_to_fetch = 10
-    elif min_discount >= 25:
         pages_to_fetch = 6
-    else:
+    elif min_discount >= 70:
         pages_to_fetch = 4
+    elif min_discount >= 50:
+        pages_to_fetch = 3
+    elif min_discount >= 25:
+        pages_to_fetch = 2
+    else:
+        pages_to_fetch = 1
 
     all_deals = []
+    saw_429 = False
 
     # NOTE: For high discount filters we fetch many CheapShark pages.
     # Doing that fully in parallel can trigger timeouts / rate limiting and yield 0 results.
@@ -298,6 +299,7 @@ async def browse_all_deals(
     semaphore = asyncio.Semaphore(concurrency)
 
     async def fetch_page(client: httpx.AsyncClient, page_num: int):
+        nonlocal saw_429
         params = {
             "sortBy": sort_by,
             "onSale": 1,
@@ -319,6 +321,7 @@ async def browse_all_deals(
                 except httpx.HTTPStatusError as e:
                     status = e.response.status_code if e.response is not None else None
                     if status == 429:
+                        saw_429 = True
                         retry_after = None
                         try:
                             retry_after = float(e.response.headers.get("Retry-After", ""))  # type: ignore[arg-type]
@@ -437,6 +440,46 @@ async def browse_all_deals(
     results = list(game_dict.values())
     results.sort(key=lambda x: x["deal_rating"], reverse=True)
 
+    # If CheapShark is rate-limiting and live fetch returned empty, serve stale fallback.
+    if saw_429 and not results:
+        fallback_items = _cache.get("cs_browse_last_success_items", ttl=6 * 3600) or []
+        if fallback_items:
+            filtered_fallback = []
+            for item in fallback_items:
+                sale = float(item.get("sale_price") or 0)
+                regular = float(item.get("regular_price") or 0)
+                discount = float(item.get("discount_percent") or 0)
+                if sale < min_price or sale > max_price:
+                    continue
+                if discount < min_discount:
+                    continue
+                if sale == 0 and min_discount < 100:
+                    continue
+                if regular > 200:
+                    continue
+                filtered_fallback.append(item)
+
+            if sort_by == "Price":
+                filtered_fallback.sort(key=lambda x: x.get("sale_price", 999999))
+            elif sort_by == "Savings":
+                filtered_fallback.sort(key=lambda x: x.get("discount_percent", 0), reverse=True)
+            elif sort_by == "Title":
+                filtered_fallback.sort(key=lambda x: str(x.get("name", "")).lower())
+            elif sort_by in {"Metacritic", "Reviews"}:
+                # Not available in this data; keep default quality order.
+                filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
+            else:
+                filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
+
+            # Keep API behavior stable even when serving stale fallback data.
+            result = {
+                "items": filtered_fallback[:effective_limit],
+                "has_more": False,
+                "total_fetched": len(filtered_fallback)
+            }
+            _cache.set(cache_key, result)
+            return result
+
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
     has_more = (
@@ -459,6 +502,8 @@ async def browse_all_deals(
         "has_more": has_more,
         "total_fetched": len(results)
     }
+    if results:
+        _cache.set("cs_browse_last_success_items", results[:400])
     _cache.set(cache_key, result)
     return result
 

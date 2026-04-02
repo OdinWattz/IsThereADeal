@@ -51,7 +51,7 @@ async def browse_games(
     limit: int = Query(60, ge=1, le=100),
     min_price: float = 0,
     max_price: float = 999,
-    min_discount: int = Query(0, ge=0, le=90),
+    min_discount: int = Query(0, ge=0, le=100),
     sort_by: str = "DealRating",
 ):
     """

@@ -15,7 +15,7 @@ const SORT_OPTIONS = [
   { value: 'reviews', label: 'Review Score' },
 ]
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 60
 
 interface BrowseResponse {
   items: Game[]
@@ -94,7 +94,7 @@ export function BrowsePage() {
           Browse Games
         </h1>
         <p className="text-gray-400 text-sm sm:text-base">
-          Ontdek games met filters tot 90% minimale korting
+          Ontdek games met filters tot 100% minimale korting
         </p>
       </div>
 
@@ -182,13 +182,13 @@ export function BrowsePage() {
               <input
                 type="range"
                 min="0"
-                max="90"
+                max="100"
                 step="5"
                 value={minDiscount || '0'}
                 onChange={(e) => setMinDiscount(e.target.value)}
                 className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 90%)`
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 100%)`
                 }}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -196,7 +196,7 @@ export function BrowsePage() {
                 <span>25%</span>
                 <span>50%</span>
                 <span>75%</span>
-                <span>90%</span>
+                <span>100%</span>
               </div>
             </div>
           </div>

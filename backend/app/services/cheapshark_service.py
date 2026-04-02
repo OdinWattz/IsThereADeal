@@ -261,6 +261,11 @@ async def browse_all_deals(
     """
     import asyncio
 
+    cache_key = f"cs_browse:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
+    cached = _cache.get(cache_key, ttl=60)
+    if cached is not None:
+        return cached
+
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
     # Low discount (0-25%): 5 pages = 300 deals
@@ -284,7 +289,7 @@ async def browse_all_deals(
     # NOTE: For high discount filters we fetch many CheapShark pages.
     # Doing that fully in parallel can trigger timeouts / rate limiting and yield 0 results.
     # Use bounded concurrency with a shared client for stability.
-    concurrency = 6 if pages_to_fetch >= 25 else 10
+    concurrency = 3 if pages_to_fetch >= 12 else 5
     semaphore = asyncio.Semaphore(concurrency)
 
     async def fetch_page(client: httpx.AsyncClient, page_num: int):
@@ -300,22 +305,46 @@ async def browse_all_deals(
             params["storeID"] = store_id
 
         async with semaphore:
-            try:
-                resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
-                resp.raise_for_status()
-                return resp.json()
-            except Exception:
-                return []
+            backoff_s = 0.5
+            for attempt in range(5):
+                try:
+                    resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
+                    resp.raise_for_status()
+                    return resp.json()
+                except httpx.HTTPStatusError as e:
+                    status = e.response.status_code if e.response is not None else None
+                    if status == 429:
+                        retry_after = None
+                        try:
+                            retry_after = float(e.response.headers.get("Retry-After", ""))  # type: ignore[arg-type]
+                        except Exception:
+                            retry_after = None
+                        await asyncio.sleep(retry_after if retry_after is not None else backoff_s)
+                        backoff_s = min(backoff_s * 2, 8)
+                        continue
+                    return []
+                except Exception:
+                    return []
+            return []
 
-    # Fetch multiple pages with bounded parallelism
-    async with httpx.AsyncClient(timeout=15) as client:
-        tasks = [fetch_page(client, page * pages_to_fetch + i) for i in range(pages_to_fetch)]
-        pages_data = await asyncio.gather(*tasks)
+    # Fetch pages incrementally. This reduces burstiness and helps avoid 429s.
+    async with httpx.AsyncClient(timeout=20) as client:
+        base_page = page * pages_to_fetch
+        batch_size = min(concurrency, 5)
+        fetched_pages = 0
+        while fetched_pages < pages_to_fetch:
+            take = min(batch_size, pages_to_fetch - fetched_pages)
+            tasks = [
+                fetch_page(client, base_page + fetched_pages + i)
+                for i in range(take)
+            ]
+            pages_data = await asyncio.gather(*tasks)
 
-    # Combine all pages
-    for deals in pages_data:
-        if deals:
-            all_deals.extend(deals)
+            for deals in pages_data:
+                if deals:
+                    all_deals.extend(deals)
+
+            fetched_pages += take
 
     # Process and deduplicate results (keep best price per game)
     game_dict = {}  # steam_appid -> best deal
@@ -409,11 +438,13 @@ async def browse_all_deals(
     else:
         effective_limit = limit  # Default 60 results
 
-    return {
+    result = {
         "items": results[:effective_limit],
         "has_more": has_more,
         "total_fetched": len(results)
     }
+    _cache.set(cache_key, result)
+    return result
 
 
 async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:

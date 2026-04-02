@@ -260,11 +260,16 @@ async def browse_all_deals(
         store_id: Filter by specific store ID
     """
     import asyncio
+    import time
 
     cache_key = f"cs_browse:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
     cached = _cache.get(cache_key, ttl=60)
     if cached is not None:
         return cached
+
+    # Vercel function/runtime hard timeout is ~30s; keep a buffer.
+    time_limit_s = 25.0
+    start_time = time.monotonic()
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
@@ -274,22 +279,22 @@ async def browse_all_deals(
     # Very high discount (70-85%): 25 pages = 1500 deals
     # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
     if min_discount >= 85:
-        pages_to_fetch = 40
+        pages_to_fetch = 18
     elif min_discount >= 70:
-        pages_to_fetch = 25
-    elif min_discount >= 50:
         pages_to_fetch = 12
+    elif min_discount >= 50:
+        pages_to_fetch = 10
     elif min_discount >= 25:
-        pages_to_fetch = 8
+        pages_to_fetch = 6
     else:
-        pages_to_fetch = 5
+        pages_to_fetch = 4
 
     all_deals = []
 
     # NOTE: For high discount filters we fetch many CheapShark pages.
     # Doing that fully in parallel can trigger timeouts / rate limiting and yield 0 results.
     # Use bounded concurrency with a shared client for stability.
-    concurrency = 3 if pages_to_fetch >= 12 else 5
+    concurrency = 2 if pages_to_fetch >= 12 else 4
     semaphore = asyncio.Semaphore(concurrency)
 
     async def fetch_page(client: httpx.AsyncClient, page_num: int):
@@ -306,7 +311,7 @@ async def browse_all_deals(
 
         async with semaphore:
             backoff_s = 0.5
-            for attempt in range(5):
+            for attempt in range(3):
                 try:
                     resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
                     resp.raise_for_status()
@@ -319,8 +324,13 @@ async def browse_all_deals(
                             retry_after = float(e.response.headers.get("Retry-After", ""))  # type: ignore[arg-type]
                         except Exception:
                             retry_after = None
-                        await asyncio.sleep(retry_after if retry_after is not None else backoff_s)
-                        backoff_s = min(backoff_s * 2, 8)
+                        # Cap sleep so we don't exceed overall request time budget.
+                        sleep_s = retry_after if retry_after is not None else backoff_s
+                        sleep_s = min(sleep_s, 2.5)
+                        if time.monotonic() - start_time > (time_limit_s - 1.0):
+                            return []
+                        await asyncio.sleep(sleep_s)
+                        backoff_s = min(backoff_s * 2, 2.5)
                         continue
                     return []
                 except Exception:
@@ -328,11 +338,14 @@ async def browse_all_deals(
             return []
 
     # Fetch pages incrementally. This reduces burstiness and helps avoid 429s.
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(timeout=12) as client:
         base_page = page * pages_to_fetch
         batch_size = min(concurrency, 5)
         fetched_pages = 0
         while fetched_pages < pages_to_fetch:
+            if time.monotonic() - start_time > (time_limit_s - 1.0):
+                break
+
             take = min(batch_size, pages_to_fetch - fetched_pages)
             tasks = [
                 fetch_page(client, base_page + fetched_pages + i)
@@ -426,13 +439,16 @@ async def browse_all_deals(
 
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
-    has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
+    has_more = (
+        fetched_pages >= pages_to_fetch
+        and len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
+    )
 
     # For high discount filters, return more results (since there are fewer matches)
     if min_discount >= 85:
-        effective_limit = min(limit * 4, 240)  # 85%+: show up to 240 results
+        effective_limit = min(limit * 3, 150)  # 85%+: show up to 150 results
     elif min_discount >= 70:
-        effective_limit = min(limit * 3, 180)  # 70%+: show up to 180 results
+        effective_limit = min(limit * 2, 120)  # 70%+: show up to 120 results
     elif min_discount >= 50:
         effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
     else:

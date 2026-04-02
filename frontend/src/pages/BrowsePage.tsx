@@ -334,7 +334,7 @@ export function BrowsePage() {
         </div>
       )}
 
-      {!isLoading && (page > 0 || hasMore) && (
+      {!isLoading && games.length > 0 && (
         <div className="mt-8 flex items-center justify-center gap-3">
           <button
             disabled={page === 0}
@@ -349,7 +349,7 @@ export function BrowsePage() {
           </button>
           <span className="text-sm text-gray-400">Pagina {page + 1}</span>
           <button
-            disabled={!hasMore}
+            disabled={!(hasMore || games.length >= PAGE_SIZE)}
             onClick={() => {
               const nextPage = page + 1
               setPage(nextPage)

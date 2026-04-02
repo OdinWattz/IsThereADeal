@@ -39,7 +39,7 @@ export function AlertsPage() {
       </p>
 
       {isLoading ? (
-        <div>{Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: '76px', backgroundColor: '#111320', borderRadius: '12px', marginBottom: '10px' }} />)}</div>
+        <div>{Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: '76px', backgroundColor: '#0a0a0a', borderRadius: '12px', marginBottom: '10px' }} />)}</div>
       ) : alerts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 0', color: '#475569' }}>
           <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
@@ -84,10 +84,10 @@ function AlertRow({ alert, onDelete, onToggle }: {
   const fmt = (v?: number | null) => v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—'
   const currentBest = alert.game.best_price
   const willTrigger = currentBest != null && currentBest <= alert.target_price
-  const borderColor = alert.triggered_at ? 'rgba(22,163,74,0.3)' : willTrigger ? 'rgba(234,179,8,0.4)' : '#1e2235'
+  const borderColor = alert.triggered_at ? 'rgba(22,163,74,0.3)' : willTrigger ? 'rgba(234,179,8,0.4)' : '#222222'
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 16px', backgroundColor: '#111320', border: `1px solid ${borderColor}`, borderRadius: '12px', marginBottom: '10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 16px', backgroundColor: '#0a0a0a', border: `1px solid ${borderColor}`, borderRadius: '12px', marginBottom: '10px' }}>
       <Link to={`/game/${alert.game.steam_appid}`}>
         <img src={alert.game.header_image || ''} alt={alert.game.name}
           style={{ width: '80px', height: '48px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />

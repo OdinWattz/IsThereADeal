@@ -19,8 +19,8 @@ export function GameCard({ game, showBestDeal = true }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#111320',
-        border: '1px solid #1e2235',
+        backgroundColor: '#0a0a0a',
+        border: '1px solid #222222',
         borderRadius: '12px',
         overflow: 'hidden',
         textDecoration: 'none',
@@ -34,7 +34,7 @@ export function GameCard({ game, showBestDeal = true }: Props) {
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.borderColor = '#1e2235'
+        el.style.borderColor = '#222222'
         el.style.transform = 'translateY(0)'
         el.style.boxShadow = 'none'
       }}

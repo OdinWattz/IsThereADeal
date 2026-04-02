@@ -107,12 +107,12 @@ export function BrowsePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Zoek op naam..."
-            className="w-full bg-[#111320] border border-[#1e2235] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full bg-[#0a0a0a] border border-[#222222] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg transition-colors relative flex items-center gap-2"
+          className="px-4 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg transition-colors relative flex items-center gap-2"
         >
           <Filter size={20} />
           <span className="hidden sm:inline">Filters</span>
@@ -126,7 +126,7 @@ export function BrowsePage() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="mb-6 bg-[#111320] border border-[#1e2235] rounded-xl p-6">
+        <div className="mb-6 bg-[#0a0a0a] border border-[#222222] rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <Filter size={20} />
@@ -157,9 +157,9 @@ export function BrowsePage() {
                 step="5"
                 value={maxPrice || '100'}
                 onChange={(e) => setMaxPrice(e.target.value === '100' ? '' : e.target.value)}
-                className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                className="w-full h-2 bg-[#222222] rounded-lg appearance-none cursor-pointer accent-purple-600"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${maxPrice || 100}%, #1e2235 ${maxPrice || 100}%, #1e2235 100%)`
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${maxPrice || 100}%, #222222 ${maxPrice || 100}%, #222222 100%)`
                 }}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -186,9 +186,9 @@ export function BrowsePage() {
                 step="5"
                 value={minDiscount || '0'}
                 onChange={(e) => setMinDiscount(e.target.value)}
-                className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                className="w-full h-2 bg-[#222222] rounded-lg appearance-none cursor-pointer accent-purple-600"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 100%)`
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #222222 ${minDiscount || 0}%, #222222 100%)`
                 }}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -227,7 +227,7 @@ export function BrowsePage() {
               setPage(0)
               setSearchParams({ ...buildParams(), sort_by: e.target.value, page: '0', limit: String(PAGE_SIZE) })
             }}
-            className="bg-[#111320] border border-[#1e2235] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="bg-[#0a0a0a] border border-[#222222] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -240,7 +240,7 @@ export function BrowsePage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="h-80 bg-[#111320] border border-[#1e2235] rounded-xl animate-pulse" />
+            <div key={i} className="h-80 bg-[#0a0a0a] border border-[#222222] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : games.length === 0 ? (
@@ -268,7 +268,7 @@ export function BrowsePage() {
             return (
               <div
                 key={game.steam_appid || game.id}
-                className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group relative"
+                className="bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group relative"
               >
                 {/* Quick View Button */}
                 <button
@@ -343,7 +343,7 @@ export function BrowsePage() {
               setPage(nextPage)
               setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
             }}
-            className="px-4 py-2 rounded-lg bg-[#111320] border border-[#1e2235] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#0a0a0a] border border-[#222222] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
           >
             Vorige
           </button>
@@ -355,7 +355,7 @@ export function BrowsePage() {
               setPage(nextPage)
               setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
             }}
-            className="px-4 py-2 rounded-lg bg-[#111320] border border-[#1e2235] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#0a0a0a] border border-[#222222] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
           >
             Volgende
           </button>

@@ -30,7 +30,7 @@ export function RecentlyViewed() {
             <Link
               key={game.steam_appid}
               to={`/game/${game.steam_appid}`}
-              className="group flex-shrink-0 w-48 bg-[#111320] border border-[#1e2235] rounded-lg overflow-hidden hover:border-purple-500 transition-all"
+              className="group flex-shrink-0 w-48 bg-[#0a0a0a] border border-[#222222] rounded-lg overflow-hidden hover:border-purple-500 transition-all"
             >
               <div className="relative">
                 <img

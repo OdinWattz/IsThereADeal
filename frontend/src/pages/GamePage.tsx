@@ -14,8 +14,8 @@ import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft }
 import SEO from '../components/SEO'
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: '#111320',
-  border: '1px solid #1e2235',
+  backgroundColor: '#0a0a0a',
+  border: '1px solid #222222',
   borderRadius: '12px',
   padding: '24px',
   marginBottom: '24px',
@@ -115,7 +115,7 @@ export function GamePage() {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
         {[1, 2, 3].map(i => (
-          <div key={i} style={{ height: '80px', backgroundColor: '#111320', borderRadius: '12px', marginBottom: '16px' }} />
+          <div key={i} style={{ height: '80px', backgroundColor: '#0a0a0a', borderRadius: '12px', marginBottom: '16px' }} />
         ))}
       </div>
     )
@@ -312,9 +312,9 @@ export function GamePage() {
             <button
               onClick={handleRefresh}
               disabled={isFetching}
-              style={{ ...actionBtn('#1e2235'), color: '#94a3b8', opacity: isFetching ? 0.5 : 1, border: '1px solid #2a2d3e' }}
+              style={{ ...actionBtn('#222222'), color: '#94a3b8', opacity: isFetching ? 0.5 : 1, border: '1px solid #2b2b2b' }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#252840')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#222222')}
             >
               <RefreshCw size={14} />
               Vernieuwen
@@ -324,10 +324,10 @@ export function GamePage() {
           {showAlertForm && (
             <div style={{
               marginTop: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px',
-              padding: '16px', backgroundColor: '#0d0f1a', border: '1px solid #1e2235', borderRadius: '10px',
+              padding: '16px', backgroundColor: '#050505', border: '1px solid #222222', borderRadius: '10px',
             }}>
               <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>Alert als prijs onder</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#1e2235', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '8px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#222222', border: '1px solid #2b2b2b', borderRadius: '8px', padding: '8px 12px' }}>
                 <span style={{ color: '#64748b' }}>€</span>
                 <input
                   type="number" step="0.01" min="0"
@@ -389,12 +389,12 @@ export function GamePage() {
               <Link key={dlc.steam_appid} to={`/game/${dlc.steam_appid}`} style={{ textDecoration: 'none' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '12px 14px', backgroundColor: '#0d0f1a',
-                  border: '1px solid #1e2235', borderRadius: '10px',
+                  padding: '12px 14px', backgroundColor: '#050505',
+                  border: '1px solid #222222', borderRadius: '10px',
                   cursor: 'pointer', transition: 'border-color .15s',
                 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2a2d3e')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e2235')}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2b2b2b')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#222222')}
                 >
                   <span style={{
                     flexShrink: 0, backgroundColor: '#166534', color: '#4ade80',

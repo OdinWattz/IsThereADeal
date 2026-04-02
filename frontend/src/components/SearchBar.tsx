@@ -77,7 +77,7 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
             style={{
               width: '100%',
               backgroundColor: '#191c2a',
-              border: '1px solid #2a2d3e',
+              border: '1px solid #2b2b2b',
               borderRadius: '10px',
               paddingLeft: '36px',
               paddingRight: '36px',
@@ -88,7 +88,7 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
               outline: 'none',
             }}
             onFocusCapture={e => (e.currentTarget.style.borderColor = '#7c3aed')}
-            onBlurCapture={e => (e.currentTarget.style.borderColor = '#2a2d3e')}
+            onBlurCapture={e => (e.currentTarget.style.borderColor = '#2b2b2b')}
           />
           {loading && (
             <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', border: '2px solid #7c3aed', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
@@ -99,7 +99,7 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
       {open && results.length > 0 && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', width: '100%',
-          backgroundColor: '#13152a', border: '1px solid #2a2d3e',
+          backgroundColor: '#13152a', border: '1px solid #2b2b2b',
           borderRadius: '12px', boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
           zIndex: 100, overflow: 'hidden',
         }}>
@@ -111,9 +111,9 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
                 width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '10px 14px', border: 'none', background: 'none',
                 cursor: 'pointer', textAlign: 'left',
-                borderBottom: '1px solid #1e2235',
+                borderBottom: '1px solid #222222',
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#222222')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {r.header_image && (
@@ -132,7 +132,7 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
               cursor: 'pointer', textAlign: 'center', color: '#a78bfa', fontSize: '0.82rem',
               fontWeight: 500,
             }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e2235')}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#222222')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             Alle resultaten bekijken →

@@ -27,7 +27,7 @@ export function DealsPage() {
 
   const DealCard = ({ d }: { d: TrendingDeal }) => (
     <Link to={`/game/${d.steam_appid}`} className="block">
-      <div className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/15 transition-all duration-200">
+      <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/15 transition-all duration-200">
         <div className="relative">
           <img
             src={d.header_image}
@@ -84,7 +84,7 @@ export function DealsPage() {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {Array.from({ length: 20 }).map((_, i) => (
-            <div key={i} className="bg-[#111320] rounded-xl h-44 sm:h-52 animate-pulse" />
+            <div key={i} className="bg-[#0a0a0a] rounded-xl h-44 sm:h-52 animate-pulse" />
           ))}
         </div>
       ) : showFeatured ? (
@@ -96,13 +96,13 @@ export function DealsPage() {
           {featuredLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {Array.from({ length: 20 }).map((_, i) => (
-                <div key={i} className="bg-[#111320] rounded-xl h-44 sm:h-52 animate-pulse" />
+                <div key={i} className="bg-[#0a0a0a] rounded-xl h-44 sm:h-52 animate-pulse" />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {featured.map((g: { steam_appid: string; name: string; header_image?: string; sale_price?: number; discount_percent?: number }) => (
-                <Link key={g.steam_appid} to={`/game/${g.steam_appid}`} className="block bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-[#2a2d3e] transition-colors">
+                <Link key={g.steam_appid} to={`/game/${g.steam_appid}`} className="block bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden hover:border-[#2b2b2b] transition-colors">
                   <img
                     src={g.header_image ?? `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steam_appid}/header.jpg`}
                     alt={g.name}
@@ -142,10 +142,10 @@ export function DealsPage() {
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className={`px-4 py-2 bg-[#111320] border rounded-lg text-sm transition-colors ${
+            className={`px-4 py-2 bg-[#0a0a0a] border rounded-lg text-sm transition-colors ${
               page === 0
-                ? 'border-[#1e2235] text-gray-600 cursor-not-allowed'
-                : 'border-[#2a2d3e] text-gray-300 hover:border-purple-600 hover:text-white'
+                ? 'border-[#222222] text-gray-600 cursor-not-allowed'
+                : 'border-[#2b2b2b] text-gray-300 hover:border-purple-600 hover:text-white'
             }`}
           >
             ← Vorige
@@ -154,10 +154,10 @@ export function DealsPage() {
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore}
-            className={`px-4 py-2 bg-[#111320] border rounded-lg text-sm transition-colors ${
+            className={`px-4 py-2 bg-[#0a0a0a] border rounded-lg text-sm transition-colors ${
               !hasMore
-                ? 'border-[#1e2235] text-gray-600 cursor-not-allowed'
-                : 'border-[#2a2d3e] text-gray-300 hover:border-purple-600 hover:text-white'
+                ? 'border-[#222222] text-gray-600 cursor-not-allowed'
+                : 'border-[#2b2b2b] text-gray-300 hover:border-purple-600 hover:text-white'
             }`}
           >
             Volgende →

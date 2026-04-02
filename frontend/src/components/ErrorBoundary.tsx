@@ -32,13 +32,13 @@ export class ErrorBoundary extends Component<Props, State> {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0a0c14',
+          backgroundColor: '#000000',
           padding: '20px'
         }}>
           <div style={{
             maxWidth: '600px',
-            backgroundColor: '#111320',
-            border: '1px solid #1e2235',
+            backgroundColor: '#0a0a0a',
+            border: '1px solid #222222',
             borderRadius: '12px',
             padding: '32px',
             textAlign: 'center'
@@ -51,8 +51,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
             {this.state.error && (
               <pre style={{
-                backgroundColor: '#0d0f1a',
-                border: '1px solid #1e2235',
+                backgroundColor: '#050505',
+                border: '1px solid #222222',
                 borderRadius: '8px',
                 padding: '16px',
                 color: '#ef4444',

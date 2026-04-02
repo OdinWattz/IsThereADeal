@@ -64,7 +64,7 @@ export function ComparePage() {
       </div>
 
       {/* Search to Add Games */}
-      <div className="mb-6 bg-[#111320] border border-[#1e2235] rounded-xl p-4">
+      <div className="mb-6 bg-[#0a0a0a] border border-[#222222] rounded-xl p-4">
         <label className="block text-sm font-medium text-gray-300 mb-3">
           Voeg games toe om te vergelijken ({compareIds.length}/4)
         </label>
@@ -86,7 +86,7 @@ export function ComparePage() {
           {games.map((game) => (
             <div
               key={game.id}
-              className="bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden relative"
+              className="bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden relative"
             >
               {/* Remove Button */}
               <button
@@ -219,7 +219,7 @@ export function ComparePage() {
 
           {/* Add More Placeholder */}
           {games.length < 4 && (
-            <div className="bg-[#111320] border border-[#1e2235] border-dashed rounded-xl flex items-center justify-center min-h-[400px]">
+            <div className="bg-[#0a0a0a] border border-[#222222] border-dashed rounded-xl flex items-center justify-center min-h-[400px]">
               <div className="text-center">
                 <Plus size={48} className="mx-auto mb-3 text-gray-600" />
                 <p className="text-gray-500 text-sm">Voeg nog een game toe</p>

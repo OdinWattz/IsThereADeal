@@ -338,7 +338,7 @@ export function CollectionDetailPage() {
                           alt={item.game.name}
                           className="w-full h-32 object-cover"
                         />
-                        <div className="p-2 bg-[#0d0f1a]">
+                        <div className="p-2 bg-[#050505]">
                           <p className="text-sm font-medium text-white line-clamp-1">
                             {item.game.name}
                           </p>

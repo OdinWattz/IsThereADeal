@@ -58,7 +58,7 @@ export function LoginPage() {
           <p className="text-gray-400 text-sm">Log in om je verlanglijst en alerts te bekijken</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#111320] border border-[#1e2235] rounded-2xl p-6 sm:p-7 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-[#0a0a0a] border border-[#222222] rounded-2xl p-6 sm:p-7 space-y-4">
           {/* Username */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
@@ -69,7 +69,7 @@ export function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="jouw_naam"
             />
           </div>
@@ -84,7 +84,7 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="••••••••"
             />
           </div>
@@ -96,7 +96,7 @@ export function LoginPage() {
               id="rememberMe"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 bg-[#1e2235] text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+              className="w-4 h-4 rounded border-gray-600 bg-[#222222] text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
             />
             <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-400 cursor-pointer select-none">
               Gebruikersnaam onthouden

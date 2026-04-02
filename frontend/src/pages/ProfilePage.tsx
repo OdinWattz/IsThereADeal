@@ -126,7 +126,7 @@ export function ProfilePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <Link
           to="/wishlist"
-          className="bg-[#111320] border border-[#1e2235] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
+          className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -139,7 +139,7 @@ export function ProfilePage() {
 
         <Link
           to="/alerts"
-          className="bg-[#111320] border border-[#1e2235] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
+          className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -152,7 +152,7 @@ export function ProfilePage() {
       </div>
 
       {/* Profile Info Section */}
-      <div className="bg-[#111320] border border-[#1e2235] rounded-xl p-6 mb-6">
+      <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 mb-6">
         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <User size={20} />
           Account Informatie
@@ -167,7 +167,7 @@ export function ProfilePage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Username"
               />
               <div className="flex gap-2">
@@ -190,7 +190,7 @@ export function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-4 py-3">
+            <div className="flex items-center justify-between bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
               <span className="text-white">{user?.username}</span>
               <button
                 onClick={() => setEditingField('username')}
@@ -211,7 +211,7 @@ export function ProfilePage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Email"
               />
               <div className="flex gap-2">
@@ -234,7 +234,7 @@ export function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-4 py-3">
+            <div className="flex items-center justify-between bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
               <span className="text-white">{user?.email}</span>
               <button
                 onClick={() => setEditingField('email')}
@@ -249,7 +249,7 @@ export function ProfilePage() {
         {/* Member Since */}
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-2">Lid sinds</label>
-          <div className="bg-[#0d0f1a] border border-[#1e2235] rounded-lg px-4 py-3">
+          <div className="bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
             <span className="text-white">
               {user?.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL', {
                 year: 'numeric',
@@ -262,7 +262,7 @@ export function ProfilePage() {
       </div>
 
       {/* Password Section */}
-      <div className="bg-[#111320] border border-[#1e2235] rounded-xl p-6 mb-6">
+      <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 mb-6">
         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Lock size={20} />
           Wachtwoord
@@ -283,7 +283,7 @@ export function ProfilePage() {
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
             <div>
@@ -292,7 +292,7 @@ export function ProfilePage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Minimaal 6 tekens"
               />
             </div>
@@ -302,7 +302,7 @@ export function ProfilePage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
             <div className="flex gap-2">
@@ -350,7 +350,7 @@ export function ProfilePage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#111320] border border-[#1e2235] rounded-xl p-6 max-w-md w-full">
+          <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 max-w-md w-full">
             <h3 className="text-xl font-bold text-white mb-4">Account verwijderen?</h3>
             <p className="text-gray-400 mb-4">
               Dit kan niet ongedaan worden gemaakt. Al je gegevens worden permanent verwijderd.
@@ -361,7 +361,7 @@ export function ProfilePage() {
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Wachtwoord"
               />
             </div>

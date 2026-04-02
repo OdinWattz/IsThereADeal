@@ -63,7 +63,7 @@ export function PriceTable({ prices, gameName }: Props) {
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
-    backgroundColor: '#0d0f1a',
+    backgroundColor: '#050505',
     whiteSpace: 'nowrap',
   }
 
@@ -72,8 +72,8 @@ export function PriceTable({ prices, gameName }: Props) {
     return (
       <tr
         key={i}
-        style={{ borderBottom: '1px solid #1e2235', backgroundColor: isBest ? 'rgba(22,163,74,0.06)' : 'transparent' }}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1a1d2e')}
+        style={{ borderBottom: '1px solid #222222', backgroundColor: isBest ? 'rgba(22,163,74,0.06)' : 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = isBest ? 'rgba(22,163,74,0.06)' : 'transparent')}
       >
         {/* Store */}
@@ -146,10 +146,10 @@ export function PriceTable({ prices, gameName }: Props) {
   }
 
   return (
-    <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #1e2235' }}>
+    <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #222222' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ borderBottom: '1px solid #1e2235' }}>
+          <tr style={{ borderBottom: '1px solid #222222' }}>
             <th style={{ ...thStyle, textAlign: 'left' }}>Winkel</th>
             <th style={{ ...thStyle, textAlign: 'center' }}>Normaal</th>
             <th style={{ ...thStyle, textAlign: 'center' }}>Korting</th>
@@ -161,7 +161,7 @@ export function PriceTable({ prices, gameName }: Props) {
           {sortedOfficial.map((p, i) => renderRow(p, i, i === 0))}
           {resellers.length > 0 && (
             <>
-              <tr style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1e2235' }}>
+              <tr style={{ backgroundColor: '#050505', borderBottom: '1px solid #222222' }}>
                 <td colSpan={5} style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   🔑 Key Resellers (niet-officieel)
                 </td>
@@ -172,7 +172,7 @@ export function PriceTable({ prices, gameName }: Props) {
         </tbody>
       </table>
       {gameName && (
-        <div style={{ borderTop: '1px solid #1e2235', padding: '12px 16px', backgroundColor: '#0d0f1a' }}>
+        <div style={{ borderTop: '1px solid #222222', padding: '12px 16px', backgroundColor: '#050505' }}>
           <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>
             🔑 Zoek op grey-market key sites
           </p>

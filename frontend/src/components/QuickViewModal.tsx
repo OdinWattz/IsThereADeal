@@ -26,7 +26,7 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-[#0d0f1a] border border-[#1e2235] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[#050505] border border-[#222222] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {isLoading ? (
@@ -41,11 +41,11 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
         ) : (
           <>
             {/* Header with Close Button */}
-            <div className="sticky top-0 bg-[#0d0f1a] border-b border-[#1e2235] p-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-[#050505] border-b border-[#222222] p-4 flex items-center justify-between z-10">
               <h2 className="text-xl font-bold text-white">Quick View</h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-[#1a1d2e] rounded-lg transition-colors"
+                className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
               >
                 <X size={20} className="text-gray-400" />
               </button>
@@ -136,7 +136,7 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                     {game.prices.slice(0, 6).map((price, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#111320] border border-[#1e2235] rounded-lg p-3 flex items-center justify-between"
+                        className="bg-[#0a0a0a] border border-[#222222] rounded-lg p-3 flex items-center justify-between"
                       >
                         <div>
                           <p className="text-sm font-medium text-white">{price.store_name}</p>
@@ -187,11 +187,11 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                   <ExternalLink size={18} />
                   <span>View Full Details</span>
                 </Link>
-                <button className="flex items-center gap-2 px-6 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
+                <button className="flex items-center gap-2 px-6 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
                   <Heart size={18} />
                   <span>Add to Wishlist</span>
                 </button>
-                <button className="flex items-center gap-2 px-6 py-3 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
+                <button className="flex items-center gap-2 px-6 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
                   <Bell size={18} />
                   <span>Set Alert</span>
                 </button>

@@ -232,14 +232,14 @@ export function WishlistPage() {
 
       {/* Controls */}
       {items.length > 0 && (
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-[#111320] border border-[#1e2235] rounded-xl p-4">
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-[#0a0a0a] border border-[#222222] rounded-xl p-4">
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <ArrowUpDown size={18} className="text-gray-400" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="flex-1 sm:flex-initial bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 sm:flex-initial bg-[#050505] border border-[#2b2b2b] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="date-new">Nieuwste eerst</option>
               <option value="date-old">Oudste eerst</option>
@@ -279,7 +279,7 @@ export function WishlistPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-80 bg-[#111320] border border-[#1e2235] rounded-xl animate-pulse" />
+            <div key={i} className="h-80 bg-[#0a0a0a] border border-[#222222] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -315,8 +315,8 @@ export function WishlistPage() {
             return (
               <div
                 key={item.id}
-                className={`bg-[#111320] border ${
-                  targetMet ? 'border-green-500/50' : 'border-[#1e2235]'
+                className={`bg-[#0a0a0a] border ${
+                  targetMet ? 'border-green-500/50' : 'border-[#222222]'
                 } rounded-xl overflow-hidden hover:border-purple-500/50 transition-colors relative group`}
               >
                 {/* Target Met Badge */}
@@ -377,14 +377,14 @@ export function WishlistPage() {
                   </div>
 
                   {/* Target Price */}
-                  <div className="mb-3 p-3 bg-[#0d0f1a] border border-[#1e2235] rounded-lg">
+                  <div className="mb-3 p-3 bg-[#050505] border border-[#222222] rounded-lg">
                     <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
                       <Target size={12} className="text-yellow-400" />
                       Doelprijs
                     </p>
                     {editingId === item.id ? (
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 flex-1 bg-[#111320] border border-[#2a2d3e] rounded-md px-2 py-1">
+                        <div className="flex items-center gap-1 flex-1 bg-[#0a0a0a] border border-[#2b2b2b] rounded-md px-2 py-1">
                           <span className="text-gray-400 text-sm">€</span>
                           <input
                             type="number"
@@ -444,7 +444,7 @@ export function WishlistPage() {
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0 || isRefetching}
-            className="px-4 py-2 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ← Vorige
           </button>
@@ -456,7 +456,7 @@ export function WishlistPage() {
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={items.length < ITEMS_PER_PAGE || isRefetching}
-            className="px-4 py-2 bg-[#111320] border border-[#1e2235] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Volgende →
           </button>
@@ -466,7 +466,7 @@ export function WishlistPage() {
       {/* Steam Import Modal */}
       {showSteamImport && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111320] border border-[#1e2235] rounded-xl max-w-md w-full p-6">
+          <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <Download size={24} className="text-blue-400" />
@@ -474,7 +474,7 @@ export function WishlistPage() {
               </h2>
               <button
                 onClick={() => setShowSteamImport(false)}
-                className="p-2 hover:bg-[#1e2235] rounded-lg transition-colors"
+                className="p-2 hover:bg-[#222222] rounded-lg transition-colors"
               >
                 <X size={20} className="text-gray-400" />
               </button>
@@ -497,7 +497,7 @@ export function WishlistPage() {
               value={steamInput}
               onChange={(e) => setSteamInput(e.target.value)}
               placeholder="Steam ID, profile URL, of vanity name"
-              className="w-full bg-[#0d0f1a] border border-[#2a2d3e] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+              className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
               disabled={steamImportMutation.isPending}
             />
 
@@ -522,7 +522,7 @@ export function WishlistPage() {
                     {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s max`}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-[#1e2235] rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-[#222222] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
                     style={{ width: `${importProgress}%` }}
@@ -537,7 +537,7 @@ export function WishlistPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowSteamImport(false)}
-                className="flex-1 px-4 py-3 bg-[#1e2235] hover:bg-[#252938] text-gray-300 rounded-lg font-medium transition-colors"
+                className="flex-1 px-4 py-3 bg-[#222222] hover:bg-[#252938] text-gray-300 rounded-lg font-medium transition-colors"
                 disabled={steamImportMutation.isPending}
               >
                 Annuleren

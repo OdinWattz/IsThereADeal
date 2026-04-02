@@ -44,13 +44,13 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             <Link
               to="/browse"
-              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
             >
               Browse
             </Link>
             <Link
               to="/free"
-              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors flex items-center gap-1"
+              className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors flex items-center gap-1"
             >
               <Gift size={16} className="text-green-400" />
               <span>Free</span>
@@ -61,43 +61,43 @@ export function Navbar() {
                 <Link
                   to="/wishlist"
                   title="Wishlist"
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <Heart size={20} />
                 </Link>
                 <Link
                   to="/collections"
                   title="Collections"
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <FolderOpen size={20} />
                 </Link>
                 <Link
                   to="/alerts"
                   title="Price Alerts"
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <Bell size={20} />
                 </Link>
                 <Link
                   to="/stats"
                   title="Savings Stats"
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <TrendingDown size={20} />
                 </Link>
-                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-[#1a1d2e]">
+                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-[#1a1a1a]">
                   <Link
                     to="/profile"
                     title="Profile"
-                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                   >
                     <User size={20} />
                   </Link>
                   <button
                     onClick={handleLogout}
                     title="Logout"
-                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                   >
                     <LogOut size={18} />
                   </button>
@@ -143,7 +143,7 @@ export function Navbar() {
             <Link
               to="/browse"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
             >
               <Grid3x3 size={20} />
               <span>Browse Games</span>
@@ -151,7 +151,7 @@ export function Navbar() {
             <Link
               to="/free"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
             >
               <Gift size={20} className="text-green-400" />
               <span>Gratis Games</span>
@@ -162,7 +162,7 @@ export function Navbar() {
                 <Link
                   to="/wishlist"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <Heart size={20} />
                   <span>Verlanglijst</span>
@@ -170,7 +170,7 @@ export function Navbar() {
                 <Link
                   to="/collections"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <FolderOpen size={20} />
                   <span>Collecties</span>
@@ -178,7 +178,7 @@ export function Navbar() {
                 <Link
                   to="/alerts"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <Bell size={20} />
                   <span>Price Alerts</span>
@@ -186,7 +186,7 @@ export function Navbar() {
                 <Link
                   to="/stats"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <TrendingDown size={20} />
                   <span>Besparingen</span>
@@ -194,19 +194,19 @@ export function Navbar() {
                 <Link
                   to="/profile"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors"
                 >
                   <User size={20} />
                   <span>Profiel</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1d2e] transition-colors text-left"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-[#1a1a1a] transition-colors text-left"
                 >
                   <LogOut size={20} />
                   <span>Uitloggen</span>
                 </button>
-                <div className="pt-2 px-4 text-sm text-gray-500 border-t border-[#1a1d2e]">
+                <div className="pt-2 px-4 text-sm text-gray-500 border-t border-[#1a1a1a]">
                   Ingelogd als <span className="text-gray-300">{user?.username}</span>
                 </div>
               </>

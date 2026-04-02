@@ -59,7 +59,7 @@ export function DealOfTheDay() {
 
   return (
     <div className="bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 rounded-2xl p-1 mb-8 shadow-2xl">
-      <div className="bg-[#0a0c14] rounded-xl p-6 md:p-8">
+      <div className="bg-[#000000] rounded-xl p-6 md:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

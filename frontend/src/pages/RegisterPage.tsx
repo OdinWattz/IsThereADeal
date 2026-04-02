@@ -77,7 +77,7 @@ export function RegisterPage() {
           <p className="text-gray-400 text-sm">Volg prijzen en ontvang meldingen bij deals</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#111320] border border-[#1e2235] rounded-2xl p-6 sm:p-7 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-[#0a0a0a] border border-[#222222] rounded-2xl p-6 sm:p-7 space-y-4">
           {/* Username */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
@@ -89,7 +89,7 @@ export function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               required
               minLength={3}
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="gamelover99"
             />
           </div>
@@ -104,7 +104,7 @@ export function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="jij@voorbeeld.nl"
             />
           </div>
@@ -120,7 +120,7 @@ export function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full bg-[#1e2235] border border-[#2a2d3e] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="min. 6 tekens"
             />
 

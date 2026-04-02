@@ -27,7 +27,7 @@ export function SearchPage() {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {Array.from({ length: 20 }).map((_, i) => (
-            <div key={i} className="bg-[#111320] rounded-xl h-44 sm:h-52 animate-pulse" />
+            <div key={i} className="bg-[#0a0a0a] rounded-xl h-44 sm:h-52 animate-pulse" />
           ))}
         </div>
       ) : results.length === 0 ? (
@@ -38,7 +38,7 @@ export function SearchPage() {
             <Link
               key={r.steam_appid}
               to={`/game/${r.steam_appid}`}
-              className="block bg-[#111320] border border-[#1e2235] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/15 transition-all duration-200"
+              className="block bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/15 transition-all duration-200"
             >
               <img
                 src={r.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${r.steam_appid}/header.jpg`}

@@ -20,8 +20,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const data = payload[0].payload
     return (
       <div style={{
-        background: '#1a1d2e',
-        border: '1px solid #2a2d3e',
+        background: '#1a1a1a',
+        border: '1px solid #2b2b2b',
         borderRadius: 8,
         padding: '8px 12px'
       }}>
@@ -109,22 +109,22 @@ export function PriceHistoryChart({ history }: Props) {
 
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e2235" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#222222" />
           <XAxis
             dataKey="date"
             tick={{ fill: '#64748b', fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: '#1e2235' }}
+            axisLine={{ stroke: '#222222' }}
           />
           <YAxis
             tick={{ fill: '#64748b', fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: '#1e2235' }}
+            axisLine={{ stroke: '#222222' }}
             tickFormatter={(v) => `€${v}`}
           />
           <Tooltip
             content={showAllStores ? undefined : <CustomTooltip />}
-            contentStyle={showAllStores ? { background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: 8 } : undefined}
+            contentStyle={showAllStores ? { background: '#1a1a1a', border: '1px solid #2b2b2b', borderRadius: 8 } : undefined}
             labelStyle={showAllStores ? { color: '#94a3b8' } : undefined}
             formatter={showAllStores ? (value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name] : undefined}
           />

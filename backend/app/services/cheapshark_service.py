@@ -271,6 +271,16 @@ async def browse_all_deals(
     time_limit_s = 25.0
     start_time = time.monotonic()
 
+    # Keep limits available for both live and fallback paths.
+    if min_discount >= 85:
+        effective_limit = min(limit * 3, 150)  # 85%+: show up to 150 results
+    elif min_discount >= 70:
+        effective_limit = min(limit * 2, 120)  # 70%+: show up to 120 results
+    elif min_discount >= 50:
+        effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
+    else:
+        effective_limit = limit  # Default 60 results
+
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
     # Low discount (0-25%): 5 pages = 300 deals
@@ -486,16 +496,6 @@ async def browse_all_deals(
         fetched_pages >= pages_to_fetch
         and len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
     )
-
-    # For high discount filters, return more results (since there are fewer matches)
-    if min_discount >= 85:
-        effective_limit = min(limit * 3, 150)  # 85%+: show up to 150 results
-    elif min_discount >= 70:
-        effective_limit = min(limit * 2, 120)  # 70%+: show up to 120 results
-    elif min_discount >= 50:
-        effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
-    else:
-        effective_limit = limit  # Default 60 results
 
     result = {
         "items": results[:effective_limit],

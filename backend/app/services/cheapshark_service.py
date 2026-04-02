@@ -117,6 +117,8 @@ async def get_trending_deals(page: int = 0, limit: int = 20, apply_quality_filte
         sale = float(deal.get("salePrice") or 0)
         normal = float(deal.get("normalPrice") or 0)
         savings = float(deal.get("savings") or 0)
+        metacritic_score = int(deal.get("metacriticScore") or 0)
+        steam_rating_percent = int(deal.get("steamRatingPercent") or 0)
 
         # Only apply quality filters when requested (homepage/deals page)
         if apply_quality_filter:
@@ -262,7 +264,7 @@ async def browse_all_deals(
     import asyncio
     import time
 
-    cache_key = f"cs_browse:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
+    cache_key = f"cs_browse_v2:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
     cached = _cache.get(cache_key, ttl=300)
     if cached is not None:
         return cached
@@ -279,23 +281,18 @@ async def browse_all_deals(
     # If we are in cooldown mode, keep payload smaller to reduce pressure.
     effective_limit = 60 if cheapshark_cooldown and requested_limit > 60 else requested_limit
 
-    # CheapShark has max 60 per page, so we need to fetch multiple pages
-    # Dynamically adjust pages based on discount filter - higher discount needs more pages
-    # Low discount (0-25%): 5 pages = 300 deals
-    # Medium discount (25-50%): 8 pages = 480 deals
-    # High discount (50-70%): 12 pages = 720 deals
-    # Very high discount (70-85%): 25 pages = 1500 deals
-    # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
+    # CheapShark has max 60 per page. Keep request volume lower to avoid 429s,
+    # while still fetching enough for filters and de-duplication.
     if min_discount >= 85:
-        pages_to_fetch = 8
-    elif min_discount >= 70:
         pages_to_fetch = 6
-    elif min_discount >= 50:
+    elif min_discount >= 70:
         pages_to_fetch = 4
-    elif min_discount >= 25:
+    elif min_discount >= 50:
         pages_to_fetch = 3
-    else:
+    elif min_discount >= 25:
         pages_to_fetch = 2
+    else:
+        pages_to_fetch = 1
 
     all_deals = []
     saw_429 = False
@@ -384,6 +381,8 @@ async def browse_all_deals(
         sale = float(deal.get("salePrice") or 0)
         normal = float(deal.get("normalPrice") or 0)
         savings = float(deal.get("savings") or 0)
+        metacritic_score = int(deal.get("metacriticScore") or 0)
+        steam_rating_percent = int(deal.get("steamRatingPercent") or 0)
 
         # Quality filters to remove shovelware/junk games
         # For high discount searches, allow cheaper games (they're discounted heavily)
@@ -432,6 +431,8 @@ async def browse_all_deals(
                     "store_name": STORE_NAMES.get(store_id_result, f"Store #{store_id_result}"),
                     "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
                     "deal_rating": float(deal.get("dealRating") or 0),
+                    "metacritic_score": metacritic_score,
+                    "steam_rating_percent": steam_rating_percent,
                 }
         else:
             game_dict[steam_appid] = {
@@ -443,13 +444,33 @@ async def browse_all_deals(
                 "store_name": STORE_NAMES.get(store_id_result, f"Store #{store_id_result}"),
                 "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg",
                 "deal_rating": float(deal.get("dealRating") or 0),
+                "metacritic_score": metacritic_score,
+                "steam_rating_percent": steam_rating_percent,
             }
 
-    # Convert to list and sort by deal rating (best deals first)
+    # Convert to list and apply requested sorting.
     results = list(game_dict.values())
-    results.sort(key=lambda x: x["deal_rating"], reverse=True)
+    if sort_by == "Price":
+        results.sort(key=lambda x: x.get("sale_price", 999999))
+    elif sort_by == "Savings":
+        results.sort(key=lambda x: x.get("discount_percent", 0), reverse=True)
+    elif sort_by == "Title":
+        results.sort(key=lambda x: str(x.get("name", "")).lower())
+    elif sort_by == "Metacritic":
+        results.sort(
+            key=lambda x: (x.get("metacritic_score", 0), x.get("deal_rating", 0)),
+            reverse=True,
+        )
+    elif sort_by == "Reviews":
+        results.sort(
+            key=lambda x: (x.get("steam_rating_percent", 0), x.get("deal_rating", 0)),
+            reverse=True,
+        )
+    else:
+        # DealRating and unknown values fallback to quality order.
+        results.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
 
-    if saw_429:
+    if saw_429 and not all_deals:
         _cache.set("cheapshark_429_cooldown", True)
 
     # If CheapShark is rate-limiting (or cooling down), use stale fallback to fill missing items.
@@ -487,9 +508,16 @@ async def browse_all_deals(
                 filtered_fallback.sort(key=lambda x: x.get("discount_percent", 0), reverse=True)
             elif sort_by == "Title":
                 filtered_fallback.sort(key=lambda x: str(x.get("name", "")).lower())
-            elif sort_by in {"Metacritic", "Reviews"}:
-                # Not available in this data; keep default quality order.
-                filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
+            elif sort_by == "Metacritic":
+                filtered_fallback.sort(
+                    key=lambda x: (x.get("metacritic_score", 0), x.get("deal_rating", 0)),
+                    reverse=True,
+                )
+            elif sort_by == "Reviews":
+                filtered_fallback.sort(
+                    key=lambda x: (x.get("steam_rating_percent", 0), x.get("deal_rating", 0)),
+                    reverse=True,
+                )
             else:
                 filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
 

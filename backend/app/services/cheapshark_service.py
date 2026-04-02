@@ -275,15 +275,8 @@ async def browse_all_deals(
     time_limit_s = 25.0
     start_time = time.monotonic()
 
-    # Keep limits available for both live and fallback paths.
-    if min_discount >= 85:
-        effective_limit = min(limit * 3, 150)  # 85%+: show up to 150 results
-    elif min_discount >= 70:
-        effective_limit = min(limit * 2, 120)  # 70%+: show up to 120 results
-    elif min_discount >= 50:
-        effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
-    else:
-        effective_limit = limit  # Default 60 results
+    # Always target requested page size (default 60).
+    effective_limit = limit
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
@@ -293,13 +286,13 @@ async def browse_all_deals(
     # Very high discount (70-85%): 25 pages = 1500 deals
     # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
     if min_discount >= 85:
-        pages_to_fetch = 6
+        pages_to_fetch = 8
     elif min_discount >= 70:
-        pages_to_fetch = 4
+        pages_to_fetch = 6
     elif min_discount >= 50:
-        pages_to_fetch = 3
+        pages_to_fetch = 4
     elif min_discount >= 25:
-        pages_to_fetch = 2
+        pages_to_fetch = 3
     else:
         pages_to_fetch = 2
 
@@ -395,7 +388,7 @@ async def browse_all_deals(
         # For high discount searches, allow cheaper games (they're discounted heavily)
         if min_discount < 50:
             # Low discount search: skip very cheap games (likely broken/removed)
-            if sale < 0.5:
+            if sale < 0.1:
                 continue
         elif min_discount < 75:
             # Medium discount search: allow cheaper games
@@ -403,8 +396,8 @@ async def browse_all_deals(
                 continue
         # For 75%+ discount: no price filter (high discount deals can be very cheap)
 
-        # Only show free games if user wants 100% discount (changed from 95% to 100%)
-        if sale == 0 and min_discount < 100:
+        # With max min_discount capped at 90, hide free games from browse filters.
+        if sale == 0 and min_discount < 90:
             continue
 
         if normal > 200:  # Skip overpriced special editions
@@ -458,8 +451,8 @@ async def browse_all_deals(
     if saw_429:
         _cache.set("cheapshark_429_cooldown", True)
 
-    # If CheapShark is rate-limiting (or cooling down) and live fetch returned empty, serve stale fallback.
-    if (saw_429 or cheapshark_cooldown) and not results:
+    # If CheapShark is rate-limiting (or cooling down), use stale fallback to fill missing items.
+    if saw_429 or cheapshark_cooldown:
         is_default_browse = (
             min_discount == 0
             and min_price <= 0
@@ -481,7 +474,7 @@ async def browse_all_deals(
                     continue
                 if discount < min_discount:
                     continue
-                if sale == 0 and min_discount < 100:
+                if sale == 0 and min_discount < 90:
                     continue
                 if regular > 200:
                     continue
@@ -499,14 +492,27 @@ async def browse_all_deals(
             else:
                 filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
 
-            # Keep API behavior stable even when serving stale fallback data.
-            result = {
-                "items": filtered_fallback[:effective_limit],
-                "has_more": False,
-                "total_fetched": len(filtered_fallback)
-            }
-            _cache.set(cache_key, result)
-            return result
+            # Top up live results with fallback results without breaking active filters.
+            if len(results) < effective_limit:
+                seen = {str(r.get("steam_appid")) for r in results}
+                for item in filtered_fallback:
+                    appid = str(item.get("steam_appid"))
+                    if appid in seen:
+                        continue
+                    results.append(item)
+                    seen.add(appid)
+                    if len(results) >= effective_limit:
+                        break
+
+            # If live had nothing, still return fallback.
+            if not results:
+                result = {
+                    "items": filtered_fallback[:effective_limit],
+                    "has_more": False,
+                    "total_fetched": len(filtered_fallback)
+                }
+                _cache.set(cache_key, result)
+                return result
 
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)

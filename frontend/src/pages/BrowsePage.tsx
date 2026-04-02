@@ -81,7 +81,7 @@ export function BrowsePage() {
           Browse Games
         </h1>
         <p className="text-gray-400 text-sm sm:text-base">
-          Ontdek games met filters • Stel korting op 100% voor gratis games
+          Ontdek games met filters tot 90% minimale korting
         </p>
       </div>
 
@@ -163,19 +163,19 @@ export function BrowsePage() {
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-300">Min Korting</label>
                 <span className="text-sm font-semibold text-purple-400">
-                  {minDiscount || '0'}%{minDiscount === '100' && ' (gratis)'}
+                  {minDiscount || '0'}%
                 </span>
               </div>
               <input
                 type="range"
                 min="0"
-                max="100"
+                max="90"
                 step="5"
                 value={minDiscount || '0'}
                 onChange={(e) => setMinDiscount(e.target.value)}
                 className="w-full h-2 bg-[#1e2235] rounded-lg appearance-none cursor-pointer accent-purple-600"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 100%)`
+                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #1e2235 ${minDiscount || 0}%, #1e2235 90%)`
                 }}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -183,7 +183,7 @@ export function BrowsePage() {
                 <span>25%</span>
                 <span>50%</span>
                 <span>75%</span>
-                <span>100%</span>
+                <span>90%</span>
               </div>
             </div>
           </div>

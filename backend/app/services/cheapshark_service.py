@@ -267,6 +267,10 @@ async def browse_all_deals(
     if cached is not None:
         return cached
 
+    # Global cooldown after upstream 429s to avoid hammering CheapShark.
+    # While this marker is active, skip live calls and rely on stale fallback.
+    cheapshark_cooldown = _cache.get("cheapshark_429_cooldown", ttl=90)
+
     # Vercel function/runtime hard timeout is ~30s; keep a buffer.
     time_limit_s = 25.0
     start_time = time.monotonic()
@@ -350,27 +354,28 @@ async def browse_all_deals(
                     return []
             return []
 
+    fetched_pages = 0
     # Fetch pages incrementally. This reduces burstiness and helps avoid 429s.
-    async with httpx.AsyncClient(timeout=12) as client:
-        base_page = page * pages_to_fetch
-        batch_size = min(concurrency, 5)
-        fetched_pages = 0
-        while fetched_pages < pages_to_fetch:
-            if time.monotonic() - start_time > (time_limit_s - 1.0):
-                break
+    if not cheapshark_cooldown:
+        async with httpx.AsyncClient(timeout=12) as client:
+            base_page = page * pages_to_fetch
+            batch_size = min(concurrency, 5)
+            while fetched_pages < pages_to_fetch:
+                if time.monotonic() - start_time > (time_limit_s - 1.0):
+                    break
 
-            take = min(batch_size, pages_to_fetch - fetched_pages)
-            tasks = [
-                fetch_page(client, base_page + fetched_pages + i)
-                for i in range(take)
-            ]
-            pages_data = await asyncio.gather(*tasks)
+                take = min(batch_size, pages_to_fetch - fetched_pages)
+                tasks = [
+                    fetch_page(client, base_page + fetched_pages + i)
+                    for i in range(take)
+                ]
+                pages_data = await asyncio.gather(*tasks)
 
-            for deals in pages_data:
-                if deals:
-                    all_deals.extend(deals)
+                for deals in pages_data:
+                    if deals:
+                        all_deals.extend(deals)
 
-            fetched_pages += take
+                fetched_pages += take
 
     # Process and deduplicate results (keep best price per game)
     game_dict = {}  # steam_appid -> best deal
@@ -450,8 +455,11 @@ async def browse_all_deals(
     results = list(game_dict.values())
     results.sort(key=lambda x: x["deal_rating"], reverse=True)
 
-    # If CheapShark is rate-limiting and live fetch returned empty, serve stale fallback.
-    if saw_429 and not results:
+    if saw_429:
+        _cache.set("cheapshark_429_cooldown", True)
+
+    # If CheapShark is rate-limiting (or cooling down) and live fetch returned empty, serve stale fallback.
+    if (saw_429 or cheapshark_cooldown) and not results:
         is_default_browse = (
             min_discount == 0
             and min_price <= 0

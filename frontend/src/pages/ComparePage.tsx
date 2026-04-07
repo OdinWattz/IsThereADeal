@@ -219,7 +219,7 @@ export function ComparePage() {
 
           {/* Add More Placeholder */}
           {games.length < 4 && (
-            className="border border-dashed rounded-xl flex items-center justify-center min-h-[400px]"
+            <div className="border border-dashed rounded-xl flex items-center justify-center min-h-[400px]"
               style={{ background: 'rgba(255,255,255,0.4)', borderColor: 'rgba(90,175,225,0.5)', backdropFilter: 'blur(4px)' }}
             >
               <div className="text-center">

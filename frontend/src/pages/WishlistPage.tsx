@@ -341,11 +341,10 @@ export function WishlistPage() {
                 <button
                   onClick={() => removeMutation.mutate(item.id)}
                   className="absolute top-2 right-2 z-10 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                  style={{ background: 'rgba(255,255,255,0.85)', color: '#e05050', border: '1px solid rgba(90,175,225,0.45)' }}
+                  style={{ background: 'rgba(255,255,255,0.85)', color: '#e05050', border: '1px solid rgba(90,175,225,0.45)', ...(maxDiscount > 0 ? { top: '3.5rem' } : {}) }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ef4444'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.85)'; (e.currentTarget as HTMLElement).style.color = '#e05050' }}
                   title="Verwijderen"
-                  style={maxDiscount > 0 ? { top: '3.5rem' } : {}}
                 >
                   <Trash2 size={16} />
                 </button>

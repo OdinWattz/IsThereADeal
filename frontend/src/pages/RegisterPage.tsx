@@ -70,17 +70,17 @@ export function RegisterPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-7">
-          <div className="inline-flex p-3.5 bg-purple-600/15 rounded-full mb-3">
-            <Gamepad2 size={32} className="text-purple-400" />
+          <div className="inline-flex p-3.5 rounded-full mb-3" style={{background: 'rgba(20,128,184,0.12)'}}>
+            <Gamepad2 size={32} style={{color: '#1480b8'}} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Account aanmaken</h1>
-          <p className="text-gray-400 text-sm">Volg prijzen en ontvang meldingen bij deals</p>
+          <h1 className="text-2xl font-bold mb-1" style={{color: 'var(--text-primary)'}}>Account aanmaken</h1>
+          <p className="text-sm" style={{color: 'var(--text-secondary)'}}>Volg prijzen en ontvang meldingen bij deals</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#0a0a0a] border border-[#222222] rounded-2xl p-6 sm:p-7 space-y-4">
+        <form onSubmit={handleSubmit} className="rounded-2xl p-6 sm:p-7 space-y-4" style={{background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 24px rgba(50,120,170,0.12)'}}>
           {/* Username */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{color: 'var(--text-secondary)'}}>
               Gebruikersnaam
             </label>
             <input
@@ -89,14 +89,14 @@ export function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               required
               minLength={3}
-              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full input-aero px-3.5 py-2.5 text-sm"
               placeholder="gamelover99"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{color: 'var(--text-secondary)'}}>
               E-mail
             </label>
             <input
@@ -104,14 +104,14 @@ export function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full input-aero px-3.5 py-2.5 text-sm"
               placeholder="jij@voorbeeld.nl"
             />
           </div>
 
           {/* Password with Strength Indicator */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{color: 'var(--text-secondary)'}}>
               Wachtwoord
             </label>
             <input
@@ -120,7 +120,7 @@ export function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full bg-[#222222] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full input-aero px-3.5 py-2.5 text-sm"
               placeholder="min. 6 tekens"
             />
 
@@ -134,13 +134,13 @@ export function RegisterPage() {
                       className={`h-1 flex-1 rounded-full transition-colors ${
                         level <= passwordStrength.score
                           ? passwordStrength.color
-                          : 'bg-gray-700'
+                          : 'bg-[rgba(160,210,240,0.5)]'
                       }`}
                     />
                   ))}
                 </div>
                 {passwordStrength.label && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs" style={{color: 'var(--text-secondary)'}}>
                     Sterkte: <span className="font-medium">{passwordStrength.label}</span>
                   </p>
                 )}
@@ -155,9 +155,9 @@ export function RegisterPage() {
                     {req.met ? (
                       <Check size={14} className="text-green-400" />
                     ) : (
-                      <X size={14} className="text-gray-600" />
+                      <X size={14} style={{color: '#8cbfd8'}} />
                     )}
-                    <span className={req.met ? 'text-green-400' : 'text-gray-500'}>
+                    <span className={req.met ? 'text-green-500' : ''} style={!req.met ? {color: 'var(--text-tertiary)'} : {}}>
                       {req.label}
                     </span>
                   </div>
@@ -170,16 +170,16 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed rounded-lg text-white font-medium text-sm transition-colors mt-6"
+            className="flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 btn-aero font-medium text-sm mt-6"
           >
             <UserPlus size={16} />
             {loading ? 'Aanmaken...' : 'Account aanmaken'}
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-gray-400">
+        <p className="text-center mt-4 text-sm" style={{color: 'var(--text-secondary)'}}>
           Al een account?{' '}
-          <Link to="/login" className="text-purple-400 hover:text-purple-300 transition-colors">
+          <Link to="/login" className="transition-colors" style={{color: 'var(--accent)'}}>
             Inloggen
           </Link>
         </p>

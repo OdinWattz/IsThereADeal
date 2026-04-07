@@ -26,28 +26,32 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-[#050505] border border-[#222222] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        style={{ background: 'rgba(235,250,255,0.97)', border: '1px solid rgba(90,175,225,0.5)', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(40,100,160,0.2)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {isLoading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4" />
-            <p className="text-gray-400">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#1480b8' }} />
+            <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
           </div>
         ) : !game ? (
           <div className="p-8 text-center">
-            <p className="text-gray-400">Game not found</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Game not found</p>
           </div>
         ) : (
           <>
             {/* Header with Close Button */}
-            <div className="sticky top-0 bg-[#050505] border-b border-[#222222] p-4 flex items-center justify-between z-10">
-              <h2 className="text-xl font-bold text-white">Quick View</h2>
+            <div className="sticky top-0 p-4 flex items-center justify-between z-10" style={{ background: 'rgba(220,244,255,0.96)', borderBottom: '1px solid rgba(90,175,225,0.4)', backdropFilter: 'blur(12px)' }}>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Quick View</h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(90,175,225,0.2)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
               >
-                <X size={20} className="text-gray-400" />
+                <X size={20} />
               </button>
             </div>
 
@@ -61,17 +65,17 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                   className="w-full md:w-96 rounded-lg"
                 />
                 <div className="flex-1 space-y-4">
-                  <h3 className="text-2xl font-bold text-white">{game.name}</h3>
+                  <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{game.name}</h3>
 
                   {/* Price */}
                   <div>
-                    <p className="text-sm text-gray-400 mb-1">Best Price</p>
+                    <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Best Price</p>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-green-400">
+                      <span className="text-3xl font-bold" style={{ color: 'var(--green)' }}>
                         {fmt(game.best_price)}
                       </span>
                       {game.best_store && (
-                        <span className="text-sm text-gray-500">via {game.best_store}</span>
+                        <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>via {game.best_store}</span>
                       )}
                     </div>
                   </div>
@@ -82,26 +86,26 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                       <div className="flex items-center gap-2">
                         <Award size={18} className="text-yellow-400" />
                         <div>
-                          <p className="text-xs text-gray-400">Metacritic</p>
+                          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Metacritic</p>
                           <p className="text-lg font-bold text-yellow-400">{game.metacritic_score}</p>
                         </div>
                       </div>
                     )}
                     {game.steam_review_score && (
                       <div className="flex items-center gap-2">
-                        <Star size={18} className="text-blue-400" />
+                        <Star size={18} style={{ color: '#1480b8' }} />
                         <div>
-                          <p className="text-xs text-gray-400">Steam Reviews</p>
-                          <p className="text-lg font-bold text-blue-400">{game.steam_review_score}%</p>
+                          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Steam Reviews</p>
+                          <p className="text-lg font-bold" style={{ color: '#1480b8' }}>{game.steam_review_score}%</p>
                         </div>
                       </div>
                     )}
                     {game.player_count_current && (
                       <div className="flex items-center gap-2">
-                        <Users size={18} className="text-purple-400" />
+                        <Users size={18} style={{ color: 'var(--accent)' }} />
                         <div>
-                          <p className="text-xs text-gray-400">Players Now</p>
-                          <p className="text-lg font-bold text-purple-400">
+                          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Players Now</p>
+                          <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
                             {game.player_count_current.toLocaleString()}
                           </p>
                         </div>
@@ -112,7 +116,7 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                   {/* Description */}
                   {game.short_description && (
                     <div>
-                      <p className="text-sm text-gray-300 line-clamp-3">
+                      <p className="text-sm line-clamp-3" style={{ color: 'var(--text-secondary)' }}>
                         {game.short_description}
                       </p>
                     </div>
@@ -121,8 +125,8 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
                   {/* Genres */}
                   {game.genres && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-1">Genres</p>
-                      <p className="text-sm text-gray-300">{game.genres}</p>
+                      <p className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Genres</p>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{game.genres}</p>
                     </div>
                   )}
                 </div>
@@ -131,25 +135,26 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
               {/* Store Prices */}
               {game.prices && game.prices.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-3">Available at:</h4>
+                  <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Available at:</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {game.prices.slice(0, 6).map((price, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#0a0a0a] border border-[#222222] rounded-lg p-3 flex items-center justify-between"
+                        className="rounded-lg p-3 flex items-center justify-between"
+                        style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', backdropFilter: 'blur(6px)' }}
                       >
                         <div>
-                          <p className="text-sm font-medium text-white">{price.store_name}</p>
+                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{price.store_name}</p>
                           {price.is_on_sale && price.discount_percent > 0 && (
-                            <p className="text-xs text-green-400">-{price.discount_percent}% off</p>
+                            <p className="text-xs" style={{ color: 'var(--green)' }}>-{price.discount_percent}% off</p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-green-400">
+                          <p className="text-lg font-bold" style={{ color: 'var(--green)' }}>
                             {price.sale_price != null ? fmt(price.sale_price) : fmt(price.regular_price)}
                           </p>
                           {price.is_on_sale && price.regular_price && (
-                            <p className="text-xs text-gray-500 line-through">
+                            <p className="text-xs line-through" style={{ color: 'var(--text-tertiary)' }}>
                               {fmt(price.regular_price)}
                             </p>
                           )}
@@ -162,14 +167,14 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
 
               {/* Historic Low */}
               {game.historic_low_price && (
-                <div className="bg-blue-950/30 border border-blue-900/50 rounded-lg p-4 flex items-center gap-3">
-                  <TrendingUp size={24} className="text-blue-400" />
+                <div className="rounded-lg p-4 flex items-center gap-3" style={{ background: 'rgba(220,244,255,0.8)', border: '1px solid rgba(90,175,225,0.5)' }}>
+                  <TrendingUp size={24} style={{ color: '#1480b8' }} />
                   <div>
-                    <p className="text-sm text-blue-400 font-semibold">Historic Low</p>
-                    <p className="text-lg font-bold text-white">
+                    <p className="text-sm font-semibold" style={{ color: '#1480b8' }}>Historic Low</p>
+                    <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                       {fmt(game.historic_low_price)}
                       {game.historic_low_date && (
-                        <span className="text-sm text-gray-400 ml-2">
+                        <span className="text-sm ml-2" style={{ color: 'var(--text-tertiary)' }}>
                           on {new Date(game.historic_low_date).toLocaleDateString('nl-NL')}
                         </span>
                       )}
@@ -182,16 +187,26 @@ export function QuickViewModal({ steamAppid, onClose }: QuickViewModalProps) {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to={`/game/${game.steam_appid}`}
-                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                  className="btn-aero flex items-center gap-2 px-6 py-3 rounded-lg font-medium"
                 >
                   <ExternalLink size={18} />
                   <span>View Full Details</span>
                 </Link>
-                <button className="flex items-center gap-2 px-6 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
+                <button
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', color: 'var(--text-primary)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1480b8' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)' }}
+                >
                   <Heart size={18} />
                   <span>Add to Wishlist</span>
                 </button>
-                <button className="flex items-center gap-2 px-6 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors">
+                <button
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', color: 'var(--text-primary)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1480b8' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)' }}
+                >
                   <Bell size={18} />
                   <span>Set Alert</span>
                 </button>

@@ -54,18 +54,18 @@ export function ComparePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <ArrowLeftRight size={32} className="text-purple-400" />
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3" style={{color: 'var(--text-primary)'}}>
+          <ArrowLeftRight size={32} style={{color: 'var(--accent)'}} />
           Game Vergelijken
         </h1>
-        <p className="text-gray-400 text-sm sm:text-base">
+        <p className="text-sm sm:text-base" style={{color: 'var(--text-secondary)'}}>
           Vergelijk tot 4 games naast elkaar
         </p>
       </div>
 
       {/* Search to Add Games */}
-      <div className="mb-6 bg-[#0a0a0a] border border-[#222222] rounded-xl p-4">
-        <label className="block text-sm font-medium text-gray-300 mb-3">
+      <div className="mb-6 rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)' }}>
+        <label className="block text-sm font-medium mb-3" style={{color: 'var(--text-secondary)'}}>
           Voeg games toe om te vergelijken ({compareIds.length}/4)
         </label>
         <SearchBar
@@ -77,21 +77,25 @@ export function ComparePage() {
       {/* Comparison Grid */}
       {games.length === 0 ? (
         <div className="text-center py-20">
-          <ArrowLeftRight size={64} className="mx-auto mb-4 text-gray-600 opacity-30" />
-          <p className="text-gray-400 mb-2 text-lg">Geen games geselecteerd</p>
-          <p className="text-gray-500 text-sm">Zoek en voeg games toe om ze te vergelijken</p>
+          <ArrowLeftRight size={64} className="mx-auto mb-4 opacity-30" style={{color: 'var(--text-tertiary)'}} />
+          <p className="mb-2 text-lg" style={{color: 'var(--text-secondary)'}}>Geen games geselecteerd</p>
+          <p className="text-sm" style={{color: 'var(--text-tertiary)'}}>Zoek en voeg games toe om ze te vergelijken</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {games.map((game) => (
             <div
               key={game.id}
-              className="bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden relative"
+              className="rounded-xl overflow-hidden relative"
+              style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 16px rgba(40,110,165,0.1)' }}
             >
               {/* Remove Button */}
               <button
                 onClick={() => removeGame(game.steam_appid)}
-                className="absolute top-2 right-2 z-10 p-2 bg-black/70 hover:bg-red-600 text-white rounded-lg transition-colors"
+                className="absolute top-2 right-2 z-10 p-2 rounded-lg transition-all"
+                style={{ background: 'rgba(255,255,255,0.85)', color: '#e05050', border: '1px solid rgba(90,175,225,0.45)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ef4444'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.85)'; (e.currentTarget as HTMLElement).style.color = '#e05050' }}
               >
                 <X size={16} />
               </button>
@@ -106,19 +110,15 @@ export function ComparePage() {
               {/* Game Info */}
               <div className="p-4 space-y-4">
                 {/* Name */}
-                <h3 className="text-white font-semibold text-lg line-clamp-2">
-                  {game.name}
-                </h3>
+                <h3 className="font-semibold text-lg line-clamp-2" style={{color: 'var(--text-primary)'}}>{game.name}</h3>
 
                 {/* Price */}
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Beste Prijs</p>
+                  <p className="text-xs mb-1" style={{color: 'var(--text-secondary)'}}>Beste Prijs</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-green-400">
-                      {fmt(game.best_price)}
-                    </span>
+                    <span className="text-2xl font-bold" style={{color: 'var(--green)'}}>{fmt(game.best_price)}</span>
                     {game.best_store && (
-                      <span className="text-xs text-gray-500">via {game.best_store}</span>
+                      <span className="text-xs" style={{color: 'var(--text-tertiary)'}}>via {game.best_store}</span>
                     )}
                   </div>
                 </div>
@@ -127,7 +127,7 @@ export function ComparePage() {
                 <div className="space-y-2">
                   {game.metacritic_score && (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-2 text-xs" style={{color: 'var(--text-secondary)'}}>
                         <Award size={14} className="text-yellow-400" />
                         <span>Metacritic</span>
                       </div>
@@ -147,11 +147,11 @@ export function ComparePage() {
 
                   {game.steam_review_score && (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Star size={14} className="text-blue-400" />
+                      <div className="flex items-center gap-2 text-xs" style={{color: 'var(--text-secondary)'}}>
+                        <Star size={14} style={{color: '#1480b8'}} />
                         <span>Steam Reviews</span>
                       </div>
-                      <span className="text-sm font-semibold text-blue-400">
+                      <span className="text-sm font-semibold" style={{color: '#1480b8'}}>
                         {game.steam_review_score}%
                       </span>
                     </div>
@@ -159,8 +159,8 @@ export function ComparePage() {
 
                   {game.steam_review_count && (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Review Count</span>
-                      <span className="text-sm font-semibold text-gray-300">
+                      <span className="text-xs" style={{color: 'var(--text-secondary)'}}>Review Count</span>
+                      <span className="text-sm font-semibold" style={{color: 'var(--text-primary)'}}>
                         {game.steam_review_count.toLocaleString()}
                       </span>
                     </div>
@@ -168,11 +168,11 @@ export function ComparePage() {
 
                   {game.player_count_current && (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Users size={14} className="text-purple-400" />
+                      <div className="flex items-center gap-2 text-xs" style={{color: 'var(--text-secondary)'}}>
+                        <Users size={14} style={{color: 'var(--accent)'}} />
                         <span>Players Now</span>
                       </div>
-                      <span className="text-sm font-semibold text-purple-400">
+                      <span className="text-sm font-semibold" style={{color: 'var(--accent)'}}>
                         {game.player_count_current.toLocaleString()}
                       </span>
                     </div>
@@ -182,24 +182,24 @@ export function ComparePage() {
                 {/* Genres */}
                 {game.genres && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">Genres</p>
-                    <p className="text-xs text-gray-300 line-clamp-2">{game.genres}</p>
+                    <p className="text-xs mb-1" style={{color: 'var(--text-secondary)'}}>Genres</p>
+                    <p className="text-xs line-clamp-2" style={{color: 'var(--text-tertiary)'}}>{game.genres}</p>
                   </div>
                 )}
 
                 {/* Developers */}
                 {game.developers && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">Developer</p>
-                    <p className="text-xs text-gray-300 line-clamp-1">{game.developers}</p>
+                    <p className="text-xs mb-1" style={{color: 'var(--text-secondary)'}}>Developer</p>
+                    <p className="text-xs line-clamp-1" style={{color: 'var(--text-tertiary)'}}>{game.developers}</p>
                   </div>
                 )}
 
                 {/* Release Date */}
                 {game.release_date && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">Release Date</p>
-                    <p className="text-xs text-gray-300">{game.release_date}</p>
+                    <p className="text-xs mb-1" style={{color: 'var(--text-secondary)'}}>Release Date</p>
+                    <p className="text-xs" style={{color: 'var(--text-tertiary)'}}>{game.release_date}</p>
                   </div>
                 )}
 
@@ -208,7 +208,7 @@ export function ComparePage() {
                   href={`/game/${game.steam_appid}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 btn-aero rounded-lg text-sm font-medium"
                 >
                   <span>View Details</span>
                   <ExternalLink size={14} />
@@ -219,10 +219,12 @@ export function ComparePage() {
 
           {/* Add More Placeholder */}
           {games.length < 4 && (
-            <div className="bg-[#0a0a0a] border border-[#222222] border-dashed rounded-xl flex items-center justify-center min-h-[400px]">
+            className="border border-dashed rounded-xl flex items-center justify-center min-h-[400px]"
+              style={{ background: 'rgba(255,255,255,0.4)', borderColor: 'rgba(90,175,225,0.5)', backdropFilter: 'blur(4px)' }}
+            >
               <div className="text-center">
-                <Plus size={48} className="mx-auto mb-3 text-gray-600" />
-                <p className="text-gray-500 text-sm">Voeg nog een game toe</p>
+                <Plus size={48} className="mx-auto mb-3 opacity-40" style={{color: 'var(--text-tertiary)'}} />
+                <p className="text-sm" style={{color: 'var(--text-tertiary)'}}>Voeg nog een game toe</p>
               </div>
             </div>
           )}

@@ -14,11 +14,14 @@ import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft }
 import SEO from '../components/SEO'
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: '#0a0a0a',
-  border: '1px solid #222222',
+  background: 'rgba(255,255,255,0.84)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  border: '1px solid rgba(90,175,225,0.45)',
   borderRadius: '12px',
   padding: '24px',
   marginBottom: '24px',
+  boxShadow: '0 4px 20px rgba(50,120,170,0.10)',
 }
 
 const actionBtn = (bg: string): React.CSSProperties => ({
@@ -115,7 +118,7 @@ export function GamePage() {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
         {[1, 2, 3].map(i => (
-          <div key={i} style={{ height: '80px', backgroundColor: '#0a0a0a', borderRadius: '12px', marginBottom: '16px' }} />
+          <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '12px', marginBottom: '16px' }} />
         ))}
       </div>
     )
@@ -125,7 +128,7 @@ export function GamePage() {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', textAlign: 'center' }}>
         <p style={{ color: '#f87171', marginBottom: '16px' }}>Game niet gevonden of laden mislukt.</p>
-        <button onClick={() => navigate(-1)} style={{ color: '#a78bfa', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
+        <button onClick={() => navigate(-1)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
           ← Terug
         </button>
       </div>
@@ -151,7 +154,8 @@ export function GamePage() {
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1 text-gray-500 hover:text-white text-sm mb-4 sm:mb-6 transition-colors"
+        className="inline-flex items-center gap-1 text-sm mb-4 sm:mb-6 transition-colors"
+        style={{color: 'var(--text-tertiary)'}}
       >
         <ChevronLeft size={16} /> Terug
       </button>
@@ -164,21 +168,21 @@ export function GamePage() {
           className="w-full md:w-80 rounded-xl object-cover"
         />
         <div className="flex-1 min-w-0">
-          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{game.name}</h1>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>{game.name}</h1>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
             {game.release_date && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
                 <Calendar size={13} /> {game.release_date}
               </span>
             )}
             {game.developers && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
                 <Cpu size={13} /> {game.developers}
               </span>
             )}
             {game.genres && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#64748b' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
                 <Tag size={13} /> {game.genres}
               </span>
             )}
@@ -199,7 +203,7 @@ export function GamePage() {
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: game.metacritic_score >= 75 ? '#4ade80' : game.metacritic_score >= 50 ? '#eab308' : '#ef4444' }}>
                   {game.metacritic_score}
                 </span>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Metacritic</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Metacritic</span>
               </div>
             )}
 
@@ -210,13 +214,13 @@ export function GamePage() {
                 gap: '6px',
                 padding: '4px 10px',
                 borderRadius: '6px',
-                backgroundColor: 'rgba(99,102,241,0.15)',
-                border: '1px solid rgba(99,102,241,0.3)',
+                backgroundColor: 'rgba(20,128,184,0.1)',
+                border: '1px solid rgba(20,128,184,0.25)',
               }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#818cf8' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1480b8' }}>
                   {game.steam_review_count.toLocaleString()}
                 </span>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>reviews</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>reviews</span>
               </div>
             )}
 
@@ -227,19 +231,19 @@ export function GamePage() {
                 gap: '6px',
                 padding: '4px 10px',
                 borderRadius: '6px',
-                backgroundColor: 'rgba(168,85,247,0.15)',
-                border: '1px solid rgba(168,85,247,0.3)',
+                backgroundColor: 'rgba(8,175,208,0.1)',
+                border: '1px solid rgba(8,175,208,0.25)',
               }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a855f7' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#08afd0' }}>
                   {game.player_count_current.toLocaleString()}
                 </span>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>spelers nu</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>spelers nu</span>
               </div>
             )}
           </div>
 
           {game.short_description && (
-            <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '20px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '20px' }}>
               {game.short_description}
             </p>
           )}
@@ -266,10 +270,10 @@ export function GamePage() {
                 {formatPrice(game.best_price)}
               </p>
               {game.best_store && (
-                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>via {game.best_store}</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>via {game.best_store}</p>
               )}
               {steamPrice?.regular_price && game.best_price < steamPrice.regular_price && (
-                <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px', textDecoration: 'line-through' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px', textDecoration: 'line-through' }}>
                   Steam: {formatPrice(steamPrice.regular_price)}
                 </p>
               )}
@@ -292,9 +296,9 @@ export function GamePage() {
                 <button
                   onClick={() => wishlistMutation.mutate()}
                   disabled={wishlistMutation.isPending}
-                  style={{ ...actionBtn('#7c3aed'), opacity: wishlistMutation.isPending ? 0.5 : 1 }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#6d28d9')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7c3aed')}
+                  style={{ ...actionBtn('#1480b8'), opacity: wishlistMutation.isPending ? 0.5 : 1 }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0d6799')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1480b8')}
                 >
                   <Heart size={14} /> Verlanglijst
                 </button>
@@ -312,9 +316,9 @@ export function GamePage() {
             <button
               onClick={handleRefresh}
               disabled={isFetching}
-              style={{ ...actionBtn('#222222'), color: '#94a3b8', opacity: isFetching ? 0.5 : 1, border: '1px solid #2b2b2b' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#252840')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#222222')}
+              style={{ ...actionBtn('rgba(255,255,255,0.7)'), color: 'var(--text-secondary)' as string, opacity: isFetching ? 0.5 : 1, border: '1px solid rgba(90,175,225,0.45)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(200,235,255,0.8)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.7)')}
             >
               <RefreshCw size={14} />
               Vernieuwen
@@ -324,20 +328,20 @@ export function GamePage() {
           {showAlertForm && (
             <div style={{
               marginTop: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px',
-              padding: '16px', backgroundColor: '#050505', border: '1px solid #222222', borderRadius: '10px',
+              padding: '16px', background: 'rgba(230,248,255,0.88)', border: '1px solid rgba(90,175,225,0.45)', borderRadius: '10px', backdropFilter: 'blur(8px)',
             }}>
-              <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>Alert als prijs onder</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#222222', border: '1px solid #2b2b2b', borderRadius: '8px', padding: '8px 12px' }}>
-                <span style={{ color: '#64748b' }}>€</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Alert als prijs onder</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(90,170,215,0.55)', borderRadius: '8px', padding: '8px 12px' }}>
+                <span style={{ color: 'var(--text-tertiary)' }}>€</span>
                 <input
                   type="number" step="0.01" min="0"
                   value={alertPrice}
                   onChange={(e) => setAlertPrice(e.target.value)}
-                  style={{ width: '80px', backgroundColor: 'transparent', color: '#fff', fontSize: '0.875rem', border: 'none', outline: 'none' }}
+                  style={{ width: '80px', backgroundColor: 'transparent', color: 'var(--text-primary)', fontSize: '0.875rem', border: 'none', outline: 'none' }}
                   placeholder="9,99"
                 />
               </div>
-              <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>komt</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>komt</span>
               <button
                 onClick={() => alertMutation.mutate(parseFloat(alertPrice))}
                 disabled={!alertPrice || alertMutation.isPending}
@@ -353,10 +357,10 @@ export function GamePage() {
       {/* Price Table */}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', margin: 0 }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Alle prijzen ({game.prices.length} winkels)
           </h2>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', color: '#94a3b8' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             <input
               type="checkbox"
               checked={showKeyResellers}
@@ -371,17 +375,17 @@ export function GamePage() {
 
       {/* Price History */}
       <div style={cardStyle}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>Prijsgeschiedenis</h2>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Prijsgeschiedenis</h2>
         <PriceHistoryChart history={history} />
       </div>
 
       {/* DLC Deals */}
       {dlcDeals.length > 0 && (
         <div style={cardStyle}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#fff', marginBottom: '4px' }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
             🎁 DLC in de aanbieding
           </h2>
-          <p style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: '16px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>
             {dlcDeals.length} DLC{dlcDeals.length !== 1 ? "'s" : ''} voor dit spel zijn momenteel afgeprijsd
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -389,12 +393,12 @@ export function GamePage() {
               <Link key={dlc.steam_appid} to={`/game/${dlc.steam_appid}`} style={{ textDecoration: 'none' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '12px 14px', backgroundColor: '#050505',
-                  border: '1px solid #222222', borderRadius: '10px',
+                  padding: '12px 14px', background: 'rgba(240,250,255,0.8)',
+                  border: '1px solid rgba(110,190,235,0.4)', borderRadius: '10px',
                   cursor: 'pointer', transition: 'border-color .15s',
                 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2b2b2b')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#222222')}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#1480b8')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(110,190,235,0.4)')}
                 >
                   <span style={{
                     flexShrink: 0, backgroundColor: '#166534', color: '#4ade80',
@@ -402,22 +406,22 @@ export function GamePage() {
                   }}>
                     -{dlc.discount_percent}%
                   </span>
-                  <span style={{ flex: 1, color: '#e2e8f0', fontSize: '0.875rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  <span style={{ flex: 1, color: 'var(--text-primary)', fontSize: '0.875rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {dlc.title}
                   </span>
                   <span style={{ flexShrink: 0, color: '#4ade80', fontWeight: 600, fontSize: '0.9rem' }}>
                     €{(dlc.sale_price ?? 0).toFixed(2).replace('.', ',')}
                   </span>
                   {dlc.regular_price && (
-                    <span style={{ flexShrink: 0, color: '#475569', fontSize: '0.8rem', textDecoration: 'line-through' }}>
+                    <span style={{ flexShrink: 0, color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'line-through' }}>
                       €{dlc.regular_price.toFixed(2).replace('.', ',')}
                     </span>
                   )}
-                  <span style={{ flexShrink: 0, color: '#64748b', fontSize: '0.78rem' }}>{dlc.store_name}</span>
+                  <span style={{ flexShrink: 0, color: 'var(--text-tertiary)', fontSize: '0.78rem' }}>{dlc.store_name}</span>
                   {dlc.url && (
                     <a href={dlc.url} target="_blank" rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      style={{ flexShrink: 0, color: '#60a5fa', fontSize: '0.78rem', textDecoration: 'none' }}
+                      style={{ flexShrink: 0, color: 'var(--accent)', fontSize: '0.78rem', textDecoration: 'none' }}
                     >
                       Kopen →
                     </a>

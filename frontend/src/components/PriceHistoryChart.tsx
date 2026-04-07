@@ -20,17 +20,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const data = payload[0].payload
     return (
       <div style={{
-        background: '#1a1a1a',
-        border: '1px solid #2b2b2b',
+        background: 'rgba(225, 245, 255, 0.96)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid rgba(90, 175, 225, 0.5)',
         borderRadius: 8,
-        padding: '8px 12px'
+        padding: '8px 12px',
+        boxShadow: '0 8px 20px rgba(30, 100, 160, 0.15)',
       }}>
-        <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.75rem', marginBottom: '4px' }}>{label}</p>
-        <p style={{ color: '#34d399', margin: 0, fontWeight: 600 }}>
+        <p style={{ color: '#5888a5', margin: 0, fontSize: '0.75rem', marginBottom: '4px' }}>{label}</p>
+        <p style={{ color: '#169a58', margin: 0, fontWeight: 600 }}>
           €{Number(payload[0].value).toFixed(2).replace('.', ',')}
         </p>
         {data.storeName && (
-          <p style={{ color: '#64748b', margin: 0, fontSize: '0.7rem', marginTop: '2px' }}>
+          <p style={{ color: '#7aabcc', margin: 0, fontSize: '0.7rem', marginTop: '2px' }}>
             via {data.storeName}
           </p>
         )}
@@ -84,7 +86,7 @@ export function PriceHistoryChart({ history }: Props) {
 
   if (chartData.length === 0) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', color: '#475569', fontSize: '0.875rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', color: '#5888a5', fontSize: '0.875rem' }}>
         Nog geen prijsgeschiedenis beschikbaar
       </div>
     )
@@ -98,9 +100,9 @@ export function PriceHistoryChart({ history }: Props) {
           onClick={() => setShowAllStores(!showAllStores)}
           className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
           style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderColor: 'var(--border-primary)',
-            color: 'var(--text-secondary)'
+            background: 'rgba(255,255,255,0.7)',
+            borderColor: 'rgba(90, 175, 225, 0.4)',
+            color: '#2b5b7a',
           }}
         >
           {showAllStores ? '📊 Toon Beste Prijs' : '🏪 Toon Alle Winkels'}
@@ -109,29 +111,28 @@ export function PriceHistoryChart({ history }: Props) {
 
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#222222" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(90, 175, 225, 0.3)" />
           <XAxis
             dataKey="date"
-            tick={{ fill: '#64748b', fontSize: 11 }}
+            tick={{ fill: '#5888a5', fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: '#222222' }}
+            axisLine={{ stroke: 'rgba(90, 175, 225, 0.4)' }}
           />
           <YAxis
-            tick={{ fill: '#64748b', fontSize: 11 }}
+            tick={{ fill: '#5888a5', fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: '#222222' }}
+            axisLine={{ stroke: 'rgba(90, 175, 225, 0.4)' }}
             tickFormatter={(v) => `€${v}`}
           />
           <Tooltip
             content={showAllStores ? undefined : <CustomTooltip />}
-            contentStyle={showAllStores ? { background: '#1a1a1a', border: '1px solid #2b2b2b', borderRadius: 8 } : undefined}
-            labelStyle={showAllStores ? { color: '#94a3b8' } : undefined}
+            contentStyle={showAllStores ? { background: 'rgba(225, 245, 255, 0.96)', border: '1px solid rgba(90, 175, 225, 0.5)', borderRadius: 8, backdropFilter: 'blur(8px)' } : undefined}
+            labelStyle={showAllStores ? { color: '#5888a5' } : undefined}
             formatter={showAllStores ? (value, name) => [`€${Number(value).toFixed(2).replace('.', ',')}`, name] : undefined}
           />
-          <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
+          <Legend wrapperStyle={{ fontSize: 12, color: '#5888a5' }} />
 
           {showAllStores ? (
-            // Multiple lines - one per store
             stores.map((store, i) => (
               <Line
                 key={store}
@@ -145,12 +146,11 @@ export function PriceHistoryChart({ history }: Props) {
               />
             ))
           ) : (
-            // Single line - best price
             <Line
               type="monotone"
               dataKey="price"
               name="Beste Prijs"
-              stroke="#34d399"
+              stroke="#1278a8"
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 5 }}

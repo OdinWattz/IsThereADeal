@@ -190,14 +190,14 @@ export function WishlistPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            <Heart size={32} className="text-pink-400" />
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3" style={{color: 'var(--text-primary)'}}>
+            <Heart size={32} style={{color: '#e879a0'}} />
             Verlanglijst
           </h1>
-          <p className="text-gray-400 text-sm sm:text-base">
+          <p className="text-sm sm:text-base" style={{color: 'var(--text-secondary)'}}>
             {items.length} game{items.length !== 1 ? 's' : ''} getoond (pagina {page + 1})
             {targetMetCount > 0 && (
-              <span className="ml-2 text-green-400">• {targetMetCount} op doelprijs!</span>
+              <span className="ml-2" style={{color: 'var(--green)'}}>• {targetMetCount} op doelprijs!</span>
             )}
           </p>
         </div>
@@ -205,7 +205,7 @@ export function WishlistPage() {
           <button
             onClick={handleRefresh}
             disabled={isRefetching}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 btn-aero font-medium text-sm disabled:opacity-50"
             title="Prijzen verversen"
           >
             <RefreshCw size={18} className={isRefetching ? 'animate-spin' : ''} />
@@ -213,7 +213,8 @@ export function WishlistPage() {
           </button>
           <button
             onClick={() => setShowSteamImport(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1b2838] hover:bg-[#2a3f5f] text-white rounded-lg transition-colors font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm"
+            style={{ background: 'rgba(27,40,56,0.85)', color: '#7ec8f0', border: '1px solid rgba(80,140,190,0.5)' }}
           >
             <Download size={18} />
             <span className="hidden sm:inline">Steam Import</span>
@@ -223,8 +224,8 @@ export function WishlistPage() {
 
       {/* Target Met Banner */}
       {targetMetCount > 0 && (
-        <div className="mb-6 p-4 bg-green-950/30 border border-green-900/50 rounded-xl">
-          <p className="text-green-400 font-semibold flex items-center gap-2">
+        <div className="mb-6 p-4 rounded-xl" style={{ background: 'rgba(23,160,94,0.08)', border: '1px solid rgba(23,160,94,0.3)' }}>
+          <p className="font-semibold flex items-center gap-2" style={{color: 'var(--green)'}}>
             🎉 {targetMetCount} game{targetMetCount !== 1 ? 's zijn' : ' is'} op of onder je doelprijs!
           </p>
         </div>
@@ -232,14 +233,14 @@ export function WishlistPage() {
 
       {/* Controls */}
       {items.length > 0 && (
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-[#0a0a0a] border border-[#222222] rounded-xl p-4">
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)' }}>
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <ArrowUpDown size={18} className="text-gray-400" />
+            <ArrowUpDown size={18} style={{color: 'var(--text-tertiary)'}} />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="flex-1 sm:flex-initial bg-[#050505] border border-[#2b2b2b] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 sm:flex-initial input-aero rounded-lg px-3 py-2 text-sm"
             >
               <option value="date-new">Nieuwste eerst</option>
               <option value="date-old">Oudste eerst</option>
@@ -252,22 +253,22 @@ export function WishlistPage() {
 
           {/* Filters */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Filter size={18} className="text-gray-400" />
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-300">
+            <Filter size={18} style={{color: 'var(--text-tertiary)'}} />
+            <label className="flex items-center gap-2 cursor-pointer text-sm" style={{color: 'var(--text-secondary)'}}>
               <input
                 type="checkbox"
                 checked={filterOnSale}
                 onChange={(e) => setFilterOnSale(e.target.checked)}
-                className="w-4 h-4 rounded"
+                className="w-4 h-4 rounded accent-[#1480b8]"
               />
               <span>In de aanbieding</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-300">
+            <label className="flex items-center gap-2 cursor-pointer text-sm" style={{color: 'var(--text-secondary)'}}>
               <input
                 type="checkbox"
                 checked={filterTargetMet}
                 onChange={(e) => setFilterTargetMet(e.target.checked)}
-                className="w-4 h-4 rounded"
+                className="w-4 h-4 rounded accent-[#1480b8]"
               />
               <span>Doelprijs bereikt</span>
             </label>
@@ -279,18 +280,18 @@ export function WishlistPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-80 bg-[#0a0a0a] border border-[#222222] rounded-xl animate-pulse" />
+            <div key={i} className="skeleton h-80 rounded-xl" />
           ))}
         </div>
       ) : items.length === 0 ? (
         /* Empty State */
         <div className="text-center py-20">
-          <Heart size={64} className="mx-auto mb-4 text-gray-600 opacity-30" />
-          <p className="text-gray-400 mb-4 text-lg">Je verlanglijst is leeg</p>
-          <p className="text-gray-500 mb-6 text-sm">Begin met het toevoegen van games aan je verlanglijst!</p>
+          <Heart size={64} className="mx-auto mb-4 opacity-30" style={{color: 'var(--text-tertiary)'}} />
+          <p className="mb-4 text-lg" style={{color: 'var(--text-secondary)'}}>Je verlanglijst is leeg</p>
+          <p className="mb-6 text-sm" style={{color: 'var(--text-tertiary)'}}>Begin met het toevoegen van games aan je verlanglijst!</p>
           <Link
             to="/search"
-            className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="inline-flex items-center px-6 py-3 btn-aero font-medium"
           >
             Games zoeken →
           </Link>
@@ -298,9 +299,9 @@ export function WishlistPage() {
       ) : processedItems.length === 0 ? (
         /* No Results After Filtering */
         <div className="text-center py-20">
-          <Filter size={64} className="mx-auto mb-4 text-gray-600 opacity-30" />
-          <p className="text-gray-400 mb-2 text-lg">Geen games gevonden</p>
-          <p className="text-gray-500 text-sm">Probeer je filters aan te passen</p>
+          <Filter size={64} className="mx-auto mb-4 opacity-30" style={{color: 'var(--text-tertiary)'}} />
+          <p className="mb-2 text-lg" style={{color: 'var(--text-secondary)'}}>Geen games gevonden</p>
+          <p className="text-sm" style={{color: 'var(--text-tertiary)'}}>Probeer je filters aan te passen</p>
         </div>
       ) : (
         /* Game Grid */
@@ -315,9 +316,10 @@ export function WishlistPage() {
             return (
               <div
                 key={item.id}
-                className={`bg-[#0a0a0a] border ${
-                  targetMet ? 'border-green-500/50' : 'border-[#222222]'
-                } rounded-xl overflow-hidden hover:border-purple-500/50 transition-colors relative group`}
+                className={`rounded-xl overflow-hidden relative group transition-all duration-200`}
+                style={{ background: 'rgba(255,255,255,0.84)', border: `1px solid ${targetMet ? 'rgba(23,160,94,0.5)' : 'rgba(110,190,235,0.42)'}`, backdropFilter: 'blur(8px)', boxShadow: '0 3px 12px rgba(40,110,165,0.08)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(20,128,184,0.18)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40,110,165,0.08)' }}
               >
                 {/* Target Met Badge */}
                 {targetMet && (
@@ -329,7 +331,7 @@ export function WishlistPage() {
 
                 {/* Discount Badge */}
                 {maxDiscount > 0 && (
-                  <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                  <div className="absolute top-2 right-2 z-10 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1" style={{background: 'linear-gradient(135deg, #1ea866, #15924e)'}}>
                     <Tag size={12} />
                     -{maxDiscount}%
                   </div>
@@ -338,7 +340,10 @@ export function WishlistPage() {
                 {/* Remove Button */}
                 <button
                   onClick={() => removeMutation.mutate(item.id)}
-                  className="absolute top-2 right-2 z-10 p-2 bg-black/70 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  className="absolute top-2 right-2 z-10 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  style={{ background: 'rgba(255,255,255,0.85)', color: '#e05050', border: '1px solid rgba(90,175,225,0.45)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ef4444'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.85)'; (e.currentTarget as HTMLElement).style.color = '#e05050' }}
                   title="Verwijderen"
                   style={maxDiscount > 0 ? { top: '3.5rem' } : {}}
                 >
@@ -358,40 +363,41 @@ export function WishlistPage() {
                 <div className="p-4">
                   <Link
                     to={`/game/${item.game.steam_appid}`}
-                    className="block text-white font-semibold mb-2 hover:text-purple-400 transition-colors line-clamp-2"
+                    className="block font-semibold mb-2 hover:underline transition-colors line-clamp-2"
+                    style={{color: 'var(--text-primary)'}}
                   >
                     {item.game.name}
                   </Link>
 
                   {/* Price Info */}
                   <div className="mb-3">
-                    <p className="text-sm text-gray-400 mb-1">Beste prijs</p>
+                    <p className="text-sm mb-1" style={{color: 'var(--text-secondary)'}}>Beste prijs</p>
                     <div className="flex items-baseline gap-2">
-                      <span className={`text-2xl font-bold ${targetMet ? 'text-green-400' : 'text-white'}`}>
+                      <span className="text-2xl font-bold" style={{color: targetMet ? 'var(--green)' : 'var(--text-primary)'}}>
                         {fmt(item.game.best_price)}
                       </span>
                       {item.game.best_store && (
-                        <span className="text-xs text-gray-500">via {item.game.best_store}</span>
+                        <span className="text-xs" style={{color: 'var(--text-tertiary)'}}>via {item.game.best_store}</span>
                       )}
                     </div>
                   </div>
 
                   {/* Target Price */}
-                  <div className="mb-3 p-3 bg-[#050505] border border-[#222222] rounded-lg">
+                  <div className="mb-3 p-3 rounded-lg" style={{ background: 'rgba(220,245,255,0.7)', border: '1px solid rgba(90,175,225,0.35)' }}>
                     <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
                       <Target size={12} className="text-yellow-400" />
                       Doelprijs
                     </p>
                     {editingId === item.id ? (
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 flex-1 bg-[#0a0a0a] border border-[#2b2b2b] rounded-md px-2 py-1">
-                          <span className="text-gray-400 text-sm">€</span>
+                        <div className="flex items-center gap-1 flex-1 rounded-md px-2 py-1" style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(90,170,215,0.5)' }}>
+                          <span className="text-sm" style={{color: 'var(--text-tertiary)'}}>€</span>
                           <input
                             type="number"
                             step="0.01"
                             value={editPrice}
                             onChange={(e) => setEditPrice(e.target.value)}
-                            className="flex-1 bg-transparent text-white text-sm outline-none"
+                            className="flex-1 bg-transparent text-sm outline-none" style={{color: 'var(--text-primary)'}}
                             placeholder="0.00"
                           />
                         </div>
@@ -422,11 +428,11 @@ export function WishlistPage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs" style={{color: 'var(--text-tertiary)'}}>
                     <span>Toegevoegd {new Date(item.added_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span>
                     <Link
                       to={`/game/${item.game.steam_appid}`}
-                      className="flex items-center gap-1 text-purple-400 hover:text-purple-300"
+                      className="flex items-center gap-1 transition-colors" style={{color: 'var(--accent)'}}
                     >
                       Details <ExternalLink size={12} />
                     </Link>
@@ -444,19 +450,21 @@ export function WishlistPage() {
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0 || isRefetching}
-            className="px-4 py-2 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
           >
             ← Vorige
           </button>
 
-          <span className="text-gray-400 text-sm">
+          <span className="text-sm" style={{color: 'var(--text-secondary)'}}>
             Pagina {page + 1}
           </span>
 
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={items.length < ITEMS_PER_PAGE || isRefetching}
-            className="px-4 py-2 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
           >
             Volgende →
           </button>
@@ -466,29 +474,32 @@ export function WishlistPage() {
       {/* Steam Import Modal */}
       {showSteamImport && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl max-w-md w-full p-6">
+          <div className="rounded-xl max-w-md w-full p-6" style={{ background: 'rgba(235,250,255,0.96)', border: '1px solid rgba(90,175,225,0.5)', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(40,100,160,0.2)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Download size={24} className="text-blue-400" />
+              <h2 className="text-xl font-bold flex items-center gap-2" style={{color: 'var(--text-primary)'}}>
+                <Download size={24} style={{color: '#1480b8'}} />
                 Steam Wishlist Importeren
               </h2>
               <button
                 onClick={() => setShowSteamImport(false)}
-                className="p-2 hover:bg-[#222222] rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{color: 'var(--text-tertiary)'}}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(90,175,225,0.2)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <X size={20} className="text-gray-400" />
+                <X size={20} />
               </button>
             </div>
 
             <div className="mb-4">
-              <p className="text-gray-400 text-sm mb-4">
+              <p className="text-sm mb-4" style={{color: 'var(--text-secondary)'}}>
                 Importeer je publieke Steam wishlist. Werkt met:
               </p>
-              <ul className="text-gray-500 text-xs space-y-1 mb-4">
-                <li>• Steam ID: <code className="text-purple-400">76561197960287930</code></li>
-                <li>• Profile URL: <code className="text-purple-400">steamcommunity.com/profiles/...</code></li>
-                <li>• Vanity URL: <code className="text-purple-400">steamcommunity.com/id/gaben</code></li>
-                <li>• Vanity name: <code className="text-purple-400">gaben</code></li>
+              <ul className="text-xs space-y-1 mb-4" style={{color: 'var(--text-tertiary)'}}>
+                <li>• Steam ID: <code style={{color: 'var(--accent)'}}>76561197960287930</code></li>
+                <li>• Profile URL: <code style={{color: 'var(--accent)'}}>steamcommunity.com/profiles/...</code></li>
+                <li>• Vanity URL: <code style={{color: 'var(--accent)'}}>steamcommunity.com/id/gaben</code></li>
+                <li>• Vanity name: <code style={{color: 'var(--accent)'}}>gaben</code></li>
               </ul>
             </div>
 
@@ -497,18 +508,18 @@ export function WishlistPage() {
               value={steamInput}
               onChange={(e) => setSteamInput(e.target.value)}
               placeholder="Steam ID, profile URL, of vanity name"
-              className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+              className="w-full input-aero px-4 py-3 mb-4"
               disabled={steamImportMutation.isPending}
             />
 
-            <div className="bg-blue-950/30 border border-blue-900/50 rounded-lg p-3 mb-4">
-              <p className="text-blue-400 text-xs mb-2">
+            <div className="rounded-lg p-3 mb-4" style={{ background: 'rgba(20,128,184,0.08)', border: '1px solid rgba(20,128,184,0.25)' }}>
+              <p className="text-xs mb-2" style={{color: '#1480b8'}}>
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
-              <p className="text-blue-300 text-xs mb-2">
+              <p className="text-xs mb-2" style={{color: '#0d6799'}}>
                 ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (10 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
-              <p className="text-green-400 text-xs">
+              <p className="text-xs" style={{color: 'var(--green)'}}>
                 🚀 <strong>Anti rate-limit:</strong> Je wishlist wordt 10 min gecached. Daarna kun je onbeperkt importeren zonder Steam opnieuw te vragen!
               </p>
             </div>
@@ -522,10 +533,10 @@ export function WishlistPage() {
                     {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s max`}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-[#222222] rounded-full overflow-hidden">
+                <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(160,210,240,0.3)' }}>
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
-                    style={{ width: `${importProgress}%` }}
+                    className="h-full transition-all duration-300 ease-out"
+                    style={{ width: `${importProgress}%`, background: 'linear-gradient(90deg, #0ab5d8, #1480b8)' }}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -537,7 +548,8 @@ export function WishlistPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowSteamImport(false)}
-                className="flex-1 px-4 py-3 bg-[#222222] hover:bg-[#252938] text-gray-300 rounded-lg font-medium transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg font-medium transition-colors"
+                style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
                 disabled={steamImportMutation.isPending}
               >
                 Annuleren
@@ -545,7 +557,7 @@ export function WishlistPage() {
               <button
                 onClick={() => steamImportMutation.mutate(steamInput)}
                 disabled={!steamInput.trim() || steamImportMutation.isPending}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 btn-aero font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {steamImportMutation.isPending ? 'Importeren...' : 'Importeren'}
               </button>

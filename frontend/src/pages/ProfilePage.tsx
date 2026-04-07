@@ -115,36 +115,42 @@ export function ProfilePage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <User size={32} className="text-purple-400" />
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3" style={{color: 'var(--text-primary)'}}>
+          <User size={32} style={{color: 'var(--accent)'}} />
           Profiel
         </h1>
-        <p className="text-gray-400 text-sm sm:text-base">Beheer je account instellingen en voorkeuren</p>
+        <p className="text-sm sm:text-base" style={{color: 'var(--text-secondary)'}}>Beheer je account instellingen en voorkeuren</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <Link
           to="/wishlist"
-          className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
+          className="rounded-xl p-6 transition-all"
+          style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', backdropFilter: 'blur(8px)', boxShadow: '0 3px 12px rgba(40,110,165,0.08)' }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#1480b8'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm mb-1">Verlanglijst</p>
-              <p className="text-3xl font-bold text-white">{wishlistItems.length}</p>
+              <p className="text-sm mb-1" style={{color: 'var(--text-secondary)'}}>Verlanglijst</p>
+              <p className="text-3xl font-bold" style={{color: 'var(--text-primary)'}}>{wishlistItems.length}</p>
             </div>
-            <Heart size={32} className="text-pink-400" />
+            <Heart size={32} style={{color: '#e879a0'}} />
           </div>
         </Link>
 
         <Link
           to="/alerts"
-          className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 hover:border-purple-500/50 transition-colors"
+          className="rounded-xl p-6 transition-all"
+          style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', backdropFilter: 'blur(8px)', boxShadow: '0 3px 12px rgba(40,110,165,0.08)' }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#1480b8'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm mb-1">Price Alerts</p>
-              <p className="text-3xl font-bold text-white">{alerts.length}</p>
+              <p className="text-sm mb-1" style={{color: 'var(--text-secondary)'}}>Price Alerts</p>
+              <p className="text-3xl font-bold" style={{color: 'var(--text-primary)'}}>{alerts.length}</p>
             </div>
             <Bell size={32} className="text-orange-400" />
           </div>
@@ -152,29 +158,29 @@ export function ProfilePage() {
       </div>
 
       {/* Profile Info Section */}
-      <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="rounded-xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(50,120,170,0.1)' }}>
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{color: 'var(--text-primary)'}}>
           <User size={20} />
           Account Informatie
         </h2>
 
         {/* Username */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-400 mb-2">Gebruikersnaam</label>
+          <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Gebruikersnaam</label>
           {editingField === 'username' ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="flex-1 bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 input-aero px-4 py-2"
                 placeholder="Username"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveUsername}
                   disabled={updateMutation.isPending}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="px-4 py-2 btn-aero font-medium disabled:opacity-50"
                 >
                   Opslaan
                 </button>
@@ -183,18 +189,19 @@ export function ProfilePage() {
                     setEditingField(null)
                     setUsername(user?.username || '')
                   }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium"
+                  className="px-4 py-2 rounded-lg font-medium"
+                  style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
                 >
                   Annuleren
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
-              <span className="text-white">{user?.username}</span>
+            <div className="flex items-center justify-between rounded-lg px-4 py-3" style={{ background: 'rgba(220,244,255,0.7)', border: '1px solid rgba(90,175,225,0.35)' }}>
+              <span style={{color: 'var(--text-primary)'}}>{user?.username}</span>
               <button
                 onClick={() => setEditingField('username')}
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+                className="text-sm font-medium" style={{color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer'}}
               >
                 Bewerken
               </button>
@@ -204,21 +211,21 @@ export function ProfilePage() {
 
         {/* Email */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-400 mb-2">E-mail</label>
+          <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>E-mail</label>
           {editingField === 'email' ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 input-aero px-4 py-2"
                 placeholder="Email"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveEmail}
                   disabled={updateMutation.isPending}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="px-4 py-2 btn-aero font-medium disabled:opacity-50"
                 >
                   Opslaan
                 </button>
@@ -227,18 +234,19 @@ export function ProfilePage() {
                     setEditingField(null)
                     setEmail(user?.email || '')
                   }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium"
+                  className="px-4 py-2 rounded-lg font-medium"
+                  style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
                 >
                   Annuleren
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
-              <span className="text-white">{user?.email}</span>
+            <div className="flex items-center justify-between rounded-lg px-4 py-3" style={{ background: 'rgba(220,244,255,0.7)', border: '1px solid rgba(90,175,225,0.35)' }}>
+              <span style={{color: 'var(--text-primary)'}}>{user?.email}</span>
               <button
                 onClick={() => setEditingField('email')}
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+                className="text-sm font-medium" style={{color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer'}}
               >
                 Bewerken
               </button>
@@ -248,9 +256,9 @@ export function ProfilePage() {
 
         {/* Member Since */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">Lid sinds</label>
-          <div className="bg-[#050505] border border-[#222222] rounded-lg px-4 py-3">
-            <span className="text-white">
+          <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Lid sinds</label>
+          <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(220,244,255,0.7)', border: '1px solid rgba(90,175,225,0.35)' }}>
+            <span style={{color: 'var(--text-primary)'}}>
               {user?.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL', {
                 year: 'numeric',
                 month: 'long',
@@ -262,8 +270,8 @@ export function ProfilePage() {
       </div>
 
       {/* Password Section */}
-      <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="rounded-xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(50,120,170,0.1)' }}>
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{color: 'var(--text-primary)'}}>
           <Lock size={20} />
           Wachtwoord
         </h2>
@@ -271,45 +279,46 @@ export function ProfilePage() {
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium"
+            className="px-4 py-2 rounded-lg font-medium"
+            style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
           >
             Wachtwoord wijzigen
           </button>
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Huidig wachtwoord</label>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Huidig wachtwoord</label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full input-aero px-4 py-2"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Nieuw wachtwoord</label>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Nieuw wachtwoord</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full input-aero px-4 py-2"
                 placeholder="Minimaal 6 tekens"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Bevestig nieuw wachtwoord</label>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Bevestig nieuw wachtwoord</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full input-aero px-4 py-2"
               />
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleChangePassword}
                 disabled={passwordMutation.isPending}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50"
+                className="px-4 py-2 btn-aero font-medium disabled:opacity-50"
               >
                 Wachtwoord wijzigen
               </button>
@@ -320,7 +329,8 @@ export function ProfilePage() {
                   setNewPassword('')
                   setConfirmPassword('')
                 }}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium"
+                className="px-4 py-2 rounded-lg font-medium"
+                style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
               >
                 Annuleren
               </button>
@@ -330,12 +340,12 @@ export function ProfilePage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-red-950/20 border border-red-900/50 rounded-xl p-6">
+      <div className="rounded-xl p-6" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)' }}>
         <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
           <Shield size={20} />
           Gevarenzone
         </h2>
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-sm mb-4" style={{color: 'var(--text-secondary)'}}>
           Het verwijderen van je account is permanent en kan niet ongedaan worden gemaakt. Al je gegevens, inclusief je verlanglijst en alerts, worden verwijderd.
         </p>
         <button
@@ -350,18 +360,18 @@ export function ProfilePage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0a0a0a] border border-[#222222] rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-4">Account verwijderen?</h3>
-            <p className="text-gray-400 mb-4">
+          <div className="rounded-xl p-6 max-w-md w-full" style={{ background: 'rgba(235,250,255,0.97)', border: '1px solid rgba(90,175,225,0.5)', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(40,100,160,0.2)' }}>
+            <h3 className="text-xl font-bold mb-4" style={{color: 'var(--text-primary)'}}>Account verwijderen?</h3>
+            <p className="mb-4" style={{color: 'var(--text-secondary)'}}>
               Dit kan niet ongedaan worden gemaakt. Al je gegevens worden permanent verwijderd.
             </p>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-400 mb-2">Bevestig je wachtwoord</label>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text-secondary)'}}>Bevestig je wachtwoord</label>
               <input
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full bg-[#050505] border border-[#2b2b2b] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full input-aero px-4 py-2"
                 placeholder="Wachtwoord"
               />
             </div>
@@ -378,7 +388,8 @@ export function ProfilePage() {
                   setShowDeleteModal(false)
                   setDeletePassword('')
                 }}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium"
+                className="flex-1 px-4 py-2 rounded-lg font-medium"
+                style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-secondary)' }}
               >
                 Annuleren
               </button>

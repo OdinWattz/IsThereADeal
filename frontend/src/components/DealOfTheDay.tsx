@@ -49,8 +49,8 @@ export function DealOfTheDay() {
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-orange-600 to-red-600 rounded-2xl p-8 mb-8 animate-pulse">
-        <div className="h-48 bg-black/20 rounded-xl"></div>
+      <div className="rounded-2xl p-8 mb-8 animate-pulse" style={{ background: 'linear-gradient(135deg, #7ac8e8 0%, #4aa8d8 50%, #2888c0 100%)' }}>
+        <div className="h-48 rounded-xl" style={{ background: 'rgba(255,255,255,0.15)' }}></div>
       </div>
     )
   }
@@ -58,29 +58,40 @@ export function DealOfTheDay() {
   if (!deal) return null
 
   return (
-    <div className="bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 rounded-2xl p-1 mb-8 shadow-2xl">
-      <div className="bg-[#000000] rounded-xl p-6 md:p-8">
+    <div className="rounded-2xl p-1 mb-8" style={{
+      background: 'linear-gradient(135deg, #5ec5e8 0%, #2ea8d8 35%, #1888c0 65%, #0e6eaa 100%)',
+      boxShadow: '0 8px 32px rgba(14, 110, 170, 0.35)',
+    }}>
+      <div className="rounded-xl p-6 md:p-8" style={{
+        background: 'rgba(220, 245, 255, 0.92)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-orange-500 to-red-500 p-3 rounded-xl">
+            <div className="p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, #2ea8d8, #1278a8)', boxShadow: '0 4px 12px rgba(18, 120, 168, 0.35)' }}>
               <Flame size={28} className="text-white" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Deal of the Day</h2>
-              <p className="text-gray-400 text-sm">Dagelijks om middernacht vervangen</p>
+              <h2 className="text-2xl md:text-3xl font-bold" style={{ color: '#0a2038' }}>Deal of the Day</h2>
+              <p className="text-sm" style={{ color: '#5888a5' }}>Dagelijks om middernacht vervangen</p>
             </div>
           </div>
 
           {/* Countdown */}
-          <div className="hidden sm:flex items-center gap-2 bg-black/30 px-4 py-2 rounded-lg border border-white/10">
-            <Clock size={18} className="text-orange-400" />
-            <div className="flex items-center gap-1 font-mono text-white">
-              <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}</span>
-              <span>:</span>
-              <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span>:</span>
-              <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}</span>
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg" style={{
+            background: 'rgba(255,255,255,0.65)',
+            border: '1px solid rgba(90, 175, 225, 0.4)',
+            backdropFilter: 'blur(6px)',
+          }}>
+            <Clock size={18} style={{ color: '#1278a8' }} />
+            <div className="flex items-center gap-1 font-mono" style={{ color: '#0a2038' }}>
+              <span className="px-2 py-1 rounded" style={{ background: 'rgba(18, 120, 168, 0.12)' }}>{String(timeLeft.hours).padStart(2, '0')}</span>
+              <span style={{ color: '#5888a5' }}>:</span>
+              <span className="px-2 py-1 rounded" style={{ background: 'rgba(18, 120, 168, 0.12)' }}>{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <span style={{ color: '#5888a5' }}>:</span>
+              <span className="px-2 py-1 rounded" style={{ background: 'rgba(18, 120, 168, 0.12)' }}>{String(timeLeft.seconds).padStart(2, '0')}</span>
             </div>
           </div>
         </div>
@@ -89,45 +100,48 @@ export function DealOfTheDay() {
         <Link to={`/game/${deal.steam_appid}`} className="block group">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Game Image */}
-            <div className="md:w-1/2 relative overflow-hidden rounded-xl">
+            <div className="md:w-1/2 relative overflow-hidden rounded-xl" style={{ boxShadow: '0 4px 16px rgba(18, 120, 168, 0.2)' }}>
               <img
                 src={deal.header_image}
                 alt={deal.name}
                 className="w-full aspect-[460/215] object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-3 right-3 bg-green-600 text-white text-2xl font-bold px-4 py-2 rounded-lg shadow-lg">
+              <div className="absolute top-3 right-3 text-white text-2xl font-bold px-4 py-2 rounded-lg shadow-lg" style={{
+                background: 'linear-gradient(135deg, #1ea866, #15924e)',
+                boxShadow: '0 4px 12px rgba(22, 154, 88, 0.4)',
+              }}>
                 -{deal.discount_percent}%
               </div>
             </div>
 
             {/* Deal Info */}
             <div className="md:w-1/2 flex flex-col justify-center">
-              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 group-hover:text-orange-400 transition-colors line-clamp-2">
+              <h3 className="text-3xl md:text-4xl font-bold mb-4 transition-colors line-clamp-2" style={{ color: '#0a2038' }}>
                 {deal.name}
               </h3>
 
               <div className="flex items-baseline gap-4 mb-6">
-                <span className="text-5xl font-bold text-green-400">
+                <span className="text-5xl font-bold" style={{ color: '#169a58' }}>
                   ${deal.sale_price.toFixed(2)}
                 </span>
-                <span className="text-2xl text-gray-500 line-through">
+                <span className="text-2xl line-through" style={{ color: '#7aabcc' }}>
                   ${deal.regular_price.toFixed(2)}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-300">
+              <div className="flex items-center gap-3" style={{ color: '#5888a5' }}>
                 <span className="text-sm">via {deal.store_name}</span>
                 <span className="text-sm">•</span>
                 <span className="text-sm">Deal Rating: {deal.deal_rating.toFixed(1)}/10</span>
               </div>
 
-              <div className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-lg group-hover:from-orange-600 group-hover:to-red-600 transition-all self-start">
+              <div className="mt-6 inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-lg self-start btn-aero transition-all">
                 <span>Bekijk Deal</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
 
               {/* Mobile Countdown */}
-              <div className="sm:hidden flex items-center gap-2 mt-4 text-gray-400 text-sm">
+              <div className="sm:hidden flex items-center gap-2 mt-4 text-sm" style={{ color: '#5888a5' }}>
                 <Clock size={16} />
                 <span>Vernieuwt over {timeLeft.hours}u {timeLeft.minutes}m {timeLeft.seconds}s</span>
               </div>

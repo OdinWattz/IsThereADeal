@@ -132,12 +132,12 @@ export function CollectionDetailPage() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-64 bg-gray-700 rounded" />
-          <div className="h-4 w-96 bg-gray-700 rounded" />
+        <div className="space-y-4">
+          <div className="skeleton h-8 w-64 rounded" />
+          <div className="skeleton h-4 w-96 rounded" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-56 bg-gray-700 rounded" />
+              <div key={i} className="skeleton h-56 rounded" />
             ))}
           </div>
         </div>
@@ -159,7 +159,9 @@ export function CollectionDetailPage() {
       <div className="mb-8">
         <button
           onClick={() => navigate('/collections')}
-          className="flex items-center gap-2 mb-4 hover:text-purple-400 transition-colors"
+          className="flex items-center gap-2 mb-4 transition-colors"
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#1480b8' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
           style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowLeft size={20} />
@@ -200,7 +202,7 @@ export function CollectionDetailPage() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              className="btn-aero flex items-center gap-2 px-4 py-2 rounded-lg font-medium"
             >
               <Plus size={20} />
               <span className="hidden sm:inline">Game Toevoegen</span>
@@ -222,7 +224,7 @@ export function CollectionDetailPage() {
           <p className="text-lg mb-4">Nog geen games in deze collectie</p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="btn-aero inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium"
           >
             <Plus size={18} />
             Voeg je eerste game toe
@@ -252,7 +254,7 @@ export function CollectionDetailPage() {
               <div className="p-3">
                 <Link to={`/game/${item.game.steam_appid}`}>
                   <h3
-                    className="text-sm font-medium mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors"
+                    className="text-sm font-medium mb-2 line-clamp-2 transition-colors group-hover:text-[#1480b8]"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {item.game.name}
@@ -265,7 +267,7 @@ export function CollectionDetailPage() {
                   </p>
                 )}
                 {item.game.best_price == null && (
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="text-sm mb-2" style={{ color: 'var(--text-tertiary)' }}>
                     Prijs ophalen...
                   </p>
                 )}
@@ -327,27 +329,30 @@ export function CollectionDetailPage() {
                         onClick={() => !isInCollection && handleToggleWishlistGame(item.game.steam_appid)}
                         className={`relative rounded-lg overflow-hidden border-2 transition-all ${
                           isInCollection
-                            ? 'opacity-50 cursor-not-allowed border-gray-600'
+                            ? 'opacity-50 cursor-not-allowed'
                             : isSelected
-                            ? 'border-purple-500 cursor-pointer'
-                            : 'border-transparent hover:border-purple-400 cursor-pointer'
+                            ? 'cursor-pointer'
+                            : 'border-transparent cursor-pointer'
                         }`}
+                        style={{ borderColor: isInCollection ? 'rgba(160,210,240,0.5)' : isSelected ? '#1480b8' : undefined }}
+                        onMouseEnter={e => { if (!isInCollection && !isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#1480b8' }}
+                        onMouseLeave={e => { if (!isInCollection && !isSelected) (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
                       >
                         <img
                           src={item.game.header_image}
                           alt={item.game.name}
                           className="w-full h-32 object-cover"
                         />
-                        <div className="p-2 bg-[#050505]">
-                          <p className="text-sm font-medium text-white line-clamp-1">
+                        <div className="p-2" style={{ background: 'rgba(220,244,255,0.9)' }}>
+                          <p className="text-sm font-medium line-clamp-1" style={{ color: 'var(--text-primary)' }}>
                             {item.game.name}
                           </p>
                           {isInCollection && (
-                            <p className="text-xs text-gray-500 mt-1">Al in collectie</p>
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Al in collectie</p>
                           )}
                         </div>
                         {isSelected && !isInCollection && (
-                          <div className="absolute top-2 right-2 bg-purple-600 rounded-full p-1">
+                          <div className="absolute top-2 right-2 rounded-full p-1" style={{ background: '#1480b8' }}>
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path
                                 fillRule="evenodd"
@@ -379,7 +384,7 @@ export function CollectionDetailPage() {
                   <button
                     onClick={handleAddSelectedWishlistGames}
                     disabled={selectedWishlistGames.size === 0}
-                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-aero flex-1 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {selectedWishlistGames.size} game{selectedWishlistGames.size !== 1 ? 's' : ''} toevoegen
                   </button>
@@ -426,7 +431,7 @@ export function CollectionDetailPage() {
               <button
                 onClick={handleSearch}
                 disabled={searching || searchQuery.trim().length < 2}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="btn-aero px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
                 <Search size={20} />
               </button>

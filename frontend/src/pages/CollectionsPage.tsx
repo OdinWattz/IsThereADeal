@@ -72,7 +72,7 @@ export function CollectionsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <FolderOpen size={32} className="text-purple-400" />
+            <FolderOpen size={32} style={{color: 'var(--accent)'}} />
             <h1
               className="text-3xl sm:text-4xl font-bold"
               style={{ color: 'var(--text-primary)' }}
@@ -90,7 +90,7 @@ export function CollectionsPage() {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 btn-aero font-medium"
         >
           <Plus size={20} />
           <span className="hidden sm:inline">Nieuwe Collectie</span>
@@ -103,8 +103,7 @@ export function CollectionsPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg h-48 animate-pulse"
-              style={{ backgroundColor: 'var(--bg-card)' }}
+              className="rounded-lg h-48 skeleton"
             />
           ))}
         </div>
@@ -124,7 +123,7 @@ export function CollectionsPage() {
           <p className="text-lg mb-4">Nog geen collecties</p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 btn-aero font-medium"
           >
             <Plus size={18} />
             Maak je eerste collectie
@@ -138,19 +137,22 @@ export function CollectionsPage() {
           {collections.map((collection) => (
             <div
               key={collection.id}
-              className="border rounded-lg p-5 hover:border-purple-500 transition-all group"
+              className="border rounded-lg p-5 transition-all group"
               style={{
-                backgroundColor: 'var(--bg-card)',
-                borderColor: 'var(--border-secondary)'
+                background: 'rgba(255,255,255,0.84)',
+                borderColor: 'rgba(110,190,235,0.42)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 3px 12px rgba(40,110,165,0.08)'
               }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1480b8'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(20,128,184,0.15)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40,110,165,0.08)' }}
             >
               {/* Collection Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <Link
                     to={`/collections/${collection.id}`}
-                    className="flex items-center gap-2 group-hover:text-purple-400 transition-colors"
-                  >
+                    className="flex items-center gap-2 transition-colors" style={{color: 'var(--text-primary)'}}>
                     <h3
                       className="text-lg font-semibold"
                       style={{ color: 'var(--text-primary)' }}
@@ -304,7 +306,7 @@ export function CollectionsPage() {
               <button
                 onClick={handleCreate}
                 disabled={createMutation.isPending}
-                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 btn-aero font-medium disabled:opacity-50"
               >
                 {createMutation.isPending ? 'Aanmaken...' : 'Aanmaken'}
               </button>

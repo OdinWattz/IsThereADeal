@@ -19,24 +19,27 @@ export function GameCard({ game, showBestDeal = true }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #222222',
+        background: 'rgba(255, 255, 255, 0.84)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(110, 190, 235, 0.45)',
         borderRadius: '12px',
         overflow: 'hidden',
         textDecoration: 'none',
         transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
+        boxShadow: '0 3px 14px rgba(40, 110, 165, 0.1)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.borderColor = '#7c3aed'
+        el.style.borderColor = '#1278a8'
         el.style.transform = 'translateY(-2px)'
-        el.style.boxShadow = '0 8px 24px rgba(124,58,237,0.15)'
+        el.style.boxShadow = '0 8px 24px rgba(18, 120, 168, 0.22)'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.borderColor = '#222222'
+        el.style.borderColor = 'rgba(110, 190, 235, 0.45)'
         el.style.transform = 'translateY(0)'
-        el.style.boxShadow = 'none'
+        el.style.boxShadow = '0 3px 14px rgba(40, 110, 165, 0.1)'
       }}
     >
       {/* Image */}
@@ -49,10 +52,12 @@ export function GameCard({ game, showBestDeal = true }: Props) {
         {discount > 0 && (
           <div style={{
             position: 'absolute', top: '8px', left: '8px',
-            backgroundColor: '#16a34a', color: '#fff',
+            background: 'linear-gradient(135deg, #1ea866, #16a560)',
+            color: '#fff',
             fontSize: '0.7rem', fontWeight: 700,
             padding: '3px 7px', borderRadius: '6px',
             display: 'flex', alignItems: 'center', gap: '3px',
+            boxShadow: '0 2px 6px rgba(22, 165, 88, 0.35)',
           }}>
             <TrendingDown size={10} /> -{discount}%
           </div>
@@ -60,7 +65,9 @@ export function GameCard({ game, showBestDeal = true }: Props) {
         {game.best_store && game.best_store !== 'Steam' && showBestDeal && (
           <div style={{
             position: 'absolute', top: '8px', right: '8px',
-            backgroundColor: 'rgba(124,58,237,0.9)', color: '#fff',
+            background: 'rgba(18, 120, 168, 0.88)',
+            backdropFilter: 'blur(4px)',
+            color: '#fff',
             fontSize: '0.7rem', padding: '3px 7px', borderRadius: '6px',
           }}>
             {game.best_store}
@@ -71,7 +78,7 @@ export function GameCard({ game, showBestDeal = true }: Props) {
       {/* Info */}
       <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <h3 style={{
-          fontSize: '0.85rem', fontWeight: 500, color: '#e2e8f0',
+          fontSize: '0.85rem', fontWeight: 500, color: '#082030',
           overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
           marginBottom: '8px', lineHeight: '1.4',
@@ -82,19 +89,19 @@ export function GameCard({ game, showBestDeal = true }: Props) {
         <div>
           {displayPrice !== undefined ? (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#4ade80' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#169a58' }}>
                 €{displayPrice.toFixed(2).replace('.', ',')}
               </span>
               {regularPrice && regularPrice > displayPrice && (
-                <span style={{ fontSize: '0.75rem', color: '#64748b', textDecoration: 'line-through' }}>
+                <span style={{ fontSize: '0.75rem', color: '#7aabcc', textDecoration: 'line-through' }}>
                   €{regularPrice.toFixed(2).replace('.', ',')}
                 </span>
               )}
             </div>
           ) : (
-            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Free / N/A</span>
+            <span style={{ fontSize: '0.85rem', color: '#5888a5' }}>Free / N/A</span>
           )}
-          <p style={{ fontSize: '0.72rem', color: '#475569', marginTop: '2px' }}>
+          <p style={{ fontSize: '0.72rem', color: '#78a8c5', marginTop: '2px' }}>
             {game.prices.length} store{game.prices.length !== 1 ? 's' : ''}
           </p>
         </div>

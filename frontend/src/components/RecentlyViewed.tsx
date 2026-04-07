@@ -10,27 +10,37 @@ export function RecentlyViewed() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
-          <Clock size={20} className="text-purple-400" />
+        <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Clock size={20} style={{ color: 'var(--accent)' }} />
           Recent bekeken
         </h2>
         <button
           onClick={clearRecentlyViewed}
-          className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-1"
+          className="text-sm flex items-center gap-1 transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >
           <X size={14} />
           Wissen
         </button>
       </div>
 
-      {/* Horizontal scrollable container */}
       <div className="relative">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {recentlyViewed.map((game) => (
             <Link
               key={game.steam_appid}
               to={`/game/${game.steam_appid}`}
-              className="group flex-shrink-0 w-48 bg-[#0a0a0a] border border-[#222222] rounded-lg overflow-hidden hover:border-purple-500 transition-all"
+              className="group flex-shrink-0 w-48 rounded-lg overflow-hidden transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.82)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(110, 190, 235, 0.42)',
+                boxShadow: '0 2px 10px rgba(40, 110, 165, 0.08)',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1278a8'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(18, 120, 168, 0.18)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(40, 110, 165, 0.08)' }}
             >
               <div className="relative">
                 <img
@@ -39,10 +49,9 @@ export function RecentlyViewed() {
                   className="w-full aspect-[460/215] object-cover"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="p-2">
-                <h3 className="text-white text-xs font-medium line-clamp-2 group-hover:text-purple-400 transition-colors">
+                <h3 className="text-xs font-medium line-clamp-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
                   {game.name}
                 </h3>
               </div>

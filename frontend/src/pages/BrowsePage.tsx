@@ -89,11 +89,11 @@ export function BrowsePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <Search size={32} className="text-purple-400" />
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3" style={{color: 'var(--text-primary)'}}>
+          <Search size={32} style={{color: 'var(--accent)'}} />
           Browse Games
         </h1>
-        <p className="text-gray-400 text-sm sm:text-base">
+        <p className="text-sm sm:text-base" style={{color: 'var(--text-secondary)'}}>
           Ontdek games met filters tot 100% minimale korting
         </p>
       </div>
@@ -101,23 +101,24 @@ export function BrowsePage() {
       {/* Search Bar + Filters */}
       <div className="mb-6 flex gap-3">
         <div className="flex-1 relative">
-          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2" style={{color: 'var(--text-tertiary)'}} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Zoek op naam..."
-            className="w-full bg-[#0a0a0a] border border-[#222222] rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full input-aero pl-10 pr-4 py-3 text-sm"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-3 bg-[#0a0a0a] border border-[#222222] hover:border-purple-500 text-white rounded-lg transition-colors relative flex items-center gap-2"
+          className="px-4 py-3 rounded-lg transition-all relative flex items-center gap-2"
+          style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
         >
           <Filter size={20} />
           <span className="hidden sm:inline">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{background: '#1480b8'}}>
               {activeFilterCount}
             </span>
           )}
@@ -126,15 +127,15 @@ export function BrowsePage() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="mb-6 bg-[#0a0a0a] border border-[#222222] rounded-xl p-6">
+        <div className="mb-6 rounded-xl p-6" style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(50,120,170,0.1)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h3 className="text-lg font-semibold flex items-center gap-2" style={{color: 'var(--text-primary)'}}>
               <Filter size={20} />
               Filters
             </h3>
             <button
               onClick={clearFilters}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+              className="text-sm flex items-center gap-1" style={{color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer'}}
             >
               <X size={16} />
               Wis Alles
@@ -145,8 +146,8 @@ export function BrowsePage() {
             {/* Max Price Slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-300">Max Prijs</label>
-                <span className="text-sm font-semibold text-purple-400">
+                <label className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>Max Prijs</label>
+                <span className="text-sm font-semibold" style={{color: 'var(--accent)'}}>
                   {maxPrice ? `€${maxPrice}` : '∞'}
                 </span>
               </div>
@@ -157,12 +158,12 @@ export function BrowsePage() {
                 step="5"
                 value={maxPrice || '100'}
                 onChange={(e) => setMaxPrice(e.target.value === '100' ? '' : e.target.value)}
-                className="w-full h-2 bg-[#222222] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#1480b8]"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${maxPrice || 100}%, #222222 ${maxPrice || 100}%, #222222 100%)`
+                  background: `linear-gradient(to right, #1480b8 0%, #1480b8 ${maxPrice || 100}%, rgba(160,210,240,0.4) ${maxPrice || 100}%, rgba(160,210,240,0.4) 100%)`
                 }}
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs mt-1" style={{color: 'var(--text-tertiary)'}}>
                 <span>€0</span>
                 <span>€25</span>
                 <span>€50</span>
@@ -174,8 +175,8 @@ export function BrowsePage() {
             {/* Min Discount Slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-300">Min Korting</label>
-                <span className="text-sm font-semibold text-purple-400">
+                <label className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>Min Korting</label>
+                <span className="text-sm font-semibold" style={{color: 'var(--accent)'}}>
                   {minDiscount || '0'}%
                 </span>
               </div>
@@ -186,12 +187,12 @@ export function BrowsePage() {
                 step="5"
                 value={minDiscount || '0'}
                 onChange={(e) => setMinDiscount(e.target.value)}
-                className="w-full h-2 bg-[#222222] rounded-lg appearance-none cursor-pointer accent-purple-600"
+                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#1480b8]"
                 style={{
-                  background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${minDiscount || 0}%, #222222 ${minDiscount || 0}%, #222222 100%)`
+                  background: `linear-gradient(to right, #1480b8 0%, #1480b8 ${minDiscount || 0}%, rgba(160,210,240,0.4) ${minDiscount || 0}%, rgba(160,210,240,0.4) 100%)`
                 }}
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs mt-1" style={{color: 'var(--text-tertiary)'}}>
                 <span>0%</span>
                 <span>25%</span>
                 <span>50%</span>
@@ -206,7 +207,7 @@ export function BrowsePage() {
               setPage(0)
               setSearchParams({ ...buildParams(), page: '0', limit: String(PAGE_SIZE) })
             }}
-            className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="mt-4 w-full px-4 py-2 btn-aero font-medium"
           >
             Filters Toepassen
           </button>
@@ -215,11 +216,11 @@ export function BrowsePage() {
 
       {/* Sort & Results Count */}
       <div className="mb-6 flex items-center justify-between">
-        <p className="text-gray-400 text-sm">
+        <p className="text-sm" style={{color: 'var(--text-secondary)'}}>
           {isLoading ? 'Laden...' : `${games.length} resultaten op pagina ${page + 1}`}
         </p>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-400 hidden sm:inline">Sorteer:</label>
+          <label className="text-sm hidden sm:inline" style={{color: 'var(--text-secondary)'}}>Sorteer:</label>
           <select
             value={sortBy}
             onChange={(e) => {
@@ -227,7 +228,7 @@ export function BrowsePage() {
               setPage(0)
               setSearchParams({ ...buildParams(), sort_by: e.target.value, page: '0', limit: String(PAGE_SIZE) })
             }}
-            className="bg-[#0a0a0a] border border-[#222222] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="input-aero rounded-lg px-3 py-2 text-sm"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -240,17 +241,17 @@ export function BrowsePage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="h-80 bg-[#0a0a0a] border border-[#222222] rounded-xl animate-pulse" />
+            <div key={i} className="skeleton h-80 rounded-xl" />
           ))}
         </div>
       ) : games.length === 0 ? (
         <div className="text-center py-20">
-          <Search size={64} className="mx-auto mb-4 text-gray-600 opacity-30" />
-          <p className="text-gray-400 mb-2 text-lg">Geen games gevonden</p>
-          <p className="text-gray-500 text-sm mb-4">Probeer andere filters of zoektermen</p>
+          <Search size={64} className="mx-auto mb-4 opacity-30" style={{color: 'var(--text-tertiary)'}} />
+          <p className="mb-2 text-lg" style={{color: 'var(--text-secondary)'}}>Geen games gevonden</p>
+          <p className="text-sm mb-4" style={{color: 'var(--text-tertiary)'}}>Probeer andere filters of zoektermen</p>
           <button
             onClick={clearFilters}
-            className="text-purple-400 hover:text-purple-300 font-medium"
+            className="font-medium" style={{color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer'}}
           >
             Reset filters
           </button>
@@ -268,7 +269,10 @@ export function BrowsePage() {
             return (
               <div
                 key={game.steam_appid || game.id}
-                className="bg-[#0a0a0a] border border-[#222222] rounded-xl overflow-hidden hover:border-purple-500 transition-colors group relative"
+                className="rounded-xl overflow-hidden group relative transition-all duration-200"
+                style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(110,190,235,0.42)', backdropFilter: 'blur(8px)', boxShadow: '0 3px 12px rgba(40,110,165,0.08)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1480b8'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(20,128,184,0.2)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40,110,165,0.08)' }}
               >
                 {/* Quick View Button */}
                 <button
@@ -276,7 +280,10 @@ export function BrowsePage() {
                     e.stopPropagation()
                     setQuickViewAppid(game.steam_appid)
                   }}
-                  className="absolute top-2 left-2 z-10 p-2 bg-black/70 hover:bg-purple-600 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  className="absolute top-2 left-2 z-10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(90,175,225,0.45)', color: '#1480b8' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1480b8'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.85)'; (e.currentTarget as HTMLElement).style.color = '#1480b8' }}
                   title="Quick View"
                 >
                   <Eye size={16} />
@@ -291,7 +298,7 @@ export function BrowsePage() {
                       loading="lazy"
                     />
                     {isOnSale && discount > 0 && (
-                      <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                      <div className="absolute top-2 right-2 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1" style={{background: 'linear-gradient(135deg, #1ea866, #15924e)'}}>
                         <Tag size={12} />
                         -{discount}%
                       </div>
@@ -299,7 +306,7 @@ export function BrowsePage() {
                   </div>
 
                   <div className="p-4">
-                    <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                    <h3 className="font-semibold mb-2 line-clamp-2 transition-colors" style={{color: 'var(--text-primary)'}}>
                       {game.name}
                     </h3>
 
@@ -321,9 +328,9 @@ export function BrowsePage() {
 
                     {/* Price */}
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-white">{fmt(bestPrice)}</span>
+                      <span className="text-2xl font-bold" style={{color: 'var(--text-primary)'}}>{fmt(bestPrice)}</span>
                       {storeName && (
-                        <span className="text-xs text-gray-500">via {storeName}</span>
+                        <span className="text-xs" style={{color: 'var(--text-tertiary)'}}>via {storeName}</span>
                       )}
                     </div>
                   </div>
@@ -343,11 +350,12 @@ export function BrowsePage() {
               setPage(nextPage)
               setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
             }}
-            className="px-4 py-2 rounded-lg bg-[#0a0a0a] border border-[#222222] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+            className="px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
           >
             Vorige
           </button>
-          <span className="text-sm text-gray-400">Pagina {page + 1}</span>
+          <span className="text-sm" style={{color: 'var(--text-secondary)'}}>Pagina {page + 1}</span>
           <button
             disabled={!(hasMore || games.length >= PAGE_SIZE)}
             onClick={() => {
@@ -355,7 +363,8 @@ export function BrowsePage() {
               setPage(nextPage)
               setSearchParams({ ...buildParams(), page: String(nextPage), limit: String(PAGE_SIZE) })
             }}
-            className="px-4 py-2 rounded-lg bg-[#0a0a0a] border border-[#222222] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-purple-500 transition-colors"
+            className="px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
           >
             Volgende
           </button>

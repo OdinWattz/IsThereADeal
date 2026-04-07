@@ -35,7 +35,11 @@ export function HistoricLowBadge({ currentPrice, historicLowPrice, historicLowDa
 
   return (
     <div
-      className={`inline-flex items-center ${sizeClasses[size]} bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-bold rounded-md shadow-lg animate-pulse`}
+      className={`inline-flex items-center ${sizeClasses[size]} text-white font-bold rounded-md shadow-lg animate-pulse`}
+      style={{
+        background: 'linear-gradient(135deg, #1ea866 0%, #15924e 50%, #0e7a40 100%)',
+        boxShadow: '0 3px 10px rgba(22, 154, 88, 0.4)',
+      }}
       title={dateText ? `Historic Low sinds ${dateText}` : 'Historic Low Prijs!'}
     >
       <TrendingDown size={iconSizes[size]} />

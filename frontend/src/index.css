@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Minimal reset - only reset margin/padding on body, not everything */
+/* Minimal reset */
 body, h1, h2, h3, h4, h5, h6, p {
   margin: 0;
 }
@@ -9,35 +9,136 @@ body, h1, h2, h3, h4, h5, h6, p {
   box-sizing: border-box;
 }
 
-/* Theme variables (dark theme only) */
+/* ============================================
+   FRUTIGER AERO — early 2000s sky glass theme
+   ============================================ */
 :root {
-  --bg-primary: #000000;
-  --bg-secondary: #050505;
-  --bg-card: #0a0a0a;
-  --border-primary: #1a1a1a;
-  --border-secondary: #222222;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --bg-primary: #c8e4f4;
+  --bg-secondary: rgba(210, 242, 255, 0.92);
+  --bg-card: rgba(255, 255, 255, 0.86);
+  --bg-card-solid: #eef7fd;
+  --bg-hover: rgba(200, 235, 255, 0.55);
+  --border-primary: rgba(85, 170, 220, 0.45);
+  --border-secondary: rgba(110, 190, 235, 0.35);
+  --text-primary: #082030;
+  --text-secondary: #2b5b7a;
+  --text-tertiary: #5888a5;
+  --accent: #1278a8;
+  --accent-hover: #0c6292;
+  --accent-light: rgba(18, 120, 168, 0.12);
+  --green: #169a58;
+  --green-light: rgba(22, 154, 88, 0.12);
+  --shadow-card: 0 4px 20px rgba(40, 110, 165, 0.13), 0 1px 4px rgba(40, 110, 165, 0.07);
+  --shadow-hover: 0 8px 28px rgba(18, 100, 160, 0.22), 0 2px 8px rgba(18, 100, 160, 0.12);
 }
 
 html, body {
   width: 100%;
   min-height: 100vh;
-  background-color: var(--bg-primary);
+  background: linear-gradient(
+    160deg,
+    #8ec8e8 0%,
+    #a8d8f2 12%,
+    #bde6fa 28%,
+    #cdf0ff 45%,
+    #d8f4ff 60%,
+    #c8ecf8 75%,
+    #b0d8ee 90%,
+    #9ac8e4 100%
+  );
+  background-attachment: fixed;
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', 'Trebuchet MS', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #000000; }
-::-webkit-scrollbar-thumb { background: #2e3250; }
-::-webkit-scrollbar-thumb:hover { background: #4f5494; }
+/* Scrollbar — aqua/sky style */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: rgba(155, 210, 238, 0.25); }
+::-webkit-scrollbar-thumb { background: rgba(60, 148, 205, 0.5); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(40, 128, 190, 0.75); }
+
+/* ─── Glass card ─── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(120, 195, 240, 0.5);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ─── Aero glossy button ─── */
+.btn-aero {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.78) 0%,
+    rgba(160,216,248,0.9) 32%,
+    rgba(70,162,222,0.95) 62%,
+    rgba(40,138,208,1) 100%
+  );
+  border: 1px solid rgba(30, 120, 190, 0.65);
+  box-shadow: 0 2px 8px rgba(20, 100, 175, 0.28), inset 0 1px 0 rgba(255,255,255,0.72);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.28);
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.btn-aero:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.88) 0%,
+    rgba(185,230,255,0.95) 32%,
+    rgba(90,178,238,1) 62%,
+    rgba(60,155,225,1) 100%
+  );
+  box-shadow: 0 4px 14px rgba(20, 100, 175, 0.38), inset 0 1px 0 rgba(255,255,255,0.78);
+  transform: translateY(-1px);
+}
+
+/* ─── Aero input ─── */
+.input-aero {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(85, 168, 215, 0.55);
+  box-shadow: inset 0 1px 3px rgba(30, 110, 160, 0.1), 0 1px 0 rgba(255,255,255,0.8);
+  color: #082030;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.input-aero:focus {
+  border-color: rgba(18, 120, 168, 0.72);
+  box-shadow: inset 0 1px 3px rgba(18, 105, 162, 0.13), 0 0 0 3px rgba(18, 120, 168, 0.18);
+  outline: none;
+}
+.input-aero::placeholder {
+  color: #78a8c5;
+}
+
+/* ─── Skeleton loading — sky shimmer ─── */
+@keyframes sky-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(170, 218, 240, 0.5) 25%,
+    rgba(215, 242, 255, 0.72) 50%,
+    rgba(170, 218, 240, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: sky-shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ─── Spin animation ─── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

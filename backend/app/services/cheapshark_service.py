@@ -4,10 +4,16 @@ Covers: Steam, Humble, GOG, GamersGate, GreenManGaming, Fanatical, etc.
 Docs: https://apidocs.cheapshark.com/
 """
 import httpx
+import os
 from typing import List, Dict, Any, Optional
 from app.services import cache as _cache
 
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
+CHEAPSHARK_HEADERS = {
+    # CheapShark requires a descriptive User-Agent; missing UA can return HTTP 400.
+    "User-Agent": os.getenv("CHEAPSHARK_USER_AGENT", "IsThereADeal/1.0 (contact: admin@serpodin.nl)"),
+    "Accept": "application/json",
+}
 
 # Map CheapShark storeID -> friendly name
 STORE_NAMES: Dict[str, str] = {
@@ -36,7 +42,7 @@ STORE_NAMES: Dict[str, str] = {
 
 async def get_deals_for_title(game_title: str) -> List[Dict[str, Any]]:
     """Search CheapShark for deals by exact or fuzzy title."""
-    async with httpx.AsyncClient(timeout=6) as client:
+    async with httpx.AsyncClient(timeout=6, headers=CHEAPSHARK_HEADERS) as client:
         try:
             resp = await client.get(
                 f"{CHEAPSHARK_BASE}/deals",
@@ -96,7 +102,7 @@ async def get_trending_deals(page: int = 0, limit: int = 20, apply_quality_filte
     if apply_quality_filter:
         params["lowerPrice"] = 2
 
-    async with httpx.AsyncClient(timeout=6) as client:
+    async with httpx.AsyncClient(timeout=6, headers=CHEAPSHARK_HEADERS) as client:
         try:
             resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
             resp.raise_for_status()
@@ -190,7 +196,7 @@ async def get_free_games(limit: int = 50) -> List[Dict[str, Any]]:
         "pageSize": 100,  # Fetch more to filter and deduplicate
     }
 
-    async with httpx.AsyncClient(timeout=8) as client:
+    async with httpx.AsyncClient(timeout=8, headers=CHEAPSHARK_HEADERS) as client:
         try:
             resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
             resp.raise_for_status()
@@ -348,7 +354,7 @@ async def browse_all_deals(
     fetched_pages = 0
     # Fetch pages incrementally. This reduces burstiness and helps avoid 429s.
     if not cheapshark_cooldown:
-        async with httpx.AsyncClient(timeout=12) as client:
+        async with httpx.AsyncClient(timeout=12, headers=CHEAPSHARK_HEADERS) as client:
             base_page = page * pages_to_fetch
             batch_size = min(concurrency, 5)
             while fetched_pages < pages_to_fetch:
@@ -577,7 +583,7 @@ async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:
 
     if not game_id:
         # First API call: lookup gameID by steam_appid
-        async with httpx.AsyncClient(timeout=6) as client:
+        async with httpx.AsyncClient(timeout=6, headers=CHEAPSHARK_HEADERS) as client:
             try:
                 resp = await client.get(
                     f"{CHEAPSHARK_BASE}/games",
@@ -599,7 +605,7 @@ async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:
         _cache.set(cache_key, game_id)
 
     # Second API call: get deals using gameID (always needed, but faster if cached)
-    async with httpx.AsyncClient(timeout=6) as client:
+    async with httpx.AsyncClient(timeout=6, headers=CHEAPSHARK_HEADERS) as client:
         try:
             resp = await client.get(
                 f"{CHEAPSHARK_BASE}/games",

@@ -23,7 +23,7 @@ async def register(payload: UserCreate, request: Request, db: AsyncSession = Dep
             select(User).where((User.username == payload.username) | (User.email == payload.email))
         )
         if existing.scalar_one_or_none():
-            raise HTTPException(status_code=400, detail="Username or email already taken")
+            raise HTTPException(status_code=400, detail="Could not create account")
 
         user = User(
             username=payload.username,

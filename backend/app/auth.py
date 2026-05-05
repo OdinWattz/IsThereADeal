@@ -67,6 +67,13 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     if user is None or not user.is_active:
         raise credentials_exception
+
+    # If token contains a password fingerprint, verify it still matches.
+    # This invalidates tokens immediately after a password change.
+    fp = payload.get("fp")
+    if fp is not None and user.hashed_password[:12] != fp:
+        raise credentials_exception
+
     return user
 
 

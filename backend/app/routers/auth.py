@@ -59,7 +59,7 @@ async def login(payload: UserLogin, request: Request, db: AsyncSession = Depends
             detail="Incorrect username or password",
         )
 
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token({"sub": str(user.id), "fp": user.hashed_password[:12]})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
@@ -117,7 +117,7 @@ async def change_password(
     current_user.hashed_password = hash_password(data.new_password)
     await db.commit()
 
-    return {"message": "Password changed successfully"}
+    return {"message": "Password changed successfully. Please log in again."}
 
 
 @router.delete("/me")

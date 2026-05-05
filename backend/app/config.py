@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2880  # 2 days (was 7 days)
 
     # Vercel Postgres zet POSTGRES_URL automatisch in de omgeving.
     # DATABASE_URL heeft voorrang; anders valt hij terug op POSTGRES_URL,

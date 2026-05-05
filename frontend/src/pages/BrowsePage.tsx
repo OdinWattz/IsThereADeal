@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Filter, Search, Tag, Award, Star, X, Eye } from 'lucide-react'
+import { Search, Tag, Award, Star, Eye } from 'lucide-react'
 import type { Game } from '../api/games'
 import api from '../api/client'
 import { QuickViewModal } from '../components/QuickViewModal'
@@ -24,21 +24,14 @@ interface BrowseResponse {
 
 export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
-  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
-  const [minDiscount, setMinDiscount] = useState(searchParams.get('min_discount') || '')
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'name')
   const [page, setPage] = useState(Number(searchParams.get('page') || '0'))
   const [searchQuery, setSearchQuery] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
   const [quickViewAppid, setQuickViewAppid] = useState<string | null>(null)
 
-  // Build query params (only CheapShark-supported params)
+  // Build query params (always unfiltered browse)
   const buildParams = () => {
     const params: Record<string, string> = {}
-    if (minPrice) params.min_price = minPrice
-    if (maxPrice) params.max_price = maxPrice
-    if (minDiscount) params.min_discount = minDiscount
     params.sort_by = sortBy
     params.page = String(page)
     params.limit = String(PAGE_SIZE)
@@ -65,17 +58,6 @@ export function BrowsePage() {
       )
     : allGames
 
-  const clearFilters = () => {
-    setMinPrice('')
-    setMaxPrice('')
-    setMinDiscount('')
-    setSortBy('name')
-    setPage(0)
-    setSearchQuery('')
-    setSearchParams({})
-  }
-
-  const activeFilterCount = Object.values(buildParams()).filter(v => v && v !== 'name').length + (searchQuery ? 1 : 0)
   const fmt = (v?: number | null) => (v != null ? `€${v.toFixed(2).replace('.', ',')}` : '—')
 
   return (
@@ -98,8 +80,8 @@ export function BrowsePage() {
         </p>
       </div>
 
-      {/* Search Bar + Filters */}
-      <div className="mb-6 flex gap-3">
+      {/* Search Bar */}
+      <div className="mb-6">
         <div className="flex-1 relative">
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2" style={{color: 'var(--text-tertiary)'}} />
           <input
@@ -110,109 +92,7 @@ export function BrowsePage() {
             className="w-full input-aero pl-10 pr-4 py-3 text-sm"
           />
         </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-3 rounded-lg transition-all relative flex items-center gap-2"
-          style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
-        >
-          <Filter size={20} />
-          <span className="hidden sm:inline">Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{background: '#1480b8'}}>
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
       </div>
-
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="mb-6 rounded-xl p-6" style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(90,175,225,0.45)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(50,120,170,0.1)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2" style={{color: 'var(--text-primary)'}}>
-              <Filter size={20} />
-              Filters
-            </h3>
-            <button
-              onClick={clearFilters}
-              className="text-sm flex items-center gap-1" style={{color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer'}}
-            >
-              <X size={16} />
-              Wis Alles
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Max Price Slider */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>Max Prijs</label>
-                <span className="text-sm font-semibold" style={{color: 'var(--accent)'}}>
-                  {maxPrice ? `€${maxPrice}` : '∞'}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={maxPrice || '100'}
-                onChange={(e) => setMaxPrice(e.target.value === '100' ? '' : e.target.value)}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#1480b8]"
-                style={{
-                  background: `linear-gradient(to right, #1480b8 0%, #1480b8 ${maxPrice || 100}%, rgba(160,210,240,0.4) ${maxPrice || 100}%, rgba(160,210,240,0.4) 100%)`
-                }}
-              />
-              <div className="flex justify-between text-xs mt-1" style={{color: 'var(--text-tertiary)'}}>
-                <span>€0</span>
-                <span>€25</span>
-                <span>€50</span>
-                <span>€75</span>
-                <span>∞</span>
-              </div>
-            </div>
-
-            {/* Min Discount Slider */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>Min Korting</label>
-                <span className="text-sm font-semibold" style={{color: 'var(--accent)'}}>
-                  {minDiscount || '0'}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="90"
-                step="5"
-                value={minDiscount || '0'}
-                onChange={(e) => setMinDiscount(e.target.value)}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#1480b8]"
-                style={{
-                  background: `linear-gradient(to right, #1480b8 0%, #1480b8 ${minDiscount || 0}%, rgba(160,210,240,0.4) ${minDiscount || 0}%, rgba(160,210,240,0.4) 100%)`
-                }}
-              />
-              <div className="flex justify-between text-xs mt-1" style={{color: 'var(--text-tertiary)'}}>
-                <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
-                <span>75%</span>
-                <span>90%</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setPage(0)
-              setSearchParams({ ...buildParams(), page: '0', limit: String(PAGE_SIZE) })
-            }}
-            className="mt-4 w-full px-4 py-2 btn-aero font-medium"
-          >
-            Filters Toepassen
-          </button>
-        </div>
-      )}
 
       {/* Sort & Results Count */}
       <div className="mb-6 flex items-center justify-between">
@@ -248,13 +128,7 @@ export function BrowsePage() {
         <div className="text-center py-20">
           <Search size={64} className="mx-auto mb-4 opacity-30" style={{color: 'var(--text-tertiary)'}} />
           <p className="mb-2 text-lg" style={{color: 'var(--text-secondary)'}}>Geen games gevonden</p>
-          <p className="text-sm mb-4" style={{color: 'var(--text-tertiary)'}}>Probeer andere filters of zoektermen</p>
-          <button
-            onClick={clearFilters}
-            className="font-medium" style={{color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer'}}
-          >
-            Reset filters
-          </button>
+          <p className="text-sm mb-4" style={{color: 'var(--text-tertiary)'}}>Probeer een andere zoekterm</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

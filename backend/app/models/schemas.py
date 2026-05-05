@@ -8,7 +8,7 @@ from datetime import datetime
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8)
 
 
 class UserLogin(BaseModel):
@@ -42,7 +42,7 @@ class UserUpdate(BaseModel):
 class PasswordChange(BaseModel):
     """Schema for changing password."""
     current_password: str
-    new_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=8)
 
 
 class DeleteAccount(BaseModel):

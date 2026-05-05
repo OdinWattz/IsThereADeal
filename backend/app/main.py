@@ -34,6 +34,10 @@ app = FastAPI(
     description="Aggregates game prices from Steam, GOG, Humble, key resellers and more.",
     version="1.0.0",
     lifespan=lifespan,
+    # Disable interactive docs on Vercel (production) to avoid API reconnaissance.
+    docs_url=None if _is_vercel else "/docs",
+    redoc_url=None if _is_vercel else "/redoc",
+    openapi_url=None if _is_vercel else "/openapi.json",
 )
 
 _cors_origins = settings.cors_origins_list

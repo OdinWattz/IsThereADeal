@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import List
 from datetime import datetime, timezone
+import hmac
 
 from app.database import get_db
 from app.auth import get_current_user
@@ -168,11 +169,14 @@ async def run_alert_check(
     """
     Cron endpoint: check all active alerts and send email notifications.
     Called by Vercel Cron (Authorization: Bearer {CRON_SECRET}).
+    Requires a valid CRON_SECRET — the x-vercel-cron header alone is NOT sufficient
+    because it can be spoofed by any external caller.
     """
+    if not settings.CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
     auth = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
-    is_vercel_cron = request.headers.get("x-vercel-cron") == "1"
-    is_valid_secret = bool(settings.CRON_SECRET) and auth == settings.CRON_SECRET
-    if not (is_vercel_cron or is_valid_secret):
+    # Use constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(auth.encode(), settings.CRON_SECRET.encode()):
         raise HTTPException(status_code=403, detail="Forbidden")
 
     result = await db.execute(

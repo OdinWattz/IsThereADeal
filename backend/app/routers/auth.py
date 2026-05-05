@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -11,7 +11,12 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserOut, status_code=201)
-async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(payload: UserCreate, request: Request, db: AsyncSession = Depends(get_db)):
+    from app.services.cache import check_rate_limit
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "unknown")
+    if check_rate_limit(f"register:{ip}", limit=5, window=600):  # 5 registrations per 10 min per IP
+        raise HTTPException(status_code=429, detail="Te veel registratiepogingen, probeer het later opnieuw")
+
     try:
         # Check duplicates
         existing = await db.execute(
@@ -31,17 +36,22 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
         return user
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/login", response_model=Token)
-async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(payload: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
+    from app.services.cache import check_rate_limit
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "unknown")
+    if check_rate_limit(f"login:{ip}", limit=10, window=60):  # 10 attempts per minute per IP
+        raise HTTPException(status_code=429, detail="Te veel inlogpogingen, probeer het later opnieuw")
+
     try:
         result = await db.execute(select(User).where(User.username == payload.username))
         user = result.scalar_one_or_none()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
@@ -85,8 +95,8 @@ async def update_profile(
         return current_user
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/change-password")

@@ -44,3 +44,35 @@ def invalidate(key: str) -> None:
 
 def clear() -> None:
     _store.clear()
+
+
+# Separate store for rate-limit counters: {key: (window_start, count)}
+_rl_store: Dict[str, Tuple[float, int]] = {}
+
+
+def check_rate_limit(key: str, limit: int, window: int) -> bool:
+    """Best-effort in-process rate limiter.
+
+    Returns True when the caller has exceeded *limit* calls inside *window*
+    seconds.  Not distributed across Vercel function instances, but stops
+    the vast majority of brute-force and credential-stuffing attacks that
+    hit the same warm instance repeatedly.
+
+    Args:
+        key:    Unique identifier for this bucket (e.g. "login:<ip>").
+        limit:  Maximum allowed calls per window.
+        window: Rolling window size in seconds.
+    """
+    now = time.time()
+    entry = _rl_store.get(key)
+    if entry:
+        window_start, count = entry
+        if now - window_start < window:
+            if count >= limit:
+                return True          # limit exceeded
+            _rl_store[key] = (window_start, count + 1)
+        else:
+            _rl_store[key] = (now, 1)  # window expired, reset
+    else:
+        _rl_store[key] = (now, 1)
+    return False

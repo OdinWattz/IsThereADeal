@@ -45,8 +45,7 @@ export function FreeGamesPage() {
           {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg h-56 animate-pulse"
-              style={{ backgroundColor: 'var(--bg-card)' }}
+              className="rounded-lg h-56 skeleton"
             />
           ))}
         </div>
@@ -72,11 +71,15 @@ export function FreeGamesPage() {
           {freeGames.map((game) => (
             <div
               key={game.steam_appid}
-              className="border rounded-lg overflow-hidden hover:border-green-500 transition-all duration-200 flex flex-col"
+              className="border rounded-lg overflow-hidden transition-all duration-200 flex flex-col"
               style={{
-                backgroundColor: 'var(--bg-card)',
-                borderColor: 'var(--border-secondary)'
+                background: 'rgba(255,255,255,0.84)',
+                border: '1px solid rgba(110,190,235,0.42)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 3px 12px rgba(40,110,165,0.08)'
               }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1ea866'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(30,168,102,0.2)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40,110,165,0.08)' }}
             >
               {/* Game Image */}
               <Link

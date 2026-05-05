@@ -17,8 +17,7 @@ export function StatsPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 rounded-lg animate-pulse"
-              style={{ backgroundColor: 'var(--bg-card)' }}
+              className="h-32 rounded-lg skeleton"
             />
           ))}
         </div>
@@ -57,7 +56,7 @@ export function StatsPage() {
       color: 'yellow',
     },
     {
-      icon: <Target size={24} className="text-purple-400" />,
+              icon: <Target size={24} style={{color: 'var(--accent)'}} />,
       label: 'Target Bereikt',
       value: `${savings.games_at_target_price}`,
       subtitle: 'games op target prijs',
@@ -71,7 +70,7 @@ export function StatsPage() {
       color: 'orange',
     },
     {
-      icon: <Percent size={24} className="text-pink-400" />,
+      icon: <Percent size={24} style={{color: '#e879a0'}} />,
       label: 'Korting %',
       value: `${savings.savings_percentage}%`,
       subtitle: 'gemiddelde besparing',
@@ -112,11 +111,15 @@ export function StatsPage() {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="border rounded-lg p-6 hover:border-purple-500 transition-all"
+            className="border rounded-lg p-6 transition-all"
             style={{
-              backgroundColor: 'var(--bg-card)',
-              borderColor: 'var(--border-secondary)'
+              background: 'rgba(255,255,255,0.84)',
+              borderColor: 'rgba(110,190,235,0.42)',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 3px 12px rgba(40,110,165,0.08)'
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1480b8'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(20,128,184,0.15)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110,190,235,0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40,110,165,0.08)' }}
           >
             <div className="flex items-start justify-between mb-3">
               {stat.icon}

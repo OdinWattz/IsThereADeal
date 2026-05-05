@@ -22,10 +22,10 @@ export function HomePage() {
       <div className="text-center mb-12 sm:mb-16 flex flex-col items-center">
         <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight text-center w-full"
-          style={{ color: 'var(--text-primary)' }}
+          style={{ color: 'var(--text-primary)', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}
         >
           Find the{' '}
-          <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <span style={{ background: 'linear-gradient(135deg, #0ab5d8, #1278a8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
             best game deals
           </span>
         </h1>
@@ -45,14 +45,16 @@ export function HomePage() {
           ].map(({ icon, label }) => (
             <div
               key={label}
-              className="flex items-center justify-center gap-2 border px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm"
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm"
               style={{
-                backgroundColor: 'var(--bg-card)',
-                borderColor: 'var(--border-secondary)',
-                color: 'var(--text-secondary)'
+                background: 'rgba(255, 255, 255, 0.72)',
+                backdropFilter: 'blur(6px)',
+                border: '1px solid rgba(90, 175, 225, 0.45)',
+                color: 'var(--text-secondary)',
+                boxShadow: '0 2px 8px rgba(40, 110, 165, 0.1)',
               }}
             >
-              <span className="text-purple-400">{icon}</span>
+              <span style={{ color: 'var(--accent)' }}>{icon}</span>
               <span className="text-center">{label}</span>
             </div>
           ))}
@@ -71,7 +73,7 @@ export function HomePage() {
           className="text-lg sm:text-xl font-semibold mb-4 sm:mb-5 flex items-center gap-2"
           style={{ color: 'var(--text-primary)' }}
         >
-          <TrendingDown size={20} className="text-green-400" />
+          <TrendingDown size={20} style={{ color: 'var(--green)' }} />
           Steam Featured Deals
         </h2>
         {isLoading ? (
@@ -79,8 +81,7 @@ export function HomePage() {
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-xl h-48 sm:h-56 animate-pulse"
-                style={{ backgroundColor: 'var(--bg-card)' }}
+                className="skeleton rounded-xl h-48 sm:h-56"
               />
             ))}
           </div>
@@ -90,11 +91,15 @@ export function HomePage() {
               <Link
                 key={game.steam_appid}
                 to={`/game/${game.steam_appid}`}
-                className="block border rounded-xl overflow-hidden hover:border-purple-600 hover:-translate-y-0.5 transition-all duration-200"
+                className="block rounded-xl overflow-hidden transition-all duration-200"
                 style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--border-secondary)'
+                  background: 'rgba(255, 255, 255, 0.84)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(110, 190, 235, 0.42)',
+                  boxShadow: '0 3px 12px rgba(40, 110, 165, 0.09)',
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1278a8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(18, 120, 168, 0.2)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40, 110, 165, 0.09)' }}
               >
                 <div className="relative">
                   <img
@@ -103,20 +108,20 @@ export function HomePage() {
                     className="w-full h-24 sm:h-28 object-cover"
                   />
                   {game.discount_percent > 0 && (
-                    <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                    <div className="absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'linear-gradient(135deg, #1ea866, #15924e)', boxShadow: '0 2px 6px rgba(22,154,88,0.3)' }}>
                       -{game.discount_percent}%
                     </div>
                   )}
                 </div>
                 <div className="p-2 sm:p-3">
                   <p
-                    className="text-xs sm:text-sm mb-1 sm:mb-2 truncate"
+                    className="text-xs sm:text-sm mb-1 sm:mb-2 truncate font-medium"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {game.name}
                   </p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-green-400 font-bold text-sm sm:text-base">
+                    <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--green)' }}>
                       €{(game.sale_price ?? game.regular_price ?? 0).toFixed(2).replace('.', ',')}
                     </span>
                     {game.regular_price > (game.sale_price ?? game.regular_price) && (

@@ -18,6 +18,15 @@ Een full-stack game prijsvergelijkingsplatform met real-time prijsmonitoring, wi
 - **Live prijzen** — Real-time prijzen met automatische updates
 - **Prijsgeschiedenis** — Interactieve grafieken met 2 jaar historische prijsdata per winkel
 - **DLC deals** — Zie automatisch afgeprijsde DLC voor elk spel
+- **Historic Low Badge** — Geanimeerde badge wanneer een game op zijn all-time historisch laagste prijs staat (nauwkeurig tot €0,02)
+
+### 🗂️ Browse & Ontdekken
+- **Browse pagina** — Doorzoek het volledige aanbod met server-side filters: prijs (min/max), minimale korting, en sorteermogelijkheden, plus clientside naam-zoeken
+- **Quick View Modal** — Bekijk game details (beste prijs, Metacritic, Steam reviews, spelersaantal, beschrijving) in een overlay zonder weg te navigeren
+- **Deal of the Day** — Homepage toont de dagelijkse uitgelichte deal met live countdown-timer tot het verversen van de deal
+- **Gratis games** — Overzicht van gratis te claimen en free-to-play games, gecached voor 1 uur
+- **Games vergelijken** — Vergelijk tot 4 games naast elkaar (prijs, Metacritic, Steam score, spelers), persistente selectie via URL query params
+- **Recently Viewed** — Horizontaal scrollbare rij van recent bekeken games, opgeslagen in localStorage (max 12), met clearknop
 
 ### 📋 Persoonlijke Features
 - **Verlanglijst met doelprijzen** — Voeg games toe met optionele target price
@@ -25,9 +34,15 @@ Een full-stack game prijsvergelijkingsplatform met real-time prijsmonitoring, wi
   - Filteren op "On Sale" en "Target Price Met"
   - Inline target price editing
   - Visual badges voor kortingen en bereikte doelprijzen
+- **Steam Wishlist Import** — Importeer je publieke Steam wishlist via Steam ID, profielURL of vanitynaam; dedupliceert automatisch en toont importresultaten
+- **Collecties** — Maak, beheer en deel aangepaste game-lijsten (bijv. "Backlog", "Favorieten")
+  - Games toevoegen via zoeken of bulk-import vanuit je verlanglijst
+  - Optionele notities per game in een collectie
+  - Publiek/privé schakelaar per collectie
 - **Prijsalerts** — Automatische e-mailmeldingen wanneer een game onder je doelprijs komt
   - Toggle alerts aan/uit zonder te verwijderen
   - Ontvang alleen meldingen bij actieve alerts
+- **Spaardashboard** — Statistiekenpagina met totale potentiële besparingen, reguliere vs. sale prijs, games op doelprijs, actieve alerts en recent getriggerde alerts
 - **Profile management** — Volledige accountbeheer
   - Username en email aanpassen
   - Wachtwoord wijzigen met sterkte-indicator
@@ -42,10 +57,16 @@ Een full-stack game prijsvergelijkingsplatform met real-time prijsmonitoring, wi
 
 ### 🎨 User Experience
 - **Fully responsive** — Perfect op desktop, tablet én mobiel
-- **Dark gaming theme** — Oogvriendelijk donker design met paarse accenten
+- **Dark/Light theme** — Schakelaar tussen donker gaming-thema en light mode; keuze wordt opgeslagen in localStorage
 - **Snelle laadtijden** — Geoptimaliseerd met in-memory caching en connection pooling
 - **Remember Me** — Blijf ingelogd na browser restart
 - **Password strength indicator** — Real-time feedback bij registratie
+- **Error Boundary** — Vangt onverwachte render-fouten op en toont een vriendelijke fallback in plaats van een kapotte pagina
+
+### 🔍 SEO
+- **Dynamische meta-tags** — Elke pagina heeft eigen `<title>`, beschrijving, canonical URL, Open Graph en Twitter Card tags via `react-helmet-async`
+- **Dynamische sitemap** — `/sitemap.xml` combineert statische pagina's met de 100 meest recent bijgewerkte gamepagina's (24u cache)
+- **robots.txt** — Serveer-side gegenereerd via backend API
 
 ### 🔐 Security & Auth
 - **JWT authenticatie** — Veilige token-based auth met bcrypt hashing
@@ -82,6 +103,7 @@ Een full-stack game prijsvergelijkingsplatform met real-time prijsmonitoring, wi
 | **Axios** | HTTP client met interceptors |
 | **React Hot Toast** | Toast notifications |
 | **Lucide React** | Modern icon library |
+| **react-helmet-async** | Dynamische SEO meta-tags per pagina |
 | **Vercel Analytics** | Performance monitoring |
 
 ### External APIs
@@ -341,9 +363,12 @@ IsThereADeal/
 │   │   │   └── schemas.py             # Pydantic request/response schemas
 │   │   ├── routers/
 │   │   │   ├── auth.py                # Auth endpoints (login, register, profile)
-│   │   │   ├── games.py               # Game endpoints (search, details, history)
-│   │   │   ├── wishlist.py            # Wishlist CRUD
-│   │   │   └── alerts.py              # Alert CRUD + cron endpoint
+│   │   │   ├── games.py               # Game endpoints (search, browse, details, history, free, deal-of-the-day)
+│   │   │   ├── wishlist.py            # Wishlist CRUD + Steam import
+│   │   │   ├── alerts.py              # Alert CRUD + cron endpoint
+│   │   │   ├── collections.py         # Collections CRUD + item management
+│   │   │   ├── stats.py               # Savings & activity stats
+│   │   │   └── sitemap.py             # Dynamic sitemap.xml + robots.txt
 │   │   └── services/
 │   │       ├── steam_service.py       # Steam Store API integration
 │   │       ├── itad_service.py        # IsThereAnyDeal API
@@ -352,6 +377,7 @@ IsThereADeal/
 │   │       ├── price_aggregator.py    # Merge all price sources
 │   │       ├── email_service.py       # SMTP email sending
 │   │       ├── cache.py               # In-memory TTL cache
+│   │       ├── steam_wishlist_service.py # Steam wishlist import (ID/URL/vanity)
 │   │       └── scheduler.py           # Background tasks
 │   ├── requirements.txt
 │   ├── .env.example
@@ -366,19 +392,34 @@ IsThereADeal/
 │   │   │   ├── SearchBar.tsx          # Live search with dropdown
 │   │   │   ├── GameCard.tsx           # Reusable game card
 │   │   │   ├── PriceTable.tsx         # Multi-store price comparison
-│   │   │   └── PriceHistoryChart.tsx  # Recharts line chart
+│   │   │   ├── PriceHistoryChart.tsx  # Recharts line chart
+│   │   │   ├── DealOfTheDay.tsx       # Uitgelichte deal met countdown-timer
+│   │   │   ├── HistoricLowBadge.tsx   # Badge bij all-time historisch laagste prijs
+│   │   │   ├── QuickViewModal.tsx     # Game overlay (prijs, scores, beschrijving)
+│   │   │   ├── RecentlyViewed.tsx     # Scrollbare rij van recent bekeken games
+│   │   │   ├── SEO.tsx                # Helmet-wrapper voor meta/OG/Twitter tags
+│   │   │   └── ErrorBoundary.tsx      # React error boundary met fallback UI
+│   │   ├── hooks/
+│   │   │   └── useRecentlyViewed.ts   # localStorage-hook voor recent bekeken games
 │   │   ├── pages/
-│   │   │   ├── HomePage.tsx           # Featured deals grid
+│   │   │   ├── HomePage.tsx           # Featured deals grid + Deal of the Day
 │   │   │   ├── GamePage.tsx           # Game detail + prices + history
-│   │   │   ├── DealsPage.tsx          # Trending deals with pagination
-│   │   │   ├── WishlistPage.tsx       # Wishlist with sorting/filtering
-│   │   │   ├── AlertsPage.tsx         # Active/triggered alerts list
+│   │   │   ├── BrowsePage.tsx         # Gefilterde cataloguspagina
+│   │   │   ├── ComparePage.tsx        # Side-by-side vergelijking (max 4 games)
+│   │   │   ├── FreeGamesPage.tsx      # Gratis en free-to-play games
+│   │   │   ├── DealsPage.tsx          # Trending deals met pagination
+│   │   │   ├── WishlistPage.tsx       # Wishlist met sortering/filtering
+│   │   │   ├── AlertsPage.tsx         # Actieve/getriggerde alerts lijst
+│   │   │   ├── CollectionsPage.tsx    # Overzicht van gebruikerscollecties
+│   │   │   ├── CollectionDetailPage.tsx # Inhoud van één collectie
+│   │   │   ├── StatsPage.tsx          # Spaardashboard & statistieken
 │   │   │   ├── ProfilePage.tsx        # Profile management
-│   │   │   ├── LoginPage.tsx          # Login with Remember Me
-│   │   │   └── RegisterPage.tsx       # Register with password strength
+│   │   │   ├── LoginPage.tsx          # Login met Remember Me
+│   │   │   └── RegisterPage.tsx       # Registratie met wachtwoord-sterkte
 │   │   ├── store/
-│   │   │   └── authStore.ts           # Zustand auth state
-│   │   ├── App.tsx                    # Routes + auth layout
+│   │   │   ├── authStore.ts           # Zustand auth state
+│   │   │   └── themeStore.ts          # Zustand dark/light theme state
+│   │   ├── App.tsx                    # Routes + auth layout + ErrorBoundary
 │   │   ├── main.tsx                   # React entry point
 │   │   └── index.css                  # Tailwind + global styles
 │   ├── public/                        # Static assets
@@ -412,7 +453,10 @@ IsThereADeal/
 |--------|----------|-------------|------|
 | `GET` | `/api/games/search?q={query}` | Search games | ❌ |
 | `GET` | `/api/games/featured` | Steam featured deals | ❌ |
+| `GET` | `/api/games/deal-of-the-day` | Dagelijkse uitgelichte deal | ❌ |
+| `GET` | `/api/games/browse` | Gefilterd bladeren (prijs, korting, volgorde) | ❌ |
 | `GET` | `/api/games/deals?page={n}` | Trending deals | ❌ |
+| `GET` | `/api/games/free` | Gratis en free-to-play games | ❌ |
 | `GET` | `/api/games/{appid}?include_key_resellers={bool}` | Game details + prices | ❌ |
 | `GET` | `/api/games/{appid}/history` | Price history (2 years) | ❌ |
 | `GET` | `/api/games/{appid}/dlc-deals` | On-sale DLC | ❌ |
@@ -424,6 +468,7 @@ IsThereADeal/
 | `POST` | `/api/wishlist` | Add game (game_id or steam_appid) | ✅ |
 | `DELETE` | `/api/wishlist/{id}` | Remove from wishlist | ✅ |
 | `PATCH` | `/api/wishlist/{id}/target-price?target_price={price}` | Update target price | ✅ |
+| `POST` | `/api/wishlist/import-steam` | Importeer publieke Steam wishlist | ✅ |
 
 ### Alerts
 | Method | Endpoint | Description | Auth |
@@ -433,6 +478,30 @@ IsThereADeal/
 | `DELETE` | `/api/alerts/{id}` | Delete alert | ✅ |
 | `PATCH` | `/api/alerts/{id}/toggle` | Toggle active status | ✅ |
 | `POST` | `/api/alerts/run-check` | Check all active alerts (cron) | 🔒 Cron only |
+
+### Collections
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/api/collections` | Lijst van gebruikerscollecties | ✅ |
+| `POST` | `/api/collections` | Nieuwe collectie aanmaken | ✅ |
+| `GET` | `/api/collections/{id}` | Collectie details + games | ✅ |
+| `PATCH` | `/api/collections/{id}` | Naam/beschrijving/public bijwerken | ✅ |
+| `DELETE` | `/api/collections/{id}` | Collectie verwijderen | ✅ |
+| `POST` | `/api/collections/{id}/items` | Game toevoegen aan collectie | ✅ |
+| `DELETE` | `/api/collections/{id}/items/{item_id}` | Game verwijderen uit collectie | ✅ |
+| `PATCH` | `/api/collections/{id}/items/{item_id}/notes` | Notities bijwerken | ✅ |
+
+### Stats
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/api/stats/savings` | Spaardashboard (besparingen, doelprijzen, alerts) | ✅ |
+| `GET` | `/api/stats/activity` | Activiteiten (wishlist- en alertaantallen) | ✅ |
+
+### SEO
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/sitemap.xml` | Dynamische sitemap (gecached 24u) | ❌ |
+| `GET` | `/robots.txt` | Robots instructies | ❌ |
 
 ### Health
 | Method | Endpoint | Description | Auth |
@@ -478,6 +547,19 @@ id, user_id (FK), game_id (FK), target_price, added_at
 ```sql
 id, user_id (FK), game_id (FK), target_price, is_active,
 created_at, triggered_at, notify_email
+```
+
+### Collection
+```sql
+id, user_id (FK), name (max 100), description, is_public,
+created_at, updated_at
+-- UNIQUE(user_id, name)
+```
+
+### CollectionItem
+```sql
+id, collection_id (FK), game_id (FK), added_at, notes
+-- UNIQUE(collection_id, game_id)
 ```
 
 ---
@@ -559,16 +641,23 @@ alembic upgrade head
 
 ## 📈 Future Improvements
 
+- [x] ~~Steam wishlist import~~
+- [x] ~~Collection feature (custom game lists)~~
+- [x] ~~Historical low tracking~~
+- [x] ~~Browse pagina met filters~~
+- [x] ~~Games vergelijken~~
+- [x] ~~Gratis games pagina~~
+- [x] ~~SEO meta-tags & sitemap~~
+- [x] ~~Dark/light theme toggle~~
 - [ ] Email verification bij registratie
 - [ ] Password reset via email
 - [ ] Multi-currency support (USD, GBP, etc.)
 - [ ] Browser notification support
 - [ ] Price drop alerts via push notifications
-- [ ] Historical low tracking
-- [ ] Steam wishlist import
-- [ ] Collection feature (custom game lists)
 - [ ] Price prediction ML model
 - [ ] Mobile apps (React Native)
+- [ ] Public collection sharing via link
+- [ ] Game bundels tracking (Humble Bundle, etc.)
 
 ---
 

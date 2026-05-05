@@ -260,6 +260,24 @@ async def browse_all_deals(
         store_id: Filter by specific store ID
     """
     import asyncio
+    import time
+
+    cache_key = f"cs_browse:{page}:{limit}:{min_price}:{max_price}:{min_discount}:{sort_by}:{store_id or ''}"
+    cached = _cache.get(cache_key, ttl=300)
+    if cached is not None:
+        return cached
+
+    # Global cooldown after upstream 429s to avoid hammering CheapShark.
+    # While this marker is active, skip live calls and rely on stale fallback.
+    cheapshark_cooldown = _cache.get("cheapshark_429_cooldown", ttl=90)
+
+    # Vercel function/runtime hard timeout is ~30s; keep a buffer.
+    time_limit_s = 25.0
+    start_time = time.monotonic()
+
+    requested_limit = max(1, min(limit, 100))
+    # If we are in cooldown mode, keep payload smaller to reduce pressure.
+    effective_limit = 60 if cheapshark_cooldown and requested_limit > 60 else requested_limit
 
     # CheapShark has max 60 per page, so we need to fetch multiple pages
     # Dynamically adjust pages based on discount filter - higher discount needs more pages
@@ -269,19 +287,27 @@ async def browse_all_deals(
     # Very high discount (70-85%): 25 pages = 1500 deals
     # Extreme discount (85-100%): 40 pages = 2400 deals (for rare high discounts)
     if min_discount >= 85:
-        pages_to_fetch = 40
-    elif min_discount >= 70:
-        pages_to_fetch = 25
-    elif min_discount >= 50:
-        pages_to_fetch = 12
-    elif min_discount >= 25:
         pages_to_fetch = 8
+    elif min_discount >= 70:
+        pages_to_fetch = 6
+    elif min_discount >= 50:
+        pages_to_fetch = 4
+    elif min_discount >= 25:
+        pages_to_fetch = 3
     else:
-        pages_to_fetch = 5
+        pages_to_fetch = 2
 
     all_deals = []
+    saw_429 = False
 
-    async def fetch_page(page_num: int):
+    # NOTE: For high discount filters we fetch many CheapShark pages.
+    # Doing that fully in parallel can trigger timeouts / rate limiting and yield 0 results.
+    # Use bounded concurrency with a shared client for stability.
+    concurrency = 2 if pages_to_fetch >= 12 else 4
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def fetch_page(client: httpx.AsyncClient, page_num: int):
+        nonlocal saw_429
         params = {
             "sortBy": sort_by,
             "onSale": 1,
@@ -293,22 +319,57 @@ async def browse_all_deals(
         if store_id:
             params["storeID"] = store_id
 
-        async with httpx.AsyncClient(timeout=10) as client:
-            try:
-                resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
-                resp.raise_for_status()
-                return resp.json()
-            except Exception:
-                return []
+        async with semaphore:
+            backoff_s = 0.5
+            for attempt in range(3):
+                try:
+                    resp = await client.get(f"{CHEAPSHARK_BASE}/deals", params=params)
+                    resp.raise_for_status()
+                    return resp.json()
+                except httpx.HTTPStatusError as e:
+                    status = e.response.status_code if e.response is not None else None
+                    if status == 429:
+                        saw_429 = True
+                        retry_after = None
+                        try:
+                            retry_after = float(e.response.headers.get("Retry-After", ""))  # type: ignore[arg-type]
+                        except Exception:
+                            retry_after = None
+                        # Cap sleep so we don't exceed overall request time budget.
+                        sleep_s = retry_after if retry_after is not None else backoff_s
+                        sleep_s = min(sleep_s, 2.5)
+                        if time.monotonic() - start_time > (time_limit_s - 1.0):
+                            return []
+                        await asyncio.sleep(sleep_s)
+                        backoff_s = min(backoff_s * 2, 2.5)
+                        continue
+                    return []
+                except Exception:
+                    return []
+            return []
 
-    # Fetch multiple pages in parallel
-    tasks = [fetch_page(page * pages_to_fetch + i) for i in range(pages_to_fetch)]
-    pages_data = await asyncio.gather(*tasks)
+    fetched_pages = 0
+    # Fetch pages incrementally. This reduces burstiness and helps avoid 429s.
+    if not cheapshark_cooldown:
+        async with httpx.AsyncClient(timeout=12) as client:
+            base_page = page * pages_to_fetch
+            batch_size = min(concurrency, 5)
+            while fetched_pages < pages_to_fetch:
+                if time.monotonic() - start_time > (time_limit_s - 1.0):
+                    break
 
-    # Combine all pages
-    for deals in pages_data:
-        if deals:
-            all_deals.extend(deals)
+                take = min(batch_size, pages_to_fetch - fetched_pages)
+                tasks = [
+                    fetch_page(client, base_page + fetched_pages + i)
+                    for i in range(take)
+                ]
+                pages_data = await asyncio.gather(*tasks)
+
+                for deals in pages_data:
+                    if deals:
+                        all_deals.extend(deals)
+
+                fetched_pages += take
 
     # Process and deduplicate results (keep best price per game)
     game_dict = {}  # steam_appid -> best deal
@@ -328,7 +389,7 @@ async def browse_all_deals(
         # For high discount searches, allow cheaper games (they're discounted heavily)
         if min_discount < 50:
             # Low discount search: skip very cheap games (likely broken/removed)
-            if sale < 0.5:
+            if sale < 0.1:
                 continue
         elif min_discount < 75:
             # Medium discount search: allow cheaper games
@@ -336,8 +397,8 @@ async def browse_all_deals(
                 continue
         # For 75%+ discount: no price filter (high discount deals can be very cheap)
 
-        # Only show free games if user wants 100% discount (changed from 95% to 100%)
-        if sale == 0 and min_discount < 100:
+        # With max min_discount capped at 90, hide free games from browse filters.
+        if sale == 0 and min_discount < 90:
             continue
 
         if normal > 200:  # Skip overpriced special editions
@@ -388,25 +449,92 @@ async def browse_all_deals(
     results = list(game_dict.values())
     results.sort(key=lambda x: x["deal_rating"], reverse=True)
 
+    if saw_429:
+        _cache.set("cheapshark_429_cooldown", True)
+
+    # If CheapShark is rate-limiting (or cooling down), use stale fallback to fill missing items.
+    if saw_429 or cheapshark_cooldown:
+        is_default_browse = (
+            min_discount == 0
+            and min_price <= 0
+            and max_price >= 999
+            and not store_id
+        )
+        # Prefer a broad "default browse" cache to avoid tiny/random fallback sets.
+        if is_default_browse:
+            fallback_items = _cache.get("cs_browse_default_items", ttl=6 * 3600) or []
+        else:
+            fallback_items = _cache.get("cs_browse_last_success_items", ttl=6 * 3600) or []
+        if fallback_items:
+            filtered_fallback = []
+            for item in fallback_items:
+                sale = float(item.get("sale_price") or 0)
+                regular = float(item.get("regular_price") or 0)
+                discount = float(item.get("discount_percent") or 0)
+                if sale < min_price or sale > max_price:
+                    continue
+                if discount < min_discount:
+                    continue
+                if sale == 0 and min_discount < 90:
+                    continue
+                if regular > 200:
+                    continue
+                filtered_fallback.append(item)
+
+            if sort_by == "Price":
+                filtered_fallback.sort(key=lambda x: x.get("sale_price", 999999))
+            elif sort_by == "Savings":
+                filtered_fallback.sort(key=lambda x: x.get("discount_percent", 0), reverse=True)
+            elif sort_by == "Title":
+                filtered_fallback.sort(key=lambda x: str(x.get("name", "")).lower())
+            elif sort_by in {"Metacritic", "Reviews"}:
+                # Not available in this data; keep default quality order.
+                filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
+            else:
+                filtered_fallback.sort(key=lambda x: x.get("deal_rating", 0), reverse=True)
+
+            # Top up live results with fallback results without breaking active filters.
+            if len(results) < effective_limit:
+                seen = {str(r.get("steam_appid")) for r in results}
+                for item in filtered_fallback:
+                    appid = str(item.get("steam_appid"))
+                    if appid in seen:
+                        continue
+                    results.append(item)
+                    seen.add(appid)
+                    if len(results) >= effective_limit:
+                        break
+
+            # If live had nothing, still return fallback.
+            if not results:
+                start_idx = page * effective_limit
+                end_idx = start_idx + effective_limit
+                result = {
+                    "items": filtered_fallback[start_idx:end_idx],
+                    "has_more": len(filtered_fallback) > end_idx,
+                    "total_fetched": len(filtered_fallback)
+                }
+                _cache.set(cache_key, result)
+                return result
+
     # Return paginated results with has_more indicator
     # Check if we got full pages from CheapShark (means there's likely more)
-    has_more = len(all_deals) >= (pages_to_fetch * 60 * 0.9)  # 90% of expected
+    has_more = len(results) >= effective_limit or (
+        fetched_pages >= pages_to_fetch
+        and len(all_deals) >= (pages_to_fetch * 60 * 0.9)
+    )
 
-    # For high discount filters, return more results (since there are fewer matches)
-    if min_discount >= 85:
-        effective_limit = min(limit * 4, 240)  # 85%+: show up to 240 results
-    elif min_discount >= 70:
-        effective_limit = min(limit * 3, 180)  # 70%+: show up to 180 results
-    elif min_discount >= 50:
-        effective_limit = min(limit * 2, 120)  # 50%+: show up to 120 results
-    else:
-        effective_limit = limit  # Default 60 results
-
-    return {
+    result = {
         "items": results[:effective_limit],
         "has_more": has_more,
         "total_fetched": len(results)
     }
+    if results:
+        _cache.set("cs_browse_last_success_items", results[:400])
+        if min_discount == 0 and min_price <= 0 and max_price >= 999 and not store_id:
+            _cache.set("cs_browse_default_items", results[:400])
+    _cache.set(cache_key, result)
+    return result
 
 
 async def get_deals_by_steam_appid(steam_appid: str) -> List[Dict[str, Any]]:

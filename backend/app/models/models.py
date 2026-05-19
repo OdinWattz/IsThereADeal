@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Index, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
+    Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -82,9 +82,6 @@ class GamePrice(Base):
 
     __table_args__ = (
         UniqueConstraint("game_id", "store_name", name="uq_game_store"),
-        Index("ix_game_price_game_sale", "game_id", "is_on_sale"),
-        Index("ix_game_price_discount", "discount_percent"),
-        Index("ix_game_price_fetched_at", "fetched_at"),
     )
 
 
@@ -103,10 +100,6 @@ class PriceHistory(Base):
     recorded_at = Column(DateTime, default=utcnow, index=True)
 
     game = relationship("Game", back_populates="price_history")
-
-    __table_args__ = (
-        Index("ix_price_history_game_date", "game_id", "recorded_at"),
-    )
 
 
 class WishlistItem(Base):

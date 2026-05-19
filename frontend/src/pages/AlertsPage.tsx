@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { Navigate, Link } from 'react-router-dom'
 import { Bell, BellOff, Trash2, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { OptimizedImage } from '../components/OptimizedImage'
 
 export function AlertsPage() {
   const { isAuthenticated } = useAuthStore()
@@ -89,7 +90,7 @@ function AlertRow({ alert, onDelete, onToggle }: {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 16px', background: 'rgba(255,255,255,0.84)', border: `1px solid ${borderColor}`, borderRadius: '12px', marginBottom: '10px', backdropFilter: 'blur(8px)' }}>
       <Link to={`/game/${alert.game.steam_appid}`}>
-        <img src={alert.game.header_image || ''} alt={alert.game.name}
+        <OptimizedImage src={alert.game.header_image || ''} alt={alert.game.name}
           style={{ width: '80px', height: '48px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
       </Link>
 

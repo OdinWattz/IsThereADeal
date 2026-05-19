@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
 import SEO from '../components/SEO'
+import { OptimizedImage } from '../components/OptimizedImage'
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.84)',
@@ -162,10 +163,11 @@ export function GamePage() {
 
       {/* Hero */}
       <div className="flex flex-col md:flex-row gap-6 sm:gap-7 mb-6 sm:mb-7">
-        <img
+        <OptimizedImage
           src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`}
           alt={game.name}
           className="w-full md:w-80 rounded-xl object-cover"
+          priority
         />
         <div className="flex-1 min-w-0">
           <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>{game.name}</h1>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Flame, Clock } from 'lucide-react'
 import api from '../api/client'
+import { OptimizedImage } from './OptimizedImage'
 
 interface DealOfDay {
   steam_appid: string
@@ -101,10 +102,11 @@ export function DealOfTheDay() {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Game Image */}
             <div className="md:w-1/2 relative overflow-hidden rounded-xl" style={{ boxShadow: '0 4px 16px rgba(18, 120, 168, 0.2)' }}>
-              <img
+              <OptimizedImage
                 src={deal.header_image}
                 alt={deal.name}
                 className="w-full aspect-[460/215] object-cover group-hover:scale-105 transition-transform duration-300"
+                priority
               />
               <div className="absolute top-3 right-3 text-white text-2xl font-bold px-4 py-2 rounded-lg shadow-lg" style={{
                 background: 'linear-gradient(135deg, #1ea866, #15924e)',

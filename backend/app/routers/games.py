@@ -196,7 +196,7 @@ async def get_game(
     from app.services import cache as _cache
     cache_key = f"game_full:{steam_appid}"
     if not refresh:
-        cached = _cache.get(cache_key, ttl=300)  # 5 min cache
+        cached = _cache.get(cache_key, ttl=900)  # 15 min cache
         if cached is not None:
             return cached
 
@@ -261,7 +261,7 @@ async def get_game(
         raise HTTPException(status_code=404, detail="Game not found")
 
     result = _enrich_game(game)
-    _cache.set(cache_key, result)
+    _cache.set(cache_key, result, ttl=900)
     return result
 
 

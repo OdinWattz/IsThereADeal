@@ -129,7 +129,7 @@ export function PriceTable({ prices, gameName }: Props) {
             <a
               href={p.url}
               target="_blank"
-              rel="noopener noreferrer"
+              rel={p.is_key_reseller ? 'sponsored noopener noreferrer' : 'noopener noreferrer'}
               onClick={(e) => e.stopPropagation()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#1278a8', backgroundColor: 'rgba(18, 120, 168, 0.12)', border: '1px solid rgba(18, 120, 168, 0.25)', padding: '5px 12px', borderRadius: '6px', textDecoration: 'none' }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(18, 120, 168, 0.22)')}
@@ -173,6 +173,9 @@ export function PriceTable({ prices, gameName }: Props) {
       </table>
       {gameName && (
         <div style={{ borderTop: '1px solid rgba(90, 175, 225, 0.3)', padding: '12px 16px', background: 'rgba(200, 238, 255, 0.5)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '0.68rem', color: '#5888a5' }}>
+            Een deel van de externe winkel-links kan affiliate of sponsored zijn. Zie de affiliate disclosure voor details.
+          </p>
           <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#b07020', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>
             🔑 Zoek op grey-market key sites
           </p>

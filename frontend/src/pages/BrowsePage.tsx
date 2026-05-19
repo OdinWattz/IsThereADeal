@@ -6,6 +6,7 @@ import type { Game } from '../api/games'
 import api from '../api/client'
 import { QuickViewModal } from '../components/QuickViewModal'
 import SEO from '../components/SEO'
+import { OptimizedImage } from '../components/OptimizedImage'
 
 const SORT_OPTIONS = [
   { value: 'name', label: 'Naam (A-Z)' },
@@ -306,7 +307,7 @@ export function BrowsePage() {
 
                 <Link to={`/game/${game.steam_appid}`}>
                   <div className="relative">
-                    <img
+                    <OptimizedImage
                       src={game.header_image || ''}
                       alt={game.name}
                       className="w-full aspect-[460/215] object-cover"

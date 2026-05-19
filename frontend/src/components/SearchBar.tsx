@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { searchGames } from '../api/games'
 import type { SearchResult } from '../api/games'
+import { OptimizedImage } from './OptimizedImage'
 
 interface SearchBarProps {
   onSelectGame?: (result: SearchResult) => void
@@ -117,7 +118,7 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {r.header_image && (
-                <img src={r.header_image} alt="" style={{ width: '52px', height: '32px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
+                <OptimizedImage src={r.header_image} alt="" style={{ width: '52px', height: '32px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
               )}
               <span style={{ fontSize: '0.875rem', color: '#082030', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
               {r.is_in_db && (

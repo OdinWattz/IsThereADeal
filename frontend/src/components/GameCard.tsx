@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Game } from '../api/games'
 import { TrendingDown } from 'lucide-react'
+import { OptimizedImage } from './OptimizedImage'
 
 interface Props {
   game: Game
@@ -44,7 +45,7 @@ export function GameCard({ game, showBestDeal = true }: Props) {
     >
       {/* Image */}
       <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <img
+        <OptimizedImage
           src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/header.jpg`}
           alt={game.name}
           style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }}

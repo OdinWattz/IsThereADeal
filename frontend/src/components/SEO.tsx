@@ -21,6 +21,9 @@ export default function SEO({
 
   return (
     <Helmet>
+      <link rel="dns-prefetch" href="//cdn.cloudflare.steamstatic.com" />
+      <link rel="preconnect" href="https://cdn.cloudflare.steamstatic.com" crossOrigin="anonymous" />
+
       {/* Primary Meta Tags */}
       <title>{fullTitle}</title>
       <meta name="title" content={fullTitle} />

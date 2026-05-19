@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { Clock, X } from 'lucide-react'
+import { OptimizedImage } from './OptimizedImage'
 
 export function RecentlyViewed() {
   const { recentlyViewed, clearRecentlyViewed } = useRecentlyViewed()
@@ -43,7 +44,7 @@ export function RecentlyViewed() {
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(40, 110, 165, 0.08)' }}
             >
               <div className="relative">
-                <img
+                <OptimizedImage
                   src={game.header_image}
                   alt={game.name}
                   className="w-full aspect-[460/215] object-cover"

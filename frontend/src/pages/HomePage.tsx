@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { DealOfTheDay } from '../components/DealOfTheDay'
 import { RecentlyViewed } from '../components/RecentlyViewed'
 import SEO from '../components/SEO'
+import { OptimizedImage } from '../components/OptimizedImage'
 
 export function HomePage() {
   const { data: featured = [], isLoading } = useQuery({
@@ -102,7 +103,7 @@ export function HomePage() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40, 110, 165, 0.09)' }}
               >
                 <div className="relative">
-                  <img
+                  <OptimizedImage
                     src={game.header_image}
                     alt={game.name}
                     className="w-full h-24 sm:h-28 object-cover"

@@ -233,13 +233,13 @@ async def get_game(
                 result_data = _enrich_game(game)
                 if age_seconds >= _FRESH_TTL:
                     # Data is stale (5–60 min old) — refresh in background
-                    async def _bg_refresh():
+                    async def _bg_refresh(_appid=steam_appid, _include_resellers=include_key_resellers, _cache_key=cache_key, _ttl=_FRESH_TTL):
                         from app.database import get_db as _get_db
                         async for bg_db in _get_db():
                             try:
-                                refreshed = await upsert_game_and_prices(bg_db, steam_appid, include_key_resellers)
+                                refreshed = await upsert_game_and_prices(bg_db, _appid, _include_resellers)
                                 if refreshed:
-                                    _cache.set(cache_key, _enrich_game(refreshed), ttl=_FRESH_TTL)
+                                    _cache.set(_cache_key, _enrich_game(refreshed), ttl=_ttl)
                             except Exception:
                                 pass
                     background_tasks.add_task(_bg_refresh)

@@ -7,7 +7,7 @@ from app.models.schemas import BlogPostOut, BlogPostCreate, BlogPostUpdate
 from app.auth import get_current_user
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/blog", tags=["blog"])
+router = APIRouter(prefix="/api/blog", tags=["blog"])
 
 
 def utcnow():

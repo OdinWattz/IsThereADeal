@@ -216,7 +216,13 @@ async def get_game(
             game = await upsert_game_and_prices(db, steam_appid, include_key_resellers)
             if game is None:
                 raise HTTPException(status_code=404, detail="Game not found")
-            # Prices already loaded via eager loading - no second query needed!
+            # Reload with prices eagerly loaded
+            result = await db.execute(
+                select(Game)
+                .where(Game.id == game.id)
+                .options(selectinload(Game.prices))
+            )
+            game = result.scalar_one_or_none()
         except HTTPException:
             raise
         except Exception:

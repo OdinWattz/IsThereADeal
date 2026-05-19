@@ -225,7 +225,8 @@ async def get_game(
             game = result.scalar_one_or_none()
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            print(f"[Persist Error] Could not save {steam_appid}: {e}")
             # DB unavailable – fetch directly from APIs and return without persisting
             from app.services.price_aggregator import fetch_all_prices
             data = await fetch_all_prices(steam_appid, include_key_resellers)
@@ -242,12 +243,15 @@ async def get_game(
                     "currency": p.get("currency", "EUR"),
                     "url": p.get("url"),
                     "is_on_sale": p.get("is_on_sale", False),
+                    "lowest_ever_price": None,
+                    "lowest_ever_currency": None,
+                    "is_all_time_low": False,
                 }
                 for p in data.get("prices", [])
             ]
             best = data.get("best_price")
             from app.models.schemas import GameOut as GameOutSchema, GamePriceOut
-            return GameOutSchema(
+            out = GameOutSchema(
                 id=0,
                 steam_appid=steam_appid,
                 name=steam_data.get("name", ""),
@@ -262,6 +266,8 @@ async def get_game(
                 best_price=best.get("sale_price") or best.get("regular_price") if best else None,
                 best_store=best.get("store_name") if best else None,
             )
+            _cache.set(cache_key, out, ttl=900)
+            return out
 
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")

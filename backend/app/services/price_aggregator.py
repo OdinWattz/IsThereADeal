@@ -53,7 +53,7 @@ async def calculate_all_time_low(steam_appid: str) -> Dict[str, Optional[float]]
 
 async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False) -> Dict[str, Any]:
     """
-    Fetch prices from all sources in parallel and return a merged dict.
+    Fetch prices from all sources in parallel with 2-second timeout per source.
     Results are cached in-memory for _PRICES_TTL seconds.
 
     Args:
@@ -64,19 +64,32 @@ async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False
     cached = _cache.get(cache_key, ttl=_PRICES_TTL)
     if cached is not None:
         return cached
-    steam_task = get_steam_app_details(steam_appid)
-    itad_task = get_prices_for_game(steam_appid)
-    cheap_task = get_deals_by_steam_appid(steam_appid)
+    
+    # Wrap each API call with 2-second timeout
+    async def with_timeout(coro, timeout_secs=2):
+        try:
+            return await asyncio.wait_for(coro, timeout=timeout_secs)
+        except asyncio.TimeoutError:
+            print(f"[API Timeout] {steam_appid} timeout after {timeout_secs}s")
+            return None
+        except Exception as e:
+            print(f"[API Error] {steam_appid}: {e}")
+            return None
+    
+    steam_task = with_timeout(get_steam_app_details(steam_appid), 2)
+    itad_task = with_timeout(get_prices_for_game(steam_appid), 2)
+    cheap_task = with_timeout(get_deals_by_steam_appid(steam_appid), 2)
 
     steam_data, itad_prices, cheap_prices = await asyncio.gather(
         steam_task, itad_task, cheap_task, return_exceptions=True
     )
 
-    if isinstance(steam_data, Exception):
+    # Handle timeouts and exceptions – just use what we got
+    if isinstance(steam_data, Exception) or steam_data is None:
         steam_data = None
-    if isinstance(itad_prices, Exception):
+    if isinstance(itad_prices, Exception) or itad_prices is None:
         itad_prices = []
-    if isinstance(cheap_prices, Exception):
+    if isinstance(cheap_prices, Exception) or cheap_prices is None:
         cheap_prices = []
 
     # Fetch key reseller prices (slower, run after we have game name)
@@ -94,8 +107,15 @@ async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False
             if cached_keys is not None:
                 key_prices = cached_keys
             else:
-                key_prices = await get_all_key_reseller_prices(game_name)
-                _cache.set(key_cache_key, key_prices)
+                try:
+                    key_prices = await asyncio.wait_for(get_all_key_reseller_prices(game_name), timeout=3)
+                    _cache.set(key_cache_key, key_prices)
+                except asyncio.TimeoutError:
+                    print(f"[Key Resellers Timeout] {game_name} - skipping")
+                    key_prices = []
+                except Exception as e:
+                    print(f"[Key Resellers Error] {game_name}: {e}")
+                    key_prices = []
 
     # Merge: deduplicate by normalised store name
     all_prices: List[Dict] = []

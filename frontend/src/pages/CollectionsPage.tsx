@@ -204,6 +204,8 @@ export function CollectionsPage() {
                       src={item.game.header_image}
                       alt={item.game.name}
                       className="w-full h-16 object-cover rounded"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ))}
                 </div>

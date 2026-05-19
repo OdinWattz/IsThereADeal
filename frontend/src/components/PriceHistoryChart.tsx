@@ -14,8 +14,14 @@ const COLORS = [
   '#c084fc', '#6ee7b7', '#93c5fd', '#fbbf24', '#fb923c',
 ]
 
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; payload: { storeName?: string } }>
+  label?: string
+}
+
 // Custom tooltip to show store name for best price view
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
     return (

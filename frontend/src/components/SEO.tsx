@@ -1,5 +1,20 @@
 import { Helmet } from 'react-helmet-async';
 
+interface PriceData {
+  priceCurrency: string;
+  price: string;
+  storeName: string;
+  availability?: string;
+}
+
+interface ProductData {
+  name: string;
+  description: string;
+  image: string;
+  releaseDate?: string;
+  prices: PriceData[];
+}
+
 interface SEOProps {
   title?: string;
   description?: string;
@@ -7,6 +22,7 @@ interface SEOProps {
   image?: string;
   url?: string;
   type?: 'website' | 'article';
+  product?: ProductData;
 }
 
 export default function SEO({
@@ -15,9 +31,32 @@ export default function SEO({
   keywords = 'game prijzen, game deals, game korting, steam prijzen, pc games goedkoop, game prijsvergelijking, beste game deals',
   image = 'https://serpodin.nl/og-image.png',
   url = 'https://serpodin.nl/',
-  type = 'website'
+  type = 'website',
+  product,
 }: SEOProps) {
   const fullTitle = title.includes('Serpodin') ? title : `${title} | Serpodin`;
+
+  // Build Product schema for Google
+  const productSchema = product ? {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image,
+    offers: product.prices.map(p => ({
+      '@type': 'Offer',
+      url,
+      priceCurrency: p.priceCurrency,
+      price: p.price,
+      seller: {
+        '@type': 'Organization',
+        name: p.storeName,
+      },
+      availability: p.availability || 'https://schema.org/InStock',
+    })),
+    ...(product.releaseDate && { releaseDate: product.releaseDate }),
+    gamePlatform: 'PC',
+  } : null;
 
   return (
     <Helmet>
@@ -44,6 +83,15 @@ export default function SEO({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+
+      {/* Product + Pricing Schema for Google Shopping */}
+      {productSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(productSchema)}
+        </script>
+      )}
     </Helmet>
   );
 }
+
+export { SEO };

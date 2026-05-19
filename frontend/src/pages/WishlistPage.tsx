@@ -355,6 +355,8 @@ export function WishlistPage() {
                     src={item.game.header_image || ''}
                     alt={item.game.name}
                     className="w-full h-48 object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </Link>
 

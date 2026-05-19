@@ -20,6 +20,37 @@ def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+async def calculate_all_time_low(steam_appid: str) -> Dict[str, Optional[float]]:
+    """
+    Calculate all-time low price per store from ITAD 2-year history.
+    Returns: {store_name: lowest_price_usd_or_eur}
+    """
+    try:
+        history = await get_price_history(steam_appid)
+        if not history:
+            return {}
+        
+        store_lows = {}
+        for entry in history:
+            store_name = entry.get("store_name", "Unknown")
+            price = entry.get("price", 999)
+            
+            if store_name not in store_lows or price < store_lows[store_name]["price"]:
+                store_lows[store_name] = {
+                    "price": price,
+                    "currency": entry.get("currency", "EUR"),
+                }
+        
+        # Convert to simpler dict: {store_name: lowest_price}
+        result = {store: data["price"] for store, data in store_lows.items()}
+        print(f"[All-Time Low] Calculated for {steam_appid}: {len(result)} stores")
+        return result
+    except Exception as e:
+        print(f"[All-Time Low] Failed to calculate for {steam_appid}: {e}")
+        return {}
+
+
+
 async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False) -> Dict[str, Any]:
     """
     Fetch prices from all sources in parallel and return a merged dict.
@@ -188,6 +219,21 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str, include_key
             db.add(ph)
 
     await db.flush()
+
+    # Calculate all-time low prices from ITAD history
+    all_time_lows = await calculate_all_time_low(steam_appid)
+    
+    # Update GamePrice records with all-time low data
+    for gp in await db.execute(select(GamePrice).where(GamePrice.game_id == game.id)):
+        gp_record = gp[0]
+        if gp_record.store_name in all_time_lows:
+            gp_record.lowest_ever_price = all_time_lows[gp_record.store_name]
+            gp_record.lowest_ever_currency = gp_record.currency
+            
+            # Check if current price is all-time low
+            current_price = gp_record.sale_price or gp_record.regular_price
+            if current_price and current_price <= gp_record.lowest_ever_price + 0.01:  # +0.01 for floating point tolerance
+                gp_record.is_all_time_low = True
 
     # Update historic low if current price is lower
     valid_prices = [p for p in prices if (p.get("sale_price") or p.get("regular_price"))]

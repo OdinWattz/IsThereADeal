@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
+    Column, Index, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -63,20 +63,28 @@ class GamePrice(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
+    store_id = Column(Integer, ForeignKey("stores.id"), nullable=True)
     store_name = Column(String(100), nullable=False)
-    store_id = Column(String(50))
     regular_price = Column(Float)
     sale_price = Column(Float)
     discount_percent = Column(Integer, default=0)
     currency = Column(String(10), default="USD")
     url = Column(String(1000))
     is_on_sale = Column(Boolean, default=False)
+    is_key_reseller = Column(Boolean, default=False)
     fetched_at = Column(DateTime, default=utcnow)
+    lowest_ever_price = Column(Float, nullable=True)  # All-time low from price history
+    lowest_ever_currency = Column(String(10), nullable=True)
+    is_all_time_low = Column(Boolean, default=False)  # Current price = all-time low
 
     game = relationship("Game", back_populates="prices")
+    store = relationship("Store")
 
     __table_args__ = (
         UniqueConstraint("game_id", "store_name", name="uq_game_store"),
+        Index("ix_game_price_game_sale", "game_id", "is_on_sale"),
+        Index("ix_game_price_discount", "discount_percent"),
+        Index("ix_game_price_fetched_at", "fetched_at"),
     )
 
 
@@ -91,9 +99,14 @@ class PriceHistory(Base):
     regular_price = Column(Float)
     discount_percent = Column(Integer, default=0)
     currency = Column(String(10), default="USD")
+    region = Column(String(10), default="NL")  # For regional pricing tracking
     recorded_at = Column(DateTime, default=utcnow, index=True)
 
     game = relationship("Game", back_populates="price_history")
+
+    __table_args__ = (
+        Index("ix_price_history_game_date", "game_id", "recorded_at"),
+    )
 
 
 class WishlistItem(Base):
@@ -164,4 +177,84 @@ class CollectionItem(Base):
 
     __table_args__ = (
         UniqueConstraint("collection_id", "game_id", name="uq_collection_game"),
+    )
+
+
+class Store(Base):
+    """Game stores/resellers"""
+    __tablename__ = "stores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    url = Column(String(500), nullable=True)
+    logo_url = Column(String(500), nullable=True)
+    is_official = Column(Boolean, default=True)  # Official store vs key reseller
+    is_key_reseller = Column(Boolean, default=False)
+    avg_rating = Column(Float, default=0.0)  # 0-5.0
+    review_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    reviews = relationship("StoreReview", back_populates="store", cascade="all, delete-orphan")
+
+
+class StoreReview(Base):
+    """User reviews for stores"""
+    __tablename__ = "store_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    store = relationship("Store", back_populates="reviews")
+    user = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("store_id", "user_id", name="uq_store_user_review"),
+    )
+
+
+class BlogPost(Base):
+    """Blog posts and gaming guides"""
+    __tablename__ = "blog_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    title = Column(String(500), nullable=False)
+    excerpt = Column(Text, nullable=True)
+    content = Column(Text, nullable=False)  # Markdown
+    category = Column(String(50), nullable=False)  # 'guide', 'news', 'tutorial'
+    author = Column(String(100), default="GameDeals Team")
+    featured_image = Column(String(500), nullable=True)
+    is_published = Column(Boolean, default=True)
+    view_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utcnow, index=True)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+    published_at = Column(DateTime, nullable=True)
+
+
+class Freebie(Base):
+    """Tracks games that are temporarily free (Epic Games Store, Prime Gaming, etc.)"""
+    __tablename__ = "freebies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    game_id = Column(Integer, ForeignKey("games.id"), nullable=True)  # Nullable if game not in DB
+    title = Column(String(500), nullable=False)
+    source = Column(String(50), nullable=False)  # 'epic', 'prime', 'steam', etc.
+    external_id = Column(String(200), nullable=True)  # Epic ID, Prime ID, etc.
+    thumbnail_url = Column(String(500), nullable=True)
+    original_price = Column(Float, nullable=True)  # Price when not free
+    free_url = Column(String(500), nullable=True)
+    available_until = Column(DateTime, nullable=True)
+    claimed_users_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utcnow, index=True)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    game = relationship("Game", foreign_keys=[game_id])
+
+    __table_args__ = (
+        UniqueConstraint("source", "external_id", name="uq_freebie_source_id"),
     )

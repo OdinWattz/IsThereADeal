@@ -13,6 +13,9 @@ import toast from 'react-hot-toast'
 import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
 import SEO from '../components/SEO'
 import { OptimizedImage } from '../components/OptimizedImage'
+import { checkGameInBundles } from '../api/bundles'
+import { checkGameIsFree } from '../api/freebies'
+import { getRegionalPrices } from '../api/regional'
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.84)',
@@ -84,6 +87,27 @@ export function GamePage() {
     staleTime: 1000 * 60 * 30,
   })
 
+  const { data: bundleMatches = [] } = useQuery({
+    queryKey: ['bundles', game?.name],
+    queryFn: () => checkGameInBundles(game!.name),
+    enabled: !!game?.name,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const { data: freebiMatch } = useQuery({
+    queryKey: ['freebie-check', appid, game?.name],
+    queryFn: () => checkGameIsFree(appid!, game!.name),
+    enabled: !!appid && !!game?.name,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const { data: regionalPrices } = useQuery({
+    queryKey: ['regional-prices', appid],
+    queryFn: () => getRegionalPrices(appid!, ['NL', 'US', 'GB', 'DE', 'FR']),
+    enabled: !!appid,
+    staleTime: 1000 * 60 * 30,
+  })
+
   const wishlistMutation = useMutation({
     mutationFn: async () => {
       // Use steam_appid directly - backend will handle saving if needed
@@ -138,6 +162,20 @@ export function GamePage() {
 
   const steamPrice = game.prices.find((p) => p.store_name === 'Steam')
 
+  // Build product schema data for SEO
+  const productSchemaData = game && game.prices.length > 0 ? {
+    name: game.name,
+    description: game.short_description || `Vergelijk ${game.name} prijzen en vind de beste deals.`,
+    image: game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
+    releaseDate: game.release_date,
+    prices: game.prices.slice(0, 5).map(p => ({
+      priceCurrency: p.currency,
+      price: (p.sale_price ?? p.regular_price ?? 0).toFixed(2),
+      storeName: p.store_name,
+      availability: p.is_on_sale ? 'https://schema.org/InStock' : undefined,
+    })),
+  } : undefined;
+
   return (
     <>
       {game && (
@@ -148,6 +186,7 @@ export function GamePage() {
           image={game.header_image}
           url={`https://serpodin.nl/game/${appid}`}
           type="article"
+          product={productSchemaData}
         />
       )}
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -430,6 +469,89 @@ export function GamePage() {
                   )}
                 </div>
               </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Free Game Alert */}
+      {freebiMatch && (
+        <div style={{ ...cardStyle, backgroundColor: 'rgba(22, 154, 88, 0.06)', border: '2px solid rgba(22, 154, 88, 0.35)' }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#169a58', marginBottom: '8px' }}>
+            🎁 Dit spel is nu GRATIS!
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '12px' }}>
+            <strong>{freebiMatch.title}</strong> is tijdelijk gratis te claimen op {freebiMatch.source === 'epic' ? 'Epic Games Store ⚡' : 'Prime Gaming 👑'}.
+          </p>
+          <a
+            href={freebiMatch.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ ...actionBtn('#169a58'), textDecoration: 'none', display: 'inline-flex' }}
+          >
+            Nu gratis claimen <ExternalLink size={14} />
+          </a>
+        </div>
+      )}
+
+      {/* Bundle Checker */}
+      {bundleMatches.length > 0 && (
+        <div style={{ ...cardStyle, backgroundColor: 'rgba(139, 90, 60, 0.04)', border: '1px solid rgba(139, 90, 60, 0.2)' }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            📦 In een bundel!
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '12px' }}>
+            Let op: dit spel zit momenteel in {bundleMatches.length === 1 ? 'een bundel' : `${bundleMatches.length} bundels`} — misschien goedkoper dan los kopen!
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {bundleMatches.map((match, i) => (
+              <a
+                key={i}
+                href={match.bundle_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: 'rgba(139, 90, 60, 0.06)', border: '1px solid rgba(139, 90, 60, 0.15)', borderRadius: '8px', textDecoration: 'none' }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>
+                  {match.bundle_source === 'humble' ? '🙏' : '🔥'}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{match.bundle_name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {match.bundle_source === 'humble' ? 'Humble Bundle' : 'Fanatical'}
+                    {match.bundle_price && ` · €${match.bundle_price.toFixed(2)}`}
+                  </div>
+                </div>
+                <ExternalLink size={14} style={{ color: 'var(--text-secondary)' }} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Regional Pricing */}
+      {regionalPrices && Object.keys(regionalPrices).length > 0 && (
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            🌍 Regionale prijzen
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>
+            Beste prijs per regio – handig voor internationale vergelijking.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+            {Object.entries(regionalPrices).map(([code, info]) => (
+              info.best_price ? (
+                <div
+                  key={code}
+                  style={{ padding: '12px 16px', backgroundColor: 'rgba(200, 238, 255, 0.3)', borderRadius: '8px', border: '1px solid rgba(90, 175, 225, 0.2)' }}
+                >
+                  <div style={{ fontSize: '1.1rem', marginBottom: '4px' }}>{info.flag} <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>{info.name}</span></div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#169a58' }}>
+                    {info.currency} {info.best_price.toFixed(2)}
+                  </div>
+                  {info.best_store && <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{info.best_store}</div>}
+                </div>
+              ) : null
             ))}
           </div>
         </div>

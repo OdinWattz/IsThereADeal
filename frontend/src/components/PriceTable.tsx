@@ -1,5 +1,6 @@
 import type { GamePrice } from '../api/games'
-import { ExternalLink, Key, Search } from 'lucide-react'
+import { useState } from 'react'
+import { ExternalLink, Key, Search, Eye, EyeOff } from 'lucide-react'
 
 interface Props {
   prices: GamePrice[]
@@ -21,6 +22,16 @@ function getStoreLogo(storeName: string) {
 
 const fmt = (val?: number | null) =>
   val != null ? `€${val.toFixed(2).replace('.', ',')}` : null
+
+function renderStars(rating?: number, count?: number) {
+  if (!rating || rating === 0) return null
+  const stars = Math.round(rating)
+  return (
+    <span style={{ fontSize: '0.75rem', color: '#f59e0b', marginLeft: '4px' }}>
+      {'⭐'.repeat(stars)} ({count ?? 0})
+    </span>
+  )
+}
 
 const GREY_MARKET_SITES = [
   {
@@ -46,6 +57,8 @@ const GREY_MARKET_SITES = [
 ]
 
 export function PriceTable({ prices, gameName }: Props) {
+  const [hideKeyResellers, setHideKeyResellers] = useState(false)
+  
   const official = prices.filter((p) => !p.is_key_reseller)
   const resellers = prices.filter((p) => p.is_key_reseller)
 
@@ -78,15 +91,23 @@ export function PriceTable({ prices, gameName }: Props) {
       >
         {/* Store */}
         <td style={{ padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.1rem' }}>{getStoreLogo(p.store_name)}</span>
-            <span style={{ fontSize: '0.875rem', color: '#082030' }}>{p.store_name}</span>
+            <div>
+              <div style={{ fontSize: '0.875rem', color: '#082030' }}>{p.store_name}</div>
+              {renderStars(p.store_rating, p.store_review_count)}
+            </div>
             {p.is_key_reseller && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.7rem', color: '#b07020', backgroundColor: 'rgba(200, 140, 20, 0.12)', border: '1px solid rgba(200, 140, 20, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
                 <Key size={9} /> key
               </span>
             )}
-            {isBest && (
+            {p.is_all_time_low && (
+              <span style={{ fontSize: '0.7rem', color: '#c41e3a', backgroundColor: 'rgba(196, 30, 58, 0.12)', border: '1px solid rgba(196, 30, 58, 0.25)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                🔥 all-time laag
+              </span>
+            )}
+            {isBest && !p.is_all_time_low && (
               <span style={{ fontSize: '0.7rem', color: '#169a58', backgroundColor: 'rgba(22, 154, 88, 0.12)', border: '1px solid rgba(22, 154, 88, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
                 beste deal
               </span>
@@ -116,9 +137,16 @@ export function PriceTable({ prices, gameName }: Props) {
         {/* Sale price */}
         <td style={{ padding: '12px 16px', textAlign: 'right' }}>
           {displayPrice != null ? (
-            <span style={{ fontWeight: 700, fontSize: '1rem', color: p.is_on_sale ? '#169a58' : '#0a2038' }}>
-              {fmt(displayPrice)}
-            </span>
+            <div>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: p.is_on_sale ? '#169a58' : '#0a2038' }}>
+                {fmt(displayPrice)}
+              </span>
+              {p.lowest_ever_price && !p.is_all_time_low && (
+                <div style={{ fontSize: '0.7rem', color: '#7aabcc', marginTop: '2px' }}>
+                  laagst: {fmt(p.lowest_ever_price)}
+                </div>
+              )}
+            </div>
           ) : (
             <span style={{ color: '#7aabcc' }}>—</span>
           )}
@@ -146,8 +174,35 @@ export function PriceTable({ prices, gameName }: Props) {
   }
 
   return (
-    <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(90, 175, 225, 0.45)', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', boxShadow: '0 3px 14px rgba(40,110,165,0.1)' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div>
+      {resellers.length > 0 && (
+        <div style={{ marginBottom: '12px' }}>
+          <button
+            onClick={() => setHideKeyResellers(!hideKeyResellers)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              borderRadius: '6px',
+              border: '1px solid rgba(200, 140, 20, 0.3)',
+              background: hideKeyResellers ? 'rgba(200, 140, 20, 0.15)' : 'rgba(255,255,255,0.8)',
+              color: hideKeyResellers ? '#b07020' : '#666',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(200, 140, 20, 0.12)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = hideKeyResellers ? 'rgba(200, 140, 20, 0.15)' : 'rgba(255,255,255,0.8)')}
+          >
+            {hideKeyResellers ? <EyeOff size={16} /> : <Eye size={16} />}
+            {hideKeyResellers ? `Verbergen (${resellers.length})` : `Tonen (${resellers.length})`}
+          </button>
+        </div>
+      )}
+      <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(90, 175, 225, 0.45)', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', boxShadow: '0 3px 14px rgba(40,110,165,0.1)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(90, 175, 225, 0.35)' }}>
             <th style={{ ...thStyle, textAlign: 'left' }}>Winkel</th>
@@ -159,7 +214,7 @@ export function PriceTable({ prices, gameName }: Props) {
         </thead>
         <tbody>
           {sortedOfficial.map((p, i) => renderRow(p, i, i === 0))}
-          {resellers.length > 0 && (
+          {!hideKeyResellers && resellers.length > 0 && (
             <>
               <tr style={{ backgroundColor: 'rgba(200, 238, 255, 0.5)', borderBottom: '1px solid rgba(90, 175, 225, 0.25)' }}>
                 <td colSpan={5} style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 600, color: '#b07020', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -170,7 +225,8 @@ export function PriceTable({ prices, gameName }: Props) {
             </>
           )}
         </tbody>
-      </table>
+        </table>
+      </div>
       {gameName && (
         <div style={{ borderTop: '1px solid rgba(90, 175, 225, 0.3)', padding: '12px 16px', background: 'rgba(200, 238, 255, 0.5)' }}>
           <p style={{ margin: '0 0 10px', fontSize: '0.68rem', color: '#5888a5' }}>

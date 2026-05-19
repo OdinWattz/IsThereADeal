@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getFreeGames } from '../api/games'
+import { getCurrentFreebies } from '../api/freebies'
 import { Link } from 'react-router-dom'
 import { Gift, ExternalLink } from 'lucide-react'
 import SEO from '../components/SEO'
@@ -10,6 +11,16 @@ export function FreeGamesPage() {
     queryFn: () => getFreeGames(50),
     staleTime: 1000 * 60 * 60, // 1 hour
   })
+
+  const { data: epicFreebies } = useQuery({
+    queryKey: ['epicFreebies'],
+    queryFn: getCurrentFreebies,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  })
+
+  const epicGames = epicFreebies?.epic ?? []
+  const primeGames = epicFreebies?.prime ?? []
+  const hasLiveFreebies = epicGames.length > 0 || primeGames.length > 0
 
   return (
     <>
@@ -48,6 +59,49 @@ export function FreeGamesPage() {
               className="rounded-lg h-56 skeleton"
             />
           ))}
+        </div>
+      )}
+
+      {/* Live Freebies (Epic / Prime) */}
+      {hasLiveFreebies && (
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0a2038', marginBottom: '16px' }}>
+            ⚡ Nu Tijdelijk Gratis
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+            {[...epicGames.map(g => ({ ...g, source: 'epic', badge_color: '#0078f2', badge_bg: 'rgba(0,120,242,0.08)', badge_label: '⚡ Epic Games' })),
+              ...primeGames.map(g => ({ ...g, source: 'prime', badge_color: '#ff9900', badge_bg: 'rgba(255,153,0,0.08)', badge_label: '👑 Prime Gaming' }))
+            ].map((g, i) => (
+              <div
+                key={i}
+                style={{ border: '1px solid rgba(90,175,225,0.2)', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(8,32,56,0.06)' }}
+              >
+                {g.thumbnail && (
+                  <img src={g.thumbnail} alt={g.title} style={{ width: '100%', height: '110px', objectFit: 'cover' }} loading="lazy" />
+                )}
+                <div style={{ padding: '12px' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 600, color: g.badge_color, backgroundColor: g.badge_bg, padding: '2px 7px', borderRadius: '4px' }}>
+                    {g.badge_label}
+                  </span>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0a2038', margin: '8px 0 4px', lineHeight: 1.3 }}>{g.title}</p>
+                  {g.original_price && g.original_price > 0 && (
+                    <p style={{ fontSize: '0.75rem', color: '#7aabcc', margin: '0 0 10px' }}>
+                      <span style={{ textDecoration: 'line-through' }}>€{g.original_price.toFixed(2)}</span>
+                      {' '}<span style={{ color: '#169a58', fontWeight: 700 }}>Gratis!</span>
+                    </p>
+                  )}
+                  <a
+                    href={g.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px', borderRadius: '6px', backgroundColor: g.badge_color, color: '#fff', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}
+                  >
+                    Claimen <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

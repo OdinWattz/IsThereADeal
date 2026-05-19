@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function GameCard({ game, showBestDeal = true }: Props) {
-  const steamPrice = game.prices.find((p) => p.store_id === 'steam' || p.store_name === 'Steam')
+  const steamPrice = game.prices.find((p) => p.store_name === 'Steam')
   const displayPrice = game.best_price ?? steamPrice?.sale_price ?? steamPrice?.regular_price
   const regularPrice = steamPrice?.regular_price
   const discount = steamPrice?.discount_percent ?? 0

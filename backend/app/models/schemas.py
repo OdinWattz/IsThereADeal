@@ -54,14 +54,20 @@ class DeleteAccount(BaseModel):
 
 class GamePriceOut(BaseModel):
     store_name: str
-    store_id: Optional[str] = None
+    store_id: Optional[int] = None
     regular_price: Optional[float] = None
     sale_price: Optional[float] = None
     discount_percent: int = 0
     currency: str = "USD"
     url: Optional[str] = None
     is_on_sale: bool = False
+    is_key_reseller: bool = False
+    store_rating: Optional[float] = None
+    store_review_count: Optional[int] = None
     fetched_at: Optional[datetime] = None
+    lowest_ever_price: Optional[float] = None  # All-time low from history
+    lowest_ever_currency: Optional[str] = None
+    is_all_time_low: bool = False  # Current price = all-time low?
 
     class Config:
         from_attributes = True
@@ -205,3 +211,81 @@ class SearchResult(BaseModel):
     header_image: Optional[str] = None
     is_in_db: bool = False
     game_id: Optional[int] = None
+
+
+# ── Stores & Reviews ──────────────────────────────────────────────────────────
+
+class StoreReviewOut(BaseModel):
+    id: int
+    user_id: int
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StoreOut(BaseModel):
+    id: int
+    name: str
+    url: Optional[str] = None
+    logo_url: Optional[str] = None
+    is_official: bool
+    is_key_reseller: bool
+    avg_rating: float
+    review_count: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StoreDetailOut(StoreOut):
+    reviews: List[StoreReviewOut] = []
+
+
+class StoreReviewCreate(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = Field(None, max_length=500)
+
+
+# ── Blog & Guides ────────────────────────────────────────────────────────────
+
+class BlogPostOut(BaseModel):
+    id: int
+    slug: str
+    title: str
+    excerpt: Optional[str] = None
+    content: str
+    category: str
+    author: str
+    featured_image: Optional[str] = None
+    is_published: bool
+    view_count: int
+    created_at: datetime
+    updated_at: datetime
+    published_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BlogPostCreate(BaseModel):
+    slug: str = Field(..., min_length=3, max_length=200)
+    title: str = Field(..., min_length=3, max_length=500)
+    excerpt: Optional[str] = None
+    content: str = Field(..., min_length=10)
+    category: str = Field(..., pattern="^(guide|news|tutorial)$")
+    author: Optional[str] = None
+    featured_image: Optional[str] = None
+    is_published: bool = True
+
+
+class BlogPostUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=3, max_length=500)
+    excerpt: Optional[str] = None
+    content: Optional[str] = Field(None, min_length=10)
+    category: Optional[str] = Field(None, pattern="^(guide|news|tutorial)$")
+    featured_image: Optional[str] = None
+    is_published: Optional[bool] = None

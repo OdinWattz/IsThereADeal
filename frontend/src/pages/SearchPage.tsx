@@ -52,6 +52,8 @@ export function SearchPage() {
                 src={r.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${r.steam_appid}/header.jpg`}
                 alt={r.name}
                 className="w-full h-24 sm:h-28 object-cover"
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
                 }}

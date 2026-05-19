@@ -2,15 +2,20 @@ import api from './client'
 
 export interface GamePrice {
   store_name: string
-  store_id?: string
+  store_id?: number
   regular_price?: number
   sale_price?: number
   discount_percent: number
   currency: string
   url?: string
   is_on_sale: boolean
-  fetched_at?: string
   is_key_reseller?: boolean
+  store_rating?: number
+  store_review_count?: number
+  fetched_at?: string
+  lowest_ever_price?: number
+  lowest_ever_currency?: string
+  is_all_time_low?: boolean
 }
 
 export interface Game {

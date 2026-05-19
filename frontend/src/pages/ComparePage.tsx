@@ -105,6 +105,8 @@ export function ComparePage() {
                 src={game.header_image || ''}
                 alt={game.name}
                 className="w-full h-48 object-cover"
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Game Info */}

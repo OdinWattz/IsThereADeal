@@ -1,9 +1,8 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
-from datetime import datetime, timezone
 
 from app.database import get_db
 from app.models.models import Game, GamePrice, PriceHistory
@@ -182,30 +181,22 @@ async def get_free_games_route(limit: int = 50):
 @router.get("/{steam_appid}", response_model=GameOut)
 async def get_game(
     steam_appid: str,
-    background_tasks: BackgroundTasks,
     refresh: bool = False,
     include_key_resellers: bool = False,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a game with all prices. Serves DB data immediately; refreshes stale data in background.
-
-    Stale-while-revalidate: If DB data is < 1h old, return it instantly and refresh in background.
-    If > 1h old (or refresh=True), fetch fresh data synchronously.
+    """Get a game with all prices. Fetches from APIs if not in DB or refresh=true.
 
     Args:
         steam_appid: Steam application ID
-        refresh: Force synchronous refresh from APIs
+        refresh: Force refresh from APIs
         include_key_resellers: Include key reseller prices (slower, opt-in)
     """
-    _FRESH_TTL = 300       # 5 min: data is fresh, skip re-fetch
-    _STALE_MAX = 3600      # 1 h: data older than this gets refreshed synchronously
-
+    # Check in-memory cache first for non-refresh requests
     from app.services import cache as _cache
     cache_key = f"game_full:{steam_appid}"
-
-    # --- In-memory cache (5 min): absolute freshest path ---
     if not refresh:
-        cached = _cache.get(cache_key, ttl=_FRESH_TTL)
+        cached = _cache.get(cache_key, ttl=900)  # 15 min cache
         if cached is not None:
             return cached
 
@@ -220,39 +211,12 @@ async def get_game(
     except Exception:
         game = None
 
-    # --- Stale-while-revalidate from DB ---
-    if game is not None and not refresh and game.prices:
-        # Find how old the price data is
-        fetched_times = [p.fetched_at for p in game.prices if p.fetched_at]
-        if fetched_times:
-            latest_fetch = max(fetched_times)
-            age_seconds = (datetime.now(timezone.utc).replace(tzinfo=None) - latest_fetch).total_seconds()
-
-            if age_seconds < _STALE_MAX:
-                # Data is recent enough — return immediately
-                result_data = _enrich_game(game)
-                if age_seconds >= _FRESH_TTL:
-                    # Data is stale (5–60 min old) — refresh in background
-                    async def _bg_refresh(_appid=steam_appid, _include_resellers=include_key_resellers, _cache_key=cache_key, _ttl=_FRESH_TTL):
-                        from app.database import get_db as _get_db
-                        async for bg_db in _get_db():
-                            try:
-                                refreshed = await upsert_game_and_prices(bg_db, _appid, _include_resellers)
-                                if refreshed:
-                                    _cache.set(_cache_key, _enrich_game(refreshed), ttl=_ttl)
-                            except Exception:
-                                pass
-                    background_tasks.add_task(_bg_refresh)
-                else:
-                    _cache.set(cache_key, result_data, ttl=_FRESH_TTL)
-                return result_data
-
-    # --- No DB data or data is too old — fetch synchronously ---
     if game is None or refresh:
         try:
             game = await upsert_game_and_prices(db, steam_appid, include_key_resellers)
             if game is None:
                 raise HTTPException(status_code=404, detail="Game not found")
+            # Prices already loaded via eager loading - no second query needed!
         except HTTPException:
             raise
         except Exception:
@@ -297,7 +261,7 @@ async def get_game(
         raise HTTPException(status_code=404, detail="Game not found")
 
     result = _enrich_game(game)
-    _cache.set(cache_key, result, ttl=_FRESH_TTL)
+    _cache.set(cache_key, result, ttl=900)
     return result
 
 

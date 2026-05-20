@@ -154,6 +154,7 @@ export function GamePage() {
   const canGoTrailerCarouselLeft = safeTrailerCarouselStart > 0
   const canGoTrailerCarouselRight = safeTrailerCarouselStart < maxTrailerCarouselStart
   const visibleTrailers = trailerCarouselItems.slice(safeTrailerCarouselStart, safeTrailerCarouselStart + visibleTrailerCount)
+  const trailerLightboxItem = trailerLightboxIndex !== null ? trailerCarouselItems[trailerLightboxIndex] : undefined
 
   useEffect(() => {
     if (lightboxIndex === null || carouselScreenshots.length === 0) return
@@ -884,7 +885,7 @@ export function GamePage() {
         </div>
       )}
 
-      {trailerLightboxIndex !== null && trailerCarouselItems[trailerLightboxIndex] && (
+      {trailerLightboxItem && (
         <div
           role="dialog"
           aria-modal="true"
@@ -932,30 +933,32 @@ export function GamePage() {
               background: 'rgba(0,0,0,0.55)',
             }}
           >
-            {(trailerCarouselItems[trailerLightboxIndex].mp4 || trailerCarouselItems[trailerLightboxIndex].webm) ? (
+            {(trailerLightboxItem.mp4 || trailerLightboxItem.webm) ? (
               <video
+                key={`${trailerLightboxIndex}-${trailerLightboxItem.mp4 || trailerLightboxItem.webm || 'fallback'}`}
                 controls
                 autoPlay
                 muted
                 loop
                 playsInline
                 preload="metadata"
-                poster={trailerCarouselItems[trailerLightboxIndex].thumbnail || fallbackHeaderImage}
+                poster={trailerLightboxItem.thumbnail || fallbackHeaderImage}
                 className="w-full aspect-video bg-black"
               >
-                {trailerCarouselItems[trailerLightboxIndex].mp4 && <source src={trailerCarouselItems[trailerLightboxIndex].mp4} type="video/mp4" />}
-                {trailerCarouselItems[trailerLightboxIndex].webm && <source src={trailerCarouselItems[trailerLightboxIndex].webm} type="video/webm" />}
+                {trailerLightboxItem.mp4 && <source src={trailerLightboxItem.mp4} type="video/mp4" />}
+                {trailerLightboxItem.webm && <source src={trailerLightboxItem.webm} type="video/webm" />}
                 Je browser ondersteunt geen video-weergave.
               </video>
             ) : (
               <OptimizedImage
-                src={trailerCarouselItems[trailerLightboxIndex].thumbnail || fallbackHeaderImage || ''}
-                alt={trailerCarouselItems[trailerLightboxIndex].label}
+                key={`${trailerLightboxIndex}-${trailerLightboxItem.thumbnail || 'fallback'}`}
+                src={trailerLightboxItem.thumbnail || fallbackHeaderImage || ''}
+                alt={trailerLightboxItem.label}
                 className="w-full aspect-video object-cover"
               />
             )}
             <div style={{ padding: '10px 12px', color: 'white', fontSize: '0.85rem' }}>
-              {trailerCarouselItems[trailerLightboxIndex].label}
+              {trailerLightboxItem.label}
             </div>
           </div>
 

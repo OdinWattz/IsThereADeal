@@ -13,6 +13,9 @@ from app.config import settings
 from app.database import get_db
 from app.models.models import User
 
+ADMIN_USERNAME = "odinwattz"
+ADMIN_EMAIL = "odinwattez@outlook.com"
+
 # bcrypt 4.0+ raises ValueError on passwords > 72 bytes instead of silently
 # truncating. truncate_error=False restores the old silent-truncation behaviour.
 # Combined with _prep_password (SHA-256 → always 44 bytes) we are doubly safe.
@@ -87,3 +90,15 @@ async def get_optional_user(
         return await get_current_user(token, db)
     except HTTPException:
         return None
+
+
+async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if (
+        current_user.username.lower() != ADMIN_USERNAME
+        or current_user.email.lower() != ADMIN_EMAIL
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

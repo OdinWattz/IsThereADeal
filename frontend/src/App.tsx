@@ -24,6 +24,7 @@ const PrivacyPage = lazy(async () => ({ default: (await import('./pages/PrivacyP
 const AffiliateDisclosurePage = lazy(async () => ({ default: (await import('./pages/AffiliateDisclosurePage')).AffiliateDisclosurePage }))
 const BlogPage = lazy(async () => ({ default: (await import('./pages/BlogPage')).BlogPage }))
 const BlogPostPage = lazy(async () => ({ default: (await import('./pages/BlogPostPage')).BlogPostPage }))
+const AdminBlogPage = lazy(async () => ({ default: (await import('./pages/AdminBlogPage')).AdminBlogPage }))
 
 function RouteFallback() {
   return (
@@ -71,6 +72,7 @@ function App() {
                   <Route path="/affiliate-disclosure" element={<AffiliateDisclosurePage />} />
                   <Route path="/blog" element={<BlogPage />} />
                   <Route path="/blog/:slug" element={<BlogPostPage />} />
+                  <Route path="/admin/blog" element={<AdminBlogPage />} />
                 </Routes>
               </Suspense>
             </main>

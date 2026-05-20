@@ -4,7 +4,7 @@ from sqlalchemy import select, desc, update
 from app.database import get_db
 from app.models.models import BlogPost, User
 from app.models.schemas import BlogPostOut, BlogPostCreate, BlogPostUpdate
-from app.auth import get_current_user
+from app.auth import get_current_user, get_admin_user
 from datetime import datetime, timezone
 import asyncio
 import logging
@@ -63,6 +63,18 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 
+@router.get("/admin/posts", response_model=list[BlogPostOut])
+async def admin_list_posts(
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all blog posts for admin (including unpublished)."""
+    await _ensure_default_blog_posts(db)
+
+    result = await db.execute(select(BlogPost).order_by(desc(BlogPost.updated_at), desc(BlogPost.created_at)))
+    return result.scalars().all()
+
+
 @router.get("/{slug}", response_model=BlogPostOut)
 async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
     """Get blog post by slug + increment view count"""
@@ -88,7 +100,7 @@ async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=BlogPostOut)
 async def create_post(
     post: BlogPostCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create blog post (admin only)"""
@@ -109,7 +121,7 @@ async def create_post(
 async def update_post(
     post_id: int,
     post_update: BlogPostUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Update blog post (admin only)"""
@@ -131,3 +143,20 @@ async def update_post(
     await db.commit()
     await db.refresh(post)
     return post
+
+
+@router.delete("/{post_id}")
+async def delete_post(
+    post_id: int,
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete blog post (admin only)."""
+    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    await db.delete(post)
+    await db.commit()
+    return {"message": "Post deleted"}

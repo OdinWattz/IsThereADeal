@@ -16,6 +16,26 @@ export interface BlogPost {
   published_at?: string
 }
 
+export interface BlogPostCreatePayload {
+  slug: string
+  title: string
+  excerpt?: string
+  content: string
+  category: 'guide' | 'news' | 'tutorial'
+  author?: string
+  featured_image?: string
+  is_published: boolean
+}
+
+export interface BlogPostUpdatePayload {
+  title?: string
+  excerpt?: string
+  content?: string
+  category?: 'guide' | 'news' | 'tutorial'
+  featured_image?: string
+  is_published?: boolean
+}
+
 export const getBlogPosts = (category?: string, skip = 0, limit = 20) =>
   api.get<BlogPost[]>('/blog', {
     params: { category, skip, limit }
@@ -27,8 +47,14 @@ export const getBlogPost = (slug: string) =>
 export const getBlogCategories = () =>
   api.get<string[]>('/blog/categories').then(r => r.data)
 
-export const createBlogPost = (post: Omit<BlogPost, 'id' | 'created_at' | 'updated_at' | 'view_count'>) =>
+export const createBlogPost = (post: BlogPostCreatePayload) =>
   api.post<BlogPost>('/blog', post).then(r => r.data)
 
-export const updateBlogPost = (postId: number, post: Partial<BlogPost>) =>
+export const updateBlogPost = (postId: number, post: BlogPostUpdatePayload) =>
   api.put<BlogPost>(`/blog/${postId}`, post).then(r => r.data)
+
+export const deleteBlogPost = (postId: number) =>
+  api.delete(`/blog/${postId}`).then(r => r.data)
+
+export const getAdminBlogPosts = () =>
+  api.get<BlogPost[]>('/blog/admin/posts').then(r => r.data)

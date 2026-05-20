@@ -89,53 +89,61 @@ export function HomePage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {featured.slice(0, 40).map((game) => (
-              <Link
-                key={game.steam_appid}
-                to={`/game/${game.steam_appid}`}
-                className="block rounded-xl overflow-hidden transition-all duration-200"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.84)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(110, 190, 235, 0.42)',
-                  boxShadow: '0 3px 12px rgba(40, 110, 165, 0.09)',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1278a8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(18, 120, 168, 0.2)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40, 110, 165, 0.09)' }}
-              >
-                <div className="relative">
-                  <OptimizedImage
-                    src={game.header_image}
-                    alt={game.name}
-                    className="w-full h-24 sm:h-28 object-cover"
-                  />
-                  {game.discount_percent > 0 && (
-                    <div className="absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'linear-gradient(135deg, #1ea866, #15924e)', boxShadow: '0 2px 6px rgba(22,154,88,0.3)' }}>
-                      -{game.discount_percent}%
-                    </div>
-                  )}
-                </div>
-                <div className="p-2 sm:p-3">
-                  <p
-                    className="text-xs sm:text-sm mb-1 sm:mb-2 truncate font-medium"
-                    style={{ color: 'var(--text-primary)' }}
+              (() => {
+                const discountPercent = game.discount_percent ?? 0
+                const regularPrice = game.regular_price ?? 0
+                const salePrice = game.sale_price ?? regularPrice
+
+                return (
+                  <Link
+                    key={game.steam_appid}
+                    to={`/game/${game.steam_appid}`}
+                    className="block rounded-xl overflow-hidden transition-all duration-200"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.84)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(110, 190, 235, 0.42)',
+                      boxShadow: '0 3px 12px rgba(40, 110, 165, 0.09)',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1278a8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(18, 120, 168, 0.2)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40, 110, 165, 0.09)' }}
                   >
-                    {game.name}
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--green)' }}>
-                      €{(game.sale_price ?? game.regular_price ?? 0).toFixed(2).replace('.', ',')}
-                    </span>
-                    {game.regular_price > (game.sale_price ?? game.regular_price) && (
-                      <span
-                        className="text-xs line-through"
-                        style={{ color: 'var(--text-tertiary)' }}
+                    <div className="relative">
+                      <OptimizedImage
+                        src={game.header_image || ''}
+                        alt={game.name}
+                        className="w-full h-24 sm:h-28 object-cover"
+                      />
+                      {discountPercent > 0 && (
+                        <div className="absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'linear-gradient(135deg, #1ea866, #15924e)', boxShadow: '0 2px 6px rgba(22,154,88,0.3)' }}>
+                          -{discountPercent}%
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2 sm:p-3">
+                      <p
+                        className="text-xs sm:text-sm mb-1 sm:mb-2 truncate font-medium"
+                        style={{ color: 'var(--text-primary)' }}
                       >
-                        €{game.regular_price.toFixed(2).replace('.', ',')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+                        {game.name}
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--green)' }}>
+                          €{salePrice.toFixed(2).replace('.', ',')}
+                        </span>
+                        {regularPrice > salePrice && (
+                          <span
+                            className="text-xs line-through"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            €{regularPrice.toFixed(2).replace('.', ',')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })()
             ))}
           </div>
         )}

@@ -6,9 +6,23 @@ import { updateProfile, changePassword, deleteAccount, getWishlist, getAlerts } 
 import toast from 'react-hot-toast'
 import { User, Lock, Trash2, Heart, Bell, Shield } from 'lucide-react'
 
+type ApiError = {
+  response?: {
+    data?: {
+      detail?: string
+    }
+  }
+}
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const apiError = error as ApiError
+  return apiError.response?.data?.detail || fallback
+}
+
 export function ProfilePage() {
   const { user, updateUser, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
+  const authenticated = isAuthenticated()
 
   const [editingField, setEditingField] = useState<'username' | 'email' | null>(null)
   const [username, setUsername] = useState(user?.username || '')
@@ -22,11 +36,10 @@ export function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
 
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
-
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
     queryFn: () => getWishlist(50, 0),
+    enabled: authenticated,
     staleTime: 0,
     gcTime: 0,
   })
@@ -34,6 +47,7 @@ export function ProfilePage() {
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
     queryFn: getAlerts,
+    enabled: authenticated,
   })
 
   const updateMutation = useMutation({
@@ -43,8 +57,8 @@ export function ProfilePage() {
       setEditingField(null)
       toast.success('Profile updated!')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to update profile')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to update profile'))
     },
   })
 
@@ -58,8 +72,8 @@ export function ProfilePage() {
       setNewPassword('')
       setConfirmPassword('')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to change password')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to change password'))
     },
   })
 
@@ -70,10 +84,12 @@ export function ProfilePage() {
       logout()
       navigate('/')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to delete account')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to delete account'))
     },
   })
+
+  if (!authenticated) return <Navigate to="/login" replace />
 
   const handleSaveUsername = () => {
     if (username && username !== user?.username) {

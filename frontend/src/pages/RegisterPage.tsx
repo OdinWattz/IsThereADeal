@@ -5,6 +5,14 @@ import { register, login } from '../api/games'
 import toast from 'react-hot-toast'
 import { Gamepad2, UserPlus, Check, X } from 'lucide-react'
 
+type ApiError = {
+  response?: {
+    data?: {
+      detail?: string
+    }
+  }
+}
+
 function calculatePasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' }
 
@@ -59,8 +67,9 @@ export function RegisterPage() {
       setAuth(data.access_token, data.user)
       toast.success('Account created! Welcome 🎮')
       navigate('/')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Registration failed')
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      toast.error(apiError.response?.data?.detail ?? 'Registration failed')
     } finally {
       setLoading(false)
     }

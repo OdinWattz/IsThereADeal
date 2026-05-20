@@ -1,15 +1,22 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { getWishlist, removeFromWishlist, updateTargetPrice, importSteamWishlist } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 import { Navigate, Link } from 'react-router-dom'
 import { Heart, Trash2, Target, Filter, ArrowUpDown, ExternalLink, Tag, Download, X, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
+import type { GamePrice } from '../api/games'
 
 type SortOption = 'price-low' | 'price-high' | 'date-new' | 'date-old' | 'name' | 'discount'
 
+type ApiErrorPayload = {
+  detail?: string
+}
+
 export function WishlistPage() {
   const { isAuthenticated } = useAuthStore()
+  const authenticated = isAuthenticated()
   const qc = useQueryClient()
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState('')
@@ -23,11 +30,10 @@ export function WishlistPage() {
   const [page, setPage] = useState(0)
   const ITEMS_PER_PAGE = 50
 
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
-
   const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['wishlist', page],
     queryFn: () => getWishlist(ITEMS_PER_PAGE, page * ITEMS_PER_PAGE),
+    enabled: authenticated,
     staleTime: 0, // Always fetch fresh data (no caching for now)
     refetchOnMount: 'always', // Force refetch every time
     refetchOnWindowFocus: false,
@@ -84,15 +90,18 @@ export function WishlistPage() {
       // Reset timer
       setTimeout(() => setImportStartTime(null), 500)
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Steam import error:', error)
       setImportStartTime(null)
 
+      const axiosError = error as AxiosError<ApiErrorPayload>
+      const runtimeError = error as { message?: string; code?: string }
+
       // Check if this is a timeout error but some games were imported
       // In that case, refresh the wishlist and show partial success
-      const errorMsg = error.response?.data?.detail || error.message || 'Import mislukt'
+      const errorMsg = axiosError.response?.data?.detail || runtimeError.message || 'Import mislukt'
 
-      if (errorMsg.includes('timeout') || errorMsg.includes('timed out') || error.code === 'ECONNABORTED') {
+      if (errorMsg.includes('timeout') || errorMsg.includes('timed out') || runtimeError.code === 'ECONNABORTED') {
         toast.loading('Timeout - controleren of games zijn toegevoegd...', { duration: 2000 })
         setTimeout(() => {
           qc.invalidateQueries({ queryKey: ['wishlist'] })
@@ -116,8 +125,6 @@ export function WishlistPage() {
       }, 100)
 
       return () => clearInterval(interval)
-    } else {
-      setImportProgress(0)
     }
   }, [steamImportMutation.isPending, importStartTime])
 
@@ -154,7 +161,7 @@ export function WishlistPage() {
         case 'name':
           return a.game.name.localeCompare(b.game.name)
         case 'discount': {
-          const getMaxDiscount = (prices: any[]) =>
+          const getMaxDiscount = (prices: GamePrice[]) =>
             Math.max(...prices.map((p) => p.discount_percent || 0), 0)
           return getMaxDiscount(b.game.prices || []) - getMaxDiscount(a.game.prices || [])
         }
@@ -165,11 +172,6 @@ export function WishlistPage() {
 
     return filtered
   }, [items, sortBy, filterOnSale, filterTargetMet])
-
-  // Reset to page 1 when filters or sort changes
-  useEffect(() => {
-    setPage(0)
-  }, [sortBy, filterOnSale, filterTargetMet])
 
   const targetMetCount = items.filter((item) => {
     const best = item.game.best_price
@@ -182,8 +184,10 @@ export function WishlistPage() {
     return `€${v.toFixed(2).replace('.', ',')}`
   }
 
-  const getMaxDiscount = (prices: any[]) =>
+  const getMaxDiscount = (prices: GamePrice[]) =>
     Math.max(...prices.map((p) => p.discount_percent || 0), 0)
+
+  if (!authenticated) return <Navigate to="/login" replace />
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
@@ -239,7 +243,10 @@ export function WishlistPage() {
             <ArrowUpDown size={18} style={{color: 'var(--text-tertiary)'}} />
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              onChange={(e) => {
+                setSortBy(e.target.value as SortOption)
+                setPage(0)
+              }}
               className="flex-1 sm:flex-initial input-aero rounded-lg px-3 py-2 text-sm"
             >
               <option value="date-new">Nieuwste eerst</option>
@@ -258,7 +265,10 @@ export function WishlistPage() {
               <input
                 type="checkbox"
                 checked={filterOnSale}
-                onChange={(e) => setFilterOnSale(e.target.checked)}
+                onChange={(e) => {
+                  setFilterOnSale(e.target.checked)
+                  setPage(0)
+                }}
                 className="w-4 h-4 rounded accent-[#1480b8]"
               />
               <span>In de aanbieding</span>
@@ -267,7 +277,10 @@ export function WishlistPage() {
               <input
                 type="checkbox"
                 checked={filterTargetMet}
-                onChange={(e) => setFilterTargetMet(e.target.checked)}
+                onChange={(e) => {
+                  setFilterTargetMet(e.target.checked)
+                  setPage(0)
+                }}
                 className="w-4 h-4 rounded accent-[#1480b8]"
               />
               <span>Doelprijs bereikt</span>
@@ -531,7 +544,7 @@ export function WishlistPage() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Importeren...</span>
                   <span className="text-xs text-gray-500">
-                    {importStartTime && `${Math.floor((Date.now() - importStartTime) / 1000)}s / ~25s max`}
+                    {importStartTime && `${Math.floor((importProgress / 100) * 25)}s / ~25s max`}
                   </span>
                 </div>
                 <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(160,210,240,0.3)' }}>

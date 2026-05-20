@@ -104,8 +104,19 @@ export const deleteAccount = (password: string) =>
 export const searchGames = (q: string) =>
   api.get<SearchResult[]>('/games/search', { params: { q } }).then((r) => r.data)
 
+export interface FeaturedDeal {
+  steam_appid: string
+  name: string
+  sale_price?: number
+  regular_price?: number
+  discount_percent?: number
+  store_name?: string
+  header_image?: string
+  deal_rating?: number
+}
+
 export const getFeaturedDeals = () =>
-  api.get<any[]>('/games/featured').then((r) => r.data)
+  api.get<FeaturedDeal[]>('/games/featured').then((r) => r.data)
 
 export interface TrendingDeal {
   steam_appid: string

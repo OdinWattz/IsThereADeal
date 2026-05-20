@@ -161,6 +161,22 @@ async def _ensure_compat_columns(conn):
             "region": "VARCHAR(10) DEFAULT 'NL'",
         }
 
+        collections_columns = {
+            "description": "TEXT",
+            "is_public": "BOOLEAN DEFAULT 0",
+            "updated_at": "DATETIME",
+        }
+
+        collections_columns_pg = {
+            "description": "TEXT",
+            "is_public": "BOOLEAN DEFAULT FALSE",
+            "updated_at": "TIMESTAMP WITHOUT TIME ZONE",
+        }
+
+        collection_items_columns = {
+            "notes": "TEXT",
+        }
+
         if dialect == "sqlite":
             game_rows = await conn.execute(text("PRAGMA table_info('games')"))
             game_existing = {row[1] for row in game_rows.fetchall()}
@@ -182,6 +198,20 @@ async def _ensure_compat_columns(conn):
             for name, sql_type in price_history_columns.items():
                 if name not in ph_existing:
                     await conn.execute(text(f"ALTER TABLE price_history ADD COLUMN {name} {sql_type}"))
+
+            c_rows = await conn.execute(text("PRAGMA table_info('collections')"))
+            c_existing = {row[1] for row in c_rows.fetchall()}
+
+            for name, sql_type in collections_columns.items():
+                if name not in c_existing:
+                    await conn.execute(text(f"ALTER TABLE collections ADD COLUMN {name} {sql_type}"))
+
+            ci_rows = await conn.execute(text("PRAGMA table_info('collection_items')"))
+            ci_existing = {row[1] for row in ci_rows.fetchall()}
+
+            for name, sql_type in collection_items_columns.items():
+                if name not in ci_existing:
+                    await conn.execute(text(f"ALTER TABLE collection_items ADD COLUMN {name} {sql_type}"))
             return
 
         if dialect in {"postgresql", "postgres"}:
@@ -193,6 +223,12 @@ async def _ensure_compat_columns(conn):
 
             for name, sql_type in price_history_columns.items():
                 await conn.execute(text(f"ALTER TABLE price_history ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
+
+            for name, sql_type in collections_columns_pg.items():
+                await conn.execute(text(f"ALTER TABLE collections ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
+
+            for name, sql_type in collection_items_columns.items():
+                await conn.execute(text(f"ALTER TABLE collection_items ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
     except Exception as e:
         logging.getLogger(__name__).warning("Compat migration skipped/failed: %s", e)
         # Never block startup for compatibility patching.

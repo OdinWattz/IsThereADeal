@@ -23,6 +23,15 @@ async def lifespan(app: FastAPI):
         # Don't crash the whole app if DB is unreachable at startup.
         import logging
         logging.getLogger(__name__).error("init_db failed: %s", e)
+
+    # Ensure bundled blog posts are present after deploy/startup.
+    try:
+        from seed_blog_posts import seed_blog_posts
+        await seed_blog_posts(quiet=True)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("default blog seed failed: %s", e)
+
     if not _is_vercel:
         from app.services.scheduler import start_scheduler, stop_scheduler
         start_scheduler()

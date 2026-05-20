@@ -6,12 +6,32 @@ from app.models.models import BlogPost, User
 from app.models.schemas import BlogPostOut, BlogPostCreate, BlogPostUpdate
 from app.auth import get_current_user
 from datetime import datetime, timezone
+import asyncio
+import logging
 
 router = APIRouter(prefix="/api/blog", tags=["blog"])
+_blog_seed_lock = asyncio.Lock()
+_blog_seed_checked = False
 
 
 def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+async def _ensure_default_blog_posts(db: AsyncSession):
+    global _blog_seed_checked
+    if _blog_seed_checked:
+        return
+
+    async with _blog_seed_lock:
+        if _blog_seed_checked:
+            return
+        try:
+            from seed_blog_posts import seed_blog_posts
+            await seed_blog_posts(db=db, quiet=True)
+            _blog_seed_checked = True
+        except Exception as e:
+            logging.getLogger(__name__).warning("default blog seed fallback failed: %s", e)
 
 
 @router.get("", response_model=list[BlogPostOut])
@@ -22,6 +42,8 @@ async def list_posts(
     db: AsyncSession = Depends(get_db),
 ):
     """List published blog posts"""
+    await _ensure_default_blog_posts(db)
+
     query = select(BlogPost).where(BlogPost.is_published == True).order_by(desc(BlogPost.published_at))
     
     if category:
@@ -35,6 +57,8 @@ async def list_posts(
 @router.get("/categories", response_model=list[str])
 async def get_categories(db: AsyncSession = Depends(get_db)):
     """Get all post categories"""
+    await _ensure_default_blog_posts(db)
+
     result = await db.execute(select(BlogPost.category).distinct())
     return result.scalars().all()
 
@@ -42,6 +66,8 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 @router.get("/{slug}", response_model=BlogPostOut)
 async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
     """Get blog post by slug + increment view count"""
+    await _ensure_default_blog_posts(db)
+
     result = await db.execute(
         select(BlogPost).where((BlogPost.slug == slug) & (BlogPost.is_published == True))
     )

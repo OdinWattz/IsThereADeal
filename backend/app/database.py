@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase
 from urllib.parse import urlparse, urlunparse
 import asyncpg
+import logging
 from app.config import settings
 
 
@@ -94,8 +95,10 @@ async def get_db():
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await _ensure_compat_columns(conn)
             _tables_created = True
-        except Exception:
+        except Exception as e:
+            logging.getLogger(__name__).warning("DB init/compat failed in get_db: %s", e)
             pass  # non-fatal; queries will fail naturally if DB is truly unreachable
     async with factory() as session:
         try:
@@ -130,11 +133,28 @@ async def _ensure_compat_columns(conn):
             "player_count_peak": "INTEGER",
         }
 
+        game_columns_pg = {
+            "historic_low_price": "DOUBLE PRECISION",
+            "historic_low_date": "TIMESTAMP WITHOUT TIME ZONE",
+            "metacritic_score": "INTEGER",
+            "steam_review_score": "INTEGER",
+            "steam_review_count": "INTEGER",
+            "player_count_current": "INTEGER",
+            "player_count_peak": "INTEGER",
+        }
+
         game_price_columns = {
             "is_key_reseller": "BOOLEAN DEFAULT 0",
             "lowest_ever_price": "FLOAT",
             "lowest_ever_currency": "VARCHAR(10)",
             "is_all_time_low": "BOOLEAN DEFAULT 0",
+        }
+
+        game_price_columns_pg = {
+            "is_key_reseller": "BOOLEAN DEFAULT FALSE",
+            "lowest_ever_price": "DOUBLE PRECISION",
+            "lowest_ever_currency": "VARCHAR(10)",
+            "is_all_time_low": "BOOLEAN DEFAULT FALSE",
         }
 
         price_history_columns = {
@@ -165,15 +185,16 @@ async def _ensure_compat_columns(conn):
             return
 
         if dialect in {"postgresql", "postgres"}:
-            for name, sql_type in game_columns.items():
+            for name, sql_type in game_columns_pg.items():
                 await conn.execute(text(f"ALTER TABLE games ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
 
-            for name, sql_type in game_price_columns.items():
+            for name, sql_type in game_price_columns_pg.items():
                 await conn.execute(text(f"ALTER TABLE game_prices ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
 
             for name, sql_type in price_history_columns.items():
                 await conn.execute(text(f"ALTER TABLE price_history ADD COLUMN IF NOT EXISTS {name} {sql_type}"))
-    except Exception:
+    except Exception as e:
+        logging.getLogger(__name__).warning("Compat migration skipped/failed: %s", e)
         # Never block startup for compatibility patching.
         pass
 

@@ -20,6 +20,15 @@ def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _safe_int(value) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 async def calculate_all_time_low(steam_appid: str) -> Dict[str, Optional[float]]:
     """
     Calculate all-time low price per store from ITAD 2-year history.
@@ -65,8 +74,8 @@ async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False
     if cached is not None:
         return cached
     
-    # Wrap each API call with 2-second timeout
-    async def with_timeout(coro, timeout_secs=2):
+    # Wrap each API call with timeout budget
+    async def with_timeout(coro, timeout_secs=5):
         try:
             return await asyncio.wait_for(coro, timeout=timeout_secs)
         except asyncio.TimeoutError:
@@ -76,9 +85,10 @@ async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False
             print(f"[API Error] {steam_appid}: {e}")
             return None
     
-    steam_task = with_timeout(get_steam_app_details(steam_appid), 2)
-    itad_task = with_timeout(get_prices_for_game(steam_appid), 2)
-    cheap_task = with_timeout(get_deals_by_steam_appid(steam_appid), 2)
+    # Steam data is mandatory for creating a Game record; give it a larger budget.
+    steam_task = with_timeout(get_steam_app_details(steam_appid), 8)
+    itad_task = with_timeout(get_prices_for_game(steam_appid), 5)
+    cheap_task = with_timeout(get_deals_by_steam_appid(steam_appid), 5)
 
     steam_data, itad_prices, cheap_prices = await asyncio.gather(
         steam_task, itad_task, cheap_task, return_exceptions=True
@@ -91,6 +101,10 @@ async def fetch_all_prices(steam_appid: str, include_key_resellers: bool = False
         itad_prices = []
     if isinstance(cheap_prices, Exception) or cheap_prices is None:
         cheap_prices = []
+
+    # One retry for Steam metadata to avoid false 404s on transient slowness.
+    if steam_data is None:
+        steam_data = await with_timeout(get_steam_app_details(steam_appid), 8)
 
     # Fetch key reseller prices (slower, run after we have game name)
     # Only if explicitly requested - uses separate cache
@@ -214,7 +228,7 @@ async def upsert_game_and_prices(db: AsyncSession, steam_appid: str, include_key
         gp = GamePrice(
             game_id=game.id,
             store_name=p.get("store_name", "Unknown"),
-            store_id=p.get("store_id"),
+            store_id=_safe_int(p.get("store_id")),
             regular_price=p.get("regular_price"),
             sale_price=p.get("sale_price"),
             discount_percent=p.get("discount_percent", 0),

@@ -5,7 +5,7 @@ Supports: NL (EUR), US (USD), UK (GBP), DE (EUR), FR (EUR), etc.
 import httpx
 from typing import Dict, List, Optional, Any
 from app.services import cache as _cache
-from app.services.itad_service import get_game_id_by_appid, _get
+from app.services.itad_service import get_game_id_by_appid, _post
 
 _REGIONAL_TTL = 1800  # 30 minutes
 
@@ -47,7 +47,7 @@ async def get_prices_by_region(steam_appid: str, regions: List[str] = None) -> D
                 continue
             
             # ITAD v3 prices for specific region
-            rows = await _get("/games/prices/v3", {
+            rows = await _post("/games/prices/v3", {
                 "country": region,
             }, [game_id])
             

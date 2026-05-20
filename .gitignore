@@ -16,3 +16,13 @@ frontend/dist/
 # OS
 .DS_Store
 *.log
+
+# Local-only runtime artifacts
+logs/
+node_modules/
+gamedeals.db
+package-lock.json
+start.ps1
+
+# Local-only browser error logger wiring
+frontend/src/clientErrorLogger.ts

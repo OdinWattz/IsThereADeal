@@ -14,6 +14,49 @@ from app.services.itad_service import get_price_history, get_dlc_deals_for_game
 router = APIRouter(prefix="/api/games", tags=["games"])
 
 
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_optional_int(value) -> Optional[int]:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_optional_float(value) -> Optional[float]:
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_price_payload(raw: dict) -> dict:
+    return {
+        "store_name": str(raw.get("store_name") or "Unknown"),
+        "store_id": _safe_optional_int(raw.get("store_id")),
+        "regular_price": _safe_optional_float(raw.get("regular_price")),
+        "sale_price": _safe_optional_float(raw.get("sale_price")),
+        "discount_percent": _safe_int(raw.get("discount_percent"), 0),
+        "currency": str(raw.get("currency") or "EUR"),
+        "url": raw.get("url"),
+        "is_on_sale": bool(raw.get("is_on_sale", False)),
+        "lowest_ever_price": _safe_optional_float(raw.get("lowest_ever_price")),
+        "lowest_ever_currency": raw.get("lowest_ever_currency"),
+        "is_all_time_low": bool(raw.get("is_all_time_low", False)),
+    }
+
+
 @router.get("/search", response_model=List[SearchResult])
 async def search_games(
     q: str = Query(..., min_length=2),
@@ -194,7 +237,7 @@ async def get_game(
     """
     # Check in-memory cache first for non-refresh requests
     from app.services import cache as _cache
-    cache_key = f"game_full:{steam_appid}"
+    cache_key = f"game_full:{steam_appid}:kr:{int(include_key_resellers)}"
     if not refresh:
         cached = _cache.get(cache_key, ttl=900)  # 15 min cache
         if cached is not None:
@@ -227,6 +270,10 @@ async def get_game(
             raise
         except Exception as e:
             print(f"[Persist Error] Could not save {steam_appid}: {e}")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             # DB unavailable – fetch directly from APIs and return without persisting
             from app.services.price_aggregator import fetch_all_prices
             data = await fetch_all_prices(steam_appid, include_key_resellers)
@@ -234,19 +281,7 @@ async def get_game(
             if not steam_data:
                 raise HTTPException(status_code=404, detail="Game not found")
             prices_out = [
-                {
-                    "store_name": p.get("store_name", "Unknown"),
-                    "store_id": p.get("store_id"),
-                    "regular_price": p.get("regular_price"),
-                    "sale_price": p.get("sale_price"),
-                    "discount_percent": p.get("discount_percent", 0),
-                    "currency": p.get("currency", "EUR"),
-                    "url": p.get("url"),
-                    "is_on_sale": p.get("is_on_sale", False),
-                    "lowest_ever_price": None,
-                    "lowest_ever_currency": None,
-                    "is_all_time_low": False,
-                }
+                _safe_price_payload(p)
                 for p in data.get("prices", [])
             ]
             best = data.get("best_price")
@@ -342,7 +377,45 @@ def _enrich_game(game: Game) -> GameOut:
         best_price = best.sale_price or best.regular_price
         best_store = best.store_name
 
-    out = GameOut.model_validate(game)
+    try:
+        out = GameOut.model_validate(game)
+    except Exception:
+        price_models = []
+        for price in prices:
+            price_models.append(GamePriceOut(**_safe_price_payload({
+                "store_name": getattr(price, "store_name", None),
+                "store_id": getattr(price, "store_id", None),
+                "regular_price": getattr(price, "regular_price", None),
+                "sale_price": getattr(price, "sale_price", None),
+                "discount_percent": getattr(price, "discount_percent", 0),
+                "currency": getattr(price, "currency", "EUR"),
+                "url": getattr(price, "url", None),
+                "is_on_sale": getattr(price, "is_on_sale", False),
+                "lowest_ever_price": getattr(price, "lowest_ever_price", None),
+                "lowest_ever_currency": getattr(price, "lowest_ever_currency", None),
+                "is_all_time_low": getattr(price, "is_all_time_low", False),
+            })))
+
+        out = GameOut(
+            id=game.id,
+            steam_appid=game.steam_appid,
+            name=game.name,
+            header_image=game.header_image,
+            short_description=game.short_description,
+            genres=game.genres,
+            developers=game.developers,
+            publishers=game.publishers,
+            release_date=game.release_date,
+            steam_url=game.steam_url,
+            prices=price_models,
+            historic_low_price=game.historic_low_price,
+            historic_low_date=game.historic_low_date,
+            metacritic_score=game.metacritic_score,
+            steam_review_score=game.steam_review_score,
+            steam_review_count=game.steam_review_count,
+            player_count_current=game.player_count_current,
+            player_count_peak=game.player_count_peak,
+        )
     out.best_price = best_price
     out.best_store = best_store
     return out

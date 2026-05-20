@@ -58,7 +58,7 @@ async def get_steam_app_details(appid: str) -> Optional[Dict[str, Any]]:
         "steam_url": f"https://store.steampowered.com/app/{appid}",
         "price": {
             "store_name": "Steam",
-            "store_id": "steam",
+            "store_id": None,
             "regular_price": regular_price,
             "sale_price": sale_price,
             "discount_percent": discount_pct,

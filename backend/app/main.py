@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
+from datetime import datetime, timezone
+from pathlib import Path
 import os
 
 from app.config import settings
@@ -74,3 +77,56 @@ async def root():
 @app.get("/api/health")
 async def health():
     return {"status": "healthy"}
+
+
+class ClientLogEntry(BaseModel):
+    level: str
+    message: str
+    stack: str | None = None
+    source: str | None = None
+    line: int | None = None
+    column: int | None = None
+    url: str | None = None
+    userAgent: str | None = None
+    timestamp: str | None = None
+
+
+def _append_client_log(filename: str, line: str) -> None:
+    log_dir = os.environ.get("ITAD_RUN_LOG_DIR")
+    if not log_dir:
+        # Fallback when backend was not launched via start.ps1.
+        repo_root = Path(__file__).resolve().parents[2]
+        log_dir = str(repo_root / "logs" / "browser-fallback")
+
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        path = os.path.join(log_dir, filename)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        # Client log failures should never impact API flow.
+        pass
+
+
+@app.post("/api/client-log")
+async def client_log(entry: ClientLogEntry):
+    ts = datetime.now(timezone.utc).isoformat()
+    parts = [
+        f"[{ts}]",
+        "[frontend-browser]",
+        f"[{entry.level}]",
+        entry.message,
+    ]
+    if entry.url:
+        parts.append(f"url={entry.url}")
+    if entry.source:
+        parts.append(f"source={entry.source}:{entry.line}:{entry.column}")
+
+    line = " ".join(parts)
+    _append_client_log("errors.log", line)
+    _append_client_log("all.log", line)
+
+    if entry.stack:
+        _append_client_log("errors.log", f"[{ts}] [frontend-browser] [stack] {entry.stack}")
+
+    return {"ok": True}

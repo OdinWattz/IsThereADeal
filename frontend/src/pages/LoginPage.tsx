@@ -5,6 +5,14 @@ import { login } from '../api/games'
 import toast from 'react-hot-toast'
 import { Gamepad2, LogIn } from 'lucide-react'
 
+type ApiError = {
+  response?: {
+    data?: {
+      detail?: string
+    }
+  }
+}
+
 const REMEMBER_ME_KEY = 'remembered_username'
 
 export function LoginPage() {
@@ -40,8 +48,9 @@ export function LoginPage() {
 
       toast.success(`Welcome back, ${data.user.username}!`)
       navigate('/')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Login failed')
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      toast.error(apiError.response?.data?.detail ?? 'Login failed')
     } finally {
       setLoading(false)
     }

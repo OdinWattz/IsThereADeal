@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getAlerts, deleteAlert, toggleAlert } from '../api/games'
+import type { PriceAlert } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 import { Navigate, Link } from 'react-router-dom'
 import { Bell, BellOff, Trash2, CheckCircle } from 'lucide-react'
@@ -8,13 +9,13 @@ import { OptimizedImage } from '../components/OptimizedImage'
 
 export function AlertsPage() {
   const { isAuthenticated } = useAuthStore()
+  const authenticated = isAuthenticated()
   const qc = useQueryClient()
-
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
 
   const { data: alerts = [], isLoading } = useQuery({
     queryKey: ['alerts'],
     queryFn: getAlerts,
+    enabled: authenticated,
   })
 
   const deleteMutation = useMutation({
@@ -29,6 +30,8 @@ export function AlertsPage() {
 
   const active = alerts.filter((a) => a.is_active)
   const triggered = alerts.filter((a) => !a.is_active && a.triggered_at)
+
+  if (!authenticated) return <Navigate to="/login" replace />
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px' }}>
@@ -78,7 +81,7 @@ export function AlertsPage() {
 }
 
 function AlertRow({ alert, onDelete, onToggle }: {
-  alert: any
+  alert: PriceAlert
   onDelete: () => void
   onToggle: () => void
 }) {

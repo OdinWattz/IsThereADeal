@@ -1,9 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getCollection, addGameToCollection, removeGameFromCollection, searchGames, getWishlist } from '../api/games'
+import type { CollectionItem, SearchResult, WishlistItem } from '../api/games'
 import { useState } from 'react'
 import { ArrowLeft, Plus, Trash2, Search, Heart } from 'lucide-react'
 import toast from 'react-hot-toast'
+import type { AxiosError } from 'axios'
+
+type ApiErrorPayload = {
+  detail?: string
+}
 
 export function CollectionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -13,7 +19,7 @@ export function CollectionDetailPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showWishlistModal, setShowWishlistModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [selectedWishlistGames, setSelectedWishlistGames] = useState<Set<string>>(new Set())
 
@@ -40,9 +46,10 @@ export function CollectionDetailPage() {
       setSearchQuery('')
       setSearchResults([])
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const axiosError = error as AxiosError<ApiErrorPayload>
       console.error('Add game to collection error:', error)
-      const message = error.response?.data?.detail || 'Kon game niet toevoegen'
+      const message = axiosError.response?.data?.detail || 'Kon game niet toevoegen'
       toast.error(message, { duration: 5000 })
     },
   })
@@ -66,7 +73,7 @@ export function CollectionDetailPage() {
     try {
       const results = await searchGames(searchQuery)
       setSearchResults(results)
-    } catch (error) {
+    } catch {
       toast.error('Kon niet zoeken')
     } finally {
       setSearching(false)
@@ -106,8 +113,9 @@ export function CollectionDetailPage() {
       try {
         await addGameToCollection(collectionId, steamAppid)
         added++
-      } catch (error: any) {
-        if (error.response?.data?.detail?.includes('already in collection')) {
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError<ApiErrorPayload>
+        if (axiosError.response?.data?.detail?.includes('already in collection')) {
           // Skip, already in collection
         } else {
           failed++
@@ -319,9 +327,9 @@ export function CollectionDetailPage() {
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                  {wishlistItems.map((item: any) => {
+                  {wishlistItems.map((item: WishlistItem) => {
                     const isSelected = selectedWishlistGames.has(item.game.steam_appid)
-                    const isInCollection = collection?.items.some((ci: any) => ci.game.steam_appid === item.game.steam_appid)
+                    const isInCollection = collection?.items.some((ci: CollectionItem) => ci.game.steam_appid === item.game.steam_appid)
 
                     return (
                       <div

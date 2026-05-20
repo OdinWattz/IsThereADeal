@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Tag, Award, Star, Eye, Filter, X } from 'lucide-react'
-import type { Game } from '../api/games'
+import type { Game, GamePrice } from '../api/games'
 import api from '../api/client'
 import { QuickViewModal } from '../components/QuickViewModal'
 import SEO from '../components/SEO'
@@ -21,6 +21,12 @@ const PAGE_SIZE = 100
 interface BrowseResponse {
   items: Game[]
   has_more: boolean
+}
+
+type BrowseGame = Game & {
+  sale_price?: number
+  discount_percent?: number
+  store_name?: string
 }
 
 export function BrowsePage() {
@@ -76,8 +82,8 @@ export function BrowsePage() {
   const hasMore = data?.has_more || false
 
   // Client-side filter for text search (CheapShark API doesn't support it)
-  const games = searchQuery
-    ? allGames.filter((game: any) =>
+  const games: BrowseGame[] = searchQuery
+    ? allGames.filter((game: BrowseGame) =>
         game.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : allGames
@@ -274,11 +280,11 @@ export function BrowsePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {games.map((game: any) => {
+          {games.map((game: BrowseGame) => {
             // Support both Game objects (from DB) and CheapShark deals
             const isCheapSharkDeal = 'sale_price' in game
-            const discount = isCheapSharkDeal ? game.discount_percent : Math.max(...(game.prices?.map((p: any) => p.discount_percent) || [0]))
-            const isOnSale = isCheapSharkDeal ? discount > 0 : game.prices?.some((p: any) => p.is_on_sale) || false
+            const discount = isCheapSharkDeal ? (game.discount_percent ?? 0) : Math.max(...(game.prices?.map((p: GamePrice) => p.discount_percent) || [0]))
+            const isOnSale = isCheapSharkDeal ? discount > 0 : game.prices?.some((p: GamePrice) => p.is_on_sale) || false
             const bestPrice = isCheapSharkDeal ? game.sale_price : game.best_price
             const storeName = isCheapSharkDeal ? game.store_name : game.best_store
 

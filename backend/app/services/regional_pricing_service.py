@@ -2,6 +2,7 @@
 Regional pricing service – fetches prices for different regions/currencies.
 Supports: NL (EUR), US (USD), UK (GBP), DE (EUR), FR (EUR), etc.
 """
+import asyncio
 import httpx
 from typing import Dict, List, Optional, Any
 from app.services import cache as _cache
@@ -33,26 +34,25 @@ async def get_prices_by_region(steam_appid: str, regions: List[str] = None) -> D
         regions = ["NL", "US", "GB", "DE"]
     
     result = {}
-    
-    for region in regions:
+
+    game_id = await get_game_id_by_appid(steam_appid)
+    if not game_id:
+        return result
+
+    async def _fetch_one(region: str):
         cache_key = f"regional_prices:{steam_appid}:{region}"
         cached = _cache.get(cache_key, ttl=_REGIONAL_TTL)
         if cached is not None:
-            result[region] = cached
-            continue
+            return region, cached
         
         try:
-            game_id = await get_game_id_by_appid(steam_appid)
-            if not game_id:
-                continue
-            
             # ITAD v3 prices for specific region
             rows = await _post("/games/prices/v3", {
                 "country": region,
             }, [game_id])
             
             if not rows or not isinstance(rows, list) or not rows[0].get("deals"):
-                continue
+                return region, None
             
             region_data = {
                 "region": region,
@@ -87,11 +87,19 @@ async def get_prices_by_region(steam_appid: str, regions: List[str] = None) -> D
                 region_data["stores"] = prices[:5]  # Top 5 stores
             
             _cache.set(cache_key, region_data)
-            result[region] = region_data
+            return region, region_data
             
         except Exception as e:
             print(f"[Regional Pricing] Failed for {steam_appid} in {region}: {e}")
+            return region, None
+
+    fetched = await asyncio.gather(*[_fetch_one(region) for region in regions], return_exceptions=True)
+    for item in fetched:
+        if isinstance(item, Exception):
             continue
+        region, region_data = item
+        if region_data is not None:
+            result[region] = region_data
     
     return result
 

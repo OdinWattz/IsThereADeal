@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
+import re
 
 from app.database import get_db
 from app.models.models import Game, GamePrice, PriceHistory
@@ -10,6 +11,7 @@ from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchR
 from app.services.steam_service import search_steam_games, get_featured_deals
 from app.services.price_aggregator import upsert_game_and_prices
 from app.services.itad_service import get_price_history, get_dlc_deals_for_game
+import httpx
 
 router = APIRouter(prefix="/api/games", tags=["games"])
 
@@ -55,6 +57,27 @@ def _safe_price_payload(raw: dict) -> dict:
         "lowest_ever_currency": raw.get("lowest_ever_currency"),
         "is_all_time_low": bool(raw.get("is_all_time_low", False)),
     }
+
+
+def _extract_steam_movie_id(movie: dict) -> Optional[str]:
+    movie_id = movie.get("id")
+    if movie_id is not None:
+        try:
+            return str(int(movie_id))
+        except (TypeError, ValueError):
+            pass
+
+    thumbnail = movie.get("thumbnail")
+    if isinstance(thumbnail, str):
+        match = re.search(r"/steam/apps/(\d+)/movie", thumbnail)
+        if match:
+                        return match.group(1)
+
+    return None
+
+
+def _steam_movie_mp4_url(movie_id: str) -> str:
+    return f"https://cdn.akamai.steamstatic.com/steam/apps/{movie_id}/movie_max.mp4"
 
 
 @router.get("/search", response_model=List[SearchResult])
@@ -354,7 +377,15 @@ async def get_price_history_route(
             )
         )
 
-    return sorted(combined, key=lambda x: x.recorded_at)
+    from datetime import timezone
+
+    def _sort_key(point: PriceHistoryPoint):
+        recorded_at = point.recorded_at
+        if recorded_at.tzinfo is None:
+            return recorded_at.replace(tzinfo=timezone.utc)
+        return recorded_at.astimezone(timezone.utc)
+
+    return sorted(combined, key=_sort_key)
 
 
 @router.get("/{steam_appid}/dlc-deals", response_model=List[dict])
@@ -364,6 +395,76 @@ async def get_dlc_deals_route(steam_appid: str):
         return await get_dlc_deals_for_game(steam_appid)
     except Exception:
         return []
+
+
+@router.get("/{steam_appid}/media")
+async def get_game_media(steam_appid: str):
+    """Get screenshot/media assets from the Steam store page."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(20.0, connect=8.0),
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "application/json,text/plain,*/*",
+            },
+        ) as client:
+            resp = await client.get(
+                "https://store.steampowered.com/api/appdetails",
+                params={"appids": steam_appid, "l": "english", "cc": "NL"},
+            )
+            resp.raise_for_status()
+            data = resp.json().get(str(steam_appid), {})
+
+        if not data.get("success"):
+            print(f"[media] Steam appdetails returned success=false for {steam_appid}")
+            return {"screenshots": [], "trailers": []}
+
+        app_data = data.get("data", {})
+        screenshots = []
+        for shot in app_data.get("screenshots", []):
+            full = shot.get("path_full")
+            thumb = shot.get("path_thumbnail")
+            if full:
+                screenshots.append({"full": full, "thumb": thumb or full})
+
+        trailers = []
+        for movie in app_data.get("movies", []):
+            try:
+                thumb = movie.get("thumbnail")
+                mp4 = (movie.get("mp4") or {}).get("max") or (movie.get("mp4") or {}).get("480")
+                webm = (movie.get("webm") or {}).get("max") or (movie.get("webm") or {}).get("480")
+
+                movie_id = _extract_steam_movie_id(movie)
+                if not mp4 and movie_id:
+                    mp4 = _steam_movie_mp4_url(movie_id)
+
+                highlight = movie.get("highlight")
+                steam_url = None
+                if isinstance(highlight, dict):
+                    steam_url = highlight.get("mp4") or highlight.get("webm")
+                elif isinstance(highlight, str):
+                    steam_url = highlight
+
+                if thumb or mp4 or webm:
+                    trailers.append({
+                        "name": movie.get("name") or "Steam trailer",
+                        "thumbnail": thumb,
+                        "mp4": mp4,
+                        "webm": webm,
+                        "steam_url": steam_url,
+                    })
+            except Exception:
+                # Never fail the whole endpoint on one malformed movie payload.
+                continue
+
+        return {
+            "screenshots": screenshots[:12],
+            "trailers": trailers[:6],
+        }
+    except Exception as e:
+        print(f"[media] Failed to fetch media for {steam_appid}: {e}")
+        return {"screenshots": [], "trailers": []}
 
 
 def _enrich_game(game: Game) -> GameOut:

@@ -44,10 +44,7 @@ async def get_regional_prices(
                 )
         
         result = await get_prices_by_region(steam_appid, region_list)
-        
-        if not result:
-            raise HTTPException(status_code=404, detail="Game not found in regional pricing data")
-        
+
         return result
     
     except HTTPException:

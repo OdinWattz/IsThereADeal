@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals } from '../api/games'
+import { getGame, getPriceHistory, addToWishlist, createAlert, getDlcDeals, getGameMedia } from '../api/games'
 import type { DlcDeal } from '../api/games'
 import { PriceTable } from '../components/PriceTable'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
@@ -9,7 +9,7 @@ import { useAuthStore } from '../store/authStore'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft } from 'lucide-react'
+import { Heart, Bell, RefreshCw, ExternalLink, Calendar, Cpu, Tag, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import SEO from '../components/SEO'
 import { OptimizedImage } from '../components/OptimizedImage'
 import { checkGameInBundles } from '../api/bundles'
@@ -42,6 +42,23 @@ const actionBtn = (bg: string): React.CSSProperties => ({
   textDecoration: 'none',
 })
 
+type ScreenshotMediaItem = {
+  type: 'screenshot'
+  full: string
+  thumb: string
+  label: string
+}
+
+type TrailerMediaItem = {
+  type: 'trailer'
+  name: string
+  thumbnail?: string
+  mp4?: string
+  webm?: string
+  steam_url?: string
+  label: string
+}
+
 export function GamePage() {
   const { appid } = useParams<{ appid: string }>()
   const navigate = useNavigate()
@@ -51,6 +68,10 @@ export function GamePage() {
   const [alertPrice, setAlertPrice] = useState('')
   const [showAlertForm, setShowAlertForm] = useState(false)
   const [showKeyResellers, setShowKeyResellers] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [trailerLightboxIndex, setTrailerLightboxIndex] = useState<number | null>(null)
+  const [carouselStart, setCarouselStart] = useState(0)
+  const [trailerCarouselStart, setTrailerCarouselStart] = useState(0)
 
   const { data: game, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['game', appid, showKeyResellers],
@@ -85,6 +106,77 @@ export function GamePage() {
     enabled: !!appid,
     staleTime: 1000 * 60 * 30,
   })
+
+  const { data: media, isError: isMediaError } = useQuery({
+    queryKey: ['game-media', appid],
+    queryFn: () => getGameMedia(appid!),
+    enabled: !!appid,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const screenshots = media?.screenshots ?? []
+  const trailers = media?.trailers ?? []
+
+  const fallbackHeaderImage = game?.header_image || (appid ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg` : undefined)
+  const fallbackScreenshotItems: ScreenshotMediaItem[] = fallbackHeaderImage
+    ? [{ type: 'screenshot', full: fallbackHeaderImage, thumb: fallbackHeaderImage, label: `${game?.name ?? 'Game'} header` }]
+    : []
+  const screenshotItems: ScreenshotMediaItem[] = screenshots.map((shot, index) => ({
+    type: 'screenshot',
+    full: shot.full,
+    thumb: shot.thumb || shot.full,
+    label: `${game?.name ?? 'Game'} screenshot ${index + 1}`,
+  }))
+  const trailerItems: TrailerMediaItem[] = trailers.map((trailer, index) => ({
+    type: 'trailer',
+    name: trailer.name || `Trailer ${index + 1}`,
+    thumbnail: trailer.thumbnail,
+    mp4: trailer.mp4,
+    webm: trailer.webm,
+    steam_url: trailer.steam_url,
+    label: `${game?.name ?? 'Game'} trailer ${index + 1}`,
+  }))
+  const playableTrailerItems = trailerItems.filter((trailer) => Boolean(trailer.mp4 || trailer.webm))
+  const carouselScreenshots = screenshotItems.length > 0 ? screenshotItems : fallbackScreenshotItems
+
+  const visibleCarouselCount = 6
+  const useScreenshotCarousel = true
+  const maxCarouselStart = Math.max(0, carouselScreenshots.length - visibleCarouselCount)
+  const safeCarouselStart = Math.min(carouselStart, maxCarouselStart)
+  const canGoCarouselLeft = safeCarouselStart > 0
+  const canGoCarouselRight = safeCarouselStart < maxCarouselStart
+  const visibleScreenshots = carouselScreenshots.slice(safeCarouselStart, safeCarouselStart + visibleCarouselCount)
+
+  const visibleTrailerCount = 2
+  const trailerCarouselItems = playableTrailerItems.length > 0 ? playableTrailerItems : trailerItems
+  const maxTrailerCarouselStart = Math.max(0, trailerCarouselItems.length - visibleTrailerCount)
+  const safeTrailerCarouselStart = Math.min(trailerCarouselStart, maxTrailerCarouselStart)
+  const canGoTrailerCarouselLeft = safeTrailerCarouselStart > 0
+  const canGoTrailerCarouselRight = safeTrailerCarouselStart < maxTrailerCarouselStart
+  const visibleTrailers = trailerCarouselItems.slice(safeTrailerCarouselStart, safeTrailerCarouselStart + visibleTrailerCount)
+
+  useEffect(() => {
+    if (lightboxIndex === null || carouselScreenshots.length === 0) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setLightboxIndex(null)
+      } else if (event.key === 'ArrowRight') {
+        setLightboxIndex((prev) => {
+          if (prev === null) return null
+          return (prev + 1) % carouselScreenshots.length
+        })
+      } else if (event.key === 'ArrowLeft') {
+        setLightboxIndex((prev) => {
+          if (prev === null) return null
+          return (prev - 1 + carouselScreenshots.length) % carouselScreenshots.length
+        })
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [lightboxIndex, carouselScreenshots.length])
 
   const { data: bundleMatches = [] } = useQuery({
     queryKey: ['bundles', game?.name],
@@ -201,12 +293,14 @@ export function GamePage() {
 
       {/* Hero */}
       <div className="flex flex-col md:flex-row gap-6 sm:gap-7 mb-6 sm:mb-7">
-        <OptimizedImage
-          src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`}
-          alt={game.name}
-          className="w-full md:w-80 rounded-xl object-cover"
-          priority
-        />
+        <div className="w-full md:w-[460px] md:shrink-0 self-start rounded-2xl overflow-hidden border border-sky-200/45 shadow-sm bg-gradient-to-br from-sky-50 via-white to-sky-100/60 p-2">
+          <OptimizedImage
+            src={game.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`}
+            alt={game.name}
+            className="block w-full h-auto rounded-xl object-contain object-center bg-[#0f172a]/5"
+            priority
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>{game.name}</h1>
 
@@ -394,6 +488,109 @@ export function GamePage() {
         </div>
       </div>
 
+      {/* Store screenshots */}
+      {carouselScreenshots.length > 0 && (
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            🖼️ Store screenshots
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>
+            Screenshots direct van de Steam storepagina. Klik voor fullscreen.
+          </p>
+          {isMediaError && (
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: '12px' }}>
+              Extra media kon niet geladen worden, fallback afbeelding wordt getoond.
+            </p>
+          )}
+          {useScreenshotCarousel ? (
+            <>
+              <div className="flex items-center gap-2 sm:gap-3">
+                {carouselScreenshots.length > visibleCarouselCount && (
+                  <button
+                    type="button"
+                    onClick={() => setCarouselStart((prev) => Math.max(0, Math.min(maxCarouselStart, prev - 1)))}
+                    disabled={!canGoCarouselLeft}
+                    className="shrink-0 p-2 rounded-full border"
+                    style={{
+                      background: canGoCarouselLeft ? 'rgba(255,255,255,0.78)' : 'rgba(240,240,240,0.6)',
+                      borderColor: 'rgba(90,175,225,0.45)',
+                      color: canGoCarouselLeft ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      cursor: canGoCarouselLeft ? 'pointer' : 'not-allowed',
+                    }}
+                    aria-label="Vorige media"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 flex-1 transition-all duration-200 ease-out">
+                  {visibleScreenshots.map((item, visibleIndex) => {
+                    const realIndex = safeCarouselStart + visibleIndex
+                    const previewKey = `${item.full}-${realIndex}`
+                    return (
+                      <button
+                        key={previewKey}
+                        type="button"
+                        onClick={() => setLightboxIndex(realIndex)}
+                        className="block w-full overflow-hidden rounded-lg border border-sky-200/40"
+                        style={{ background: 'rgba(255,255,255,0.6)' }}
+                      >
+                        <OptimizedImage
+                          src={item.thumb}
+                          alt={item.label}
+                          className="w-full aspect-video object-cover transition-transform duration-300 hover:scale-[1.03]"
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {carouselScreenshots.length > visibleCarouselCount && (
+                  <button
+                    type="button"
+                    onClick={() => setCarouselStart((prev) => Math.max(0, Math.min(maxCarouselStart, prev + 1)))}
+                    disabled={!canGoCarouselRight}
+                    className="shrink-0 p-2 rounded-full border"
+                    style={{
+                      background: canGoCarouselRight ? 'rgba(255,255,255,0.78)' : 'rgba(240,240,240,0.6)',
+                      borderColor: 'rgba(90,175,225,0.45)',
+                      color: canGoCarouselRight ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      cursor: canGoCarouselRight ? 'pointer' : 'not-allowed',
+                    }}
+                    aria-label="Volgende media"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                )}
+              </div>
+              {carouselScreenshots.length > visibleCarouselCount && (
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginTop: '10px' }}>
+                  Toon {safeCarouselStart + 1}-{Math.min(safeCarouselStart + visibleCarouselCount, carouselScreenshots.length)} van {carouselScreenshots.length}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {carouselScreenshots.slice(0, 9).map((item, index) => (
+                <button
+                  key={`${item.full}-${index}`}
+                  type="button"
+                  onClick={() => setLightboxIndex(index)}
+                  className="block overflow-hidden rounded-lg border border-sky-200/40"
+                  style={{ background: 'rgba(255,255,255,0.6)' }}
+                >
+                  <OptimizedImage
+                    src={item.thumb}
+                    alt={item.label}
+                    className="w-full aspect-video object-cover transition-transform duration-300 hover:scale-[1.03]"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Price Table */}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
@@ -561,6 +758,307 @@ export function GamePage() {
                 </div>
               ) : null
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Steam trailers */}
+      {trailerCarouselItems.length > 0 && (
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            🎬 Steam trailers
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>
+            Officiële Steam trailers. Ze staan bewust apart onderaan, zodat screenshots nooit afhankelijk zijn van video.
+          </p>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {trailerCarouselItems.length > visibleTrailerCount && (
+              <button
+                type="button"
+                onClick={() => setTrailerCarouselStart((prev) => Math.max(0, Math.min(maxTrailerCarouselStart, prev - 1)))}
+                disabled={!canGoTrailerCarouselLeft}
+                className="shrink-0 p-2 rounded-full border"
+                style={{
+                  background: canGoTrailerCarouselLeft ? 'rgba(255,255,255,0.78)' : 'rgba(240,240,240,0.6)',
+                  borderColor: 'rgba(90,175,225,0.45)',
+                  color: canGoTrailerCarouselLeft ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: canGoTrailerCarouselLeft ? 'pointer' : 'not-allowed',
+                }}
+                aria-label="Vorige trailer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 transition-all duration-200 ease-out">
+              {visibleTrailers.map((trailer, index) => {
+                const realIndex = safeTrailerCarouselStart + index
+                return (
+                  <button
+                    type="button"
+                    key={`${trailer.name}-${realIndex}`}
+                    onClick={() => setTrailerLightboxIndex(realIndex)}
+                    className="overflow-hidden rounded-lg border border-sky-200/40 text-left"
+                    style={{ background: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+                  >
+                    <div className="relative overflow-hidden">
+                      {(trailer.mp4 || trailer.webm) ? (
+                        <video
+                          muted
+                          loop
+                          playsInline
+                          autoPlay
+                          preload="metadata"
+                          poster={trailer.thumbnail || fallbackHeaderImage}
+                          className="w-full aspect-video bg-black object-cover"
+                        >
+                          {trailer.mp4 && <source src={trailer.mp4} type="video/mp4" />}
+                          {trailer.webm && <source src={trailer.webm} type="video/webm" />}
+                          Je browser ondersteunt geen video-weergave.
+                        </video>
+                      ) : (
+                        <OptimizedImage
+                          src={trailer.thumbnail || fallbackHeaderImage || ''}
+                          alt={trailer.label}
+                          className="w-full aspect-video object-cover"
+                        />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <div className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-white" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/15">▶</span>
+                          Klik om trailer te openen
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '10px 12px' }}>
+                      <p style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: trailer.steam_url ? '8px' : 0 }}>
+                        {trailer.name}
+                      </p>
+                      {trailer.steam_url && (
+                        <a
+                          href={trailer.steam_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs"
+                          style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                        >
+                          Open op Steam <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {trailerCarouselItems.length > visibleTrailerCount && (
+              <button
+                type="button"
+                onClick={() => setTrailerCarouselStart((prev) => Math.max(0, Math.min(maxTrailerCarouselStart, prev + 1)))}
+                disabled={!canGoTrailerCarouselRight}
+                className="shrink-0 p-2 rounded-full border"
+                style={{
+                  background: canGoTrailerCarouselRight ? 'rgba(255,255,255,0.78)' : 'rgba(240,240,240,0.6)',
+                  borderColor: 'rgba(90,175,225,0.45)',
+                  color: canGoTrailerCarouselRight ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: canGoTrailerCarouselRight ? 'pointer' : 'not-allowed',
+                }}
+                aria-label="Volgende trailer"
+              >
+                <ChevronRight size={18} />
+              </button>
+            )}
+          </div>
+
+          {trailerCarouselItems.length > visibleTrailerCount && (
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginTop: '10px' }}>
+              Toon {safeTrailerCarouselStart + 1}-{Math.min(safeTrailerCarouselStart + visibleTrailerCount, trailerCarouselItems.length)} van {trailerCarouselItems.length}
+            </p>
+          )}
+          {trailerItems.length > 0 && playableTrailerItems.length === 0 && (
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginTop: '10px' }}>
+              Steam leverde voor deze game geen afspeelbare video-URL terug, alleen een posterafbeelding.
+            </p>
+          )}
+        </div>
+      )}
+
+      {trailerLightboxIndex !== null && trailerCarouselItems[trailerLightboxIndex] && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Trailer lightbox"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(8, 18, 30, 0.92)' }}
+          onClick={() => setTrailerLightboxIndex(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setTrailerLightboxIndex(null)}
+            className="absolute top-4 right-4 p-2 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+            aria-label="Close trailer lightbox"
+          >
+            <X size={20} />
+          </button>
+
+          {trailerCarouselItems.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setTrailerLightboxIndex((prev) => {
+                  if (prev === null) return null
+                  return (prev - 1 + trailerCarouselItems.length) % trailerCarouselItems.length
+                })
+              }}
+              className="absolute left-3 sm:left-5 p-2 sm:p-3 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+              aria-label="Previous trailer"
+            >
+              <ChevronLeft size={22} />
+            </button>
+          )}
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '92vw',
+              width: 'min(1100px, 92vw)',
+              borderRadius: '10px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+              overflow: 'hidden',
+              background: 'rgba(0,0,0,0.55)',
+            }}
+          >
+            {(trailerCarouselItems[trailerLightboxIndex].mp4 || trailerCarouselItems[trailerLightboxIndex].webm) ? (
+              <video
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster={trailerCarouselItems[trailerLightboxIndex].thumbnail || fallbackHeaderImage}
+                className="w-full aspect-video bg-black"
+              >
+                {trailerCarouselItems[trailerLightboxIndex].mp4 && <source src={trailerCarouselItems[trailerLightboxIndex].mp4} type="video/mp4" />}
+                {trailerCarouselItems[trailerLightboxIndex].webm && <source src={trailerCarouselItems[trailerLightboxIndex].webm} type="video/webm" />}
+                Je browser ondersteunt geen video-weergave.
+              </video>
+            ) : (
+              <OptimizedImage
+                src={trailerCarouselItems[trailerLightboxIndex].thumbnail || fallbackHeaderImage || ''}
+                alt={trailerCarouselItems[trailerLightboxIndex].label}
+                className="w-full aspect-video object-cover"
+              />
+            )}
+            <div style={{ padding: '10px 12px', color: 'white', fontSize: '0.85rem' }}>
+              {trailerCarouselItems[trailerLightboxIndex].label}
+            </div>
+          </div>
+
+          {trailerCarouselItems.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setTrailerLightboxIndex((prev) => {
+                  if (prev === null) return null
+                  return (prev + 1) % trailerCarouselItems.length
+                })
+              }}
+              className="absolute right-3 sm:right-5 p-2 sm:p-3 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+              aria-label="Next trailer"
+            >
+              <ChevronRight size={22} />
+            </button>
+          )}
+
+          <div
+            className="absolute bottom-4 px-3 py-1 rounded-full text-xs"
+            style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+          >
+            {(trailerLightboxIndex ?? 0) + 1} / {trailerCarouselItems.length}
+          </div>
+        </div>
+      )}
+
+      {lightboxIndex !== null && carouselScreenshots[lightboxIndex] && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Media lightbox"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(8, 18, 30, 0.92)' }}
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 p-2 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+            aria-label="Close lightbox"
+          >
+            <X size={20} />
+          </button>
+
+          {carouselScreenshots.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setLightboxIndex((prev) => {
+                  if (prev === null) return null
+                  return (prev - 1 + carouselScreenshots.length) % carouselScreenshots.length
+                })
+              }}
+              className="absolute left-3 sm:left-5 p-2 sm:p-3 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+              aria-label="Previous media"
+            >
+              <ChevronLeft size={22} />
+            </button>
+          )}
+
+          <img
+            src={carouselScreenshots[lightboxIndex].full || carouselScreenshots[lightboxIndex].thumb}
+            alt={carouselScreenshots[lightboxIndex].label}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '92vw',
+              maxHeight: '86vh',
+              borderRadius: '10px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+              objectFit: 'contain',
+            }}
+          />
+
+          {carouselScreenshots.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setLightboxIndex((prev) => {
+                  if (prev === null) return null
+                  return (prev + 1) % carouselScreenshots.length
+                })
+              }}
+              className="absolute right-3 sm:right-5 p-2 sm:p-3 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+              aria-label="Next media"
+            >
+              <ChevronRight size={22} />
+            </button>
+          )}
+
+          <div
+            className="absolute bottom-4 px-3 py-1 rounded-full text-xs"
+            style={{ background: 'rgba(255,255,255,0.16)', color: 'white' }}
+          >
+            {(lightboxIndex ?? 0) + 1} / {carouselScreenshots.length}
           </div>
         </div>
       )}

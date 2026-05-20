@@ -154,6 +154,27 @@ export interface DlcDeal {
 export const getDlcDeals = (steamAppid: string) =>
   api.get<DlcDeal[]>(`/games/${steamAppid}/dlc-deals`).then((r) => r.data)
 
+export interface GameScreenshot {
+  full: string
+  thumb: string
+}
+
+export interface GameTrailer {
+  name: string
+  thumbnail?: string
+  mp4?: string
+  webm?: string
+  steam_url?: string
+}
+
+export interface GameMedia {
+  screenshots: GameScreenshot[]
+  trailers: GameTrailer[]
+}
+
+export const getGameMedia = (steamAppid: string) =>
+  api.get<GameMedia>(`/games/${steamAppid}/media`).then((r) => r.data)
+
 export interface FreeGame {
   steam_appid: string
   name: string

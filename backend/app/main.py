@@ -9,7 +9,7 @@ import os
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, games, wishlist, alerts, collections, stats, sitemap, stores, blog, regional, freebies, bundles
+from app.routers import auth, games, wishlist, alerts, stats, sitemap, stores, blog, regional, freebies, bundles
 
 # Scheduler alleen starten buiten Vercel (lokale dev)
 _is_vercel = os.environ.get("VERCEL") == "1"
@@ -68,7 +68,6 @@ app.include_router(auth.router)
 app.include_router(games.router)
 app.include_router(wishlist.router)
 app.include_router(alerts.router)
-app.include_router(collections.router)
 app.include_router(stats.router)
 app.include_router(sitemap.router)
 app.include_router(stores.router)

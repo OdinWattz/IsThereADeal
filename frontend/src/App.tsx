@@ -14,8 +14,6 @@ const FreeGamesPage = lazy(async () => ({ default: (await import('./pages/FreeGa
 const SearchPage = lazy(async () => ({ default: (await import('./pages/SearchPage')).SearchPage }))
 const WishlistPage = lazy(async () => ({ default: (await import('./pages/WishlistPage')).WishlistPage }))
 const AlertsPage = lazy(async () => ({ default: (await import('./pages/AlertsPage')).AlertsPage }))
-const CollectionsPage = lazy(async () => ({ default: (await import('./pages/CollectionsPage')).CollectionsPage }))
-const CollectionDetailPage = lazy(async () => ({ default: (await import('./pages/CollectionDetailPage')).CollectionDetailPage }))
 const StatsPage = lazy(async () => ({ default: (await import('./pages/StatsPage')).StatsPage }))
 const LoginPage = lazy(async () => ({ default: (await import('./pages/LoginPage')).LoginPage }))
 const RegisterPage = lazy(async () => ({ default: (await import('./pages/RegisterPage')).RegisterPage }))
@@ -62,8 +60,6 @@ function App() {
                   <Route path="/game/:appid" element={<GamePage />} />
                   <Route path="/wishlist" element={<WishlistPage />} />
                   <Route path="/alerts" element={<AlertsPage />} />
-                  <Route path="/collections" element={<CollectionsPage />} />
-                  <Route path="/collections/:id" element={<CollectionDetailPage />} />
                   <Route path="/stats" element={<StatsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/login" element={<LoginPage />} />

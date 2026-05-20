@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { SearchBar } from './SearchBar'
-import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Gift, FolderOpen, TrendingDown, BookOpen, Shield } from 'lucide-react'
+import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Gift, TrendingDown, BookOpen, Shield } from 'lucide-react'
 
 const ADMIN_USERNAME = 'odinwattz'
 const ADMIN_EMAIL = 'odinwattez@outlook.com'
@@ -93,16 +93,6 @@ export function Navbar() {
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#1a4a68' }}
                 >
                   <Heart size={20} />
-                </Link>
-                <Link
-                  to="/collections"
-                  title="Collections"
-                  className="p-2 rounded-lg transition-colors"
-                  style={{ color: '#1a4a68' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLElement).style.color = '#082030' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#1a4a68' }}
-                >
-                  <FolderOpen size={20} />
                 </Link>
                 <Link
                   to="/alerts"
@@ -245,17 +235,6 @@ export function Navbar() {
                 >
                   <Heart size={20} />
                   <span>Verlanglijst</span>
-                </Link>
-                <Link
-                  to="/collections"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-                  style={{ color: '#1a4a68' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.5)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <FolderOpen size={20} />
-                  <span>Collecties</span>
                 </Link>
                 <Link
                   to="/alerts"

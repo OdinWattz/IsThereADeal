@@ -36,6 +36,10 @@ export interface BlogPostUpdatePayload {
   is_published?: boolean
 }
 
+export interface GuidesVisibility {
+  guides_enabled: boolean
+}
+
 export const getBlogPosts = (category?: string, skip = 0, limit = 20) =>
   api.get<BlogPost[]>('/blog', {
     params: { category, skip, limit }
@@ -58,3 +62,9 @@ export const deleteBlogPost = (postId: number) =>
 
 export const getAdminBlogPosts = () =>
   api.get<BlogPost[]>('/blog/admin/posts').then(r => r.data)
+
+export const getGuidesVisibility = () =>
+  api.get<GuidesVisibility>('/blog/visibility').then(r => r.data)
+
+export const setGuidesVisibility = (guidesEnabled: boolean) =>
+  api.patch<GuidesVisibility>('/blog/admin/visibility', { guides_enabled: guidesEnabled }).then(r => r.data)

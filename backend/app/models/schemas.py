@@ -289,3 +289,11 @@ class BlogPostUpdate(BaseModel):
     category: Optional[str] = Field(None, pattern="^(guide|news|tutorial)$")
     featured_image: Optional[str] = None
     is_published: Optional[bool] = None
+
+
+class GuidesVisibilityOut(BaseModel):
+    guides_enabled: bool
+
+
+class GuidesVisibilityUpdate(BaseModel):
+    guides_enabled: bool

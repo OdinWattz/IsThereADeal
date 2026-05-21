@@ -229,6 +229,16 @@ class BlogPost(Base):
     published_at = Column(DateTime, nullable=True)
 
 
+class SiteSetting(Base):
+    """Global site settings stored in DB."""
+    __tablename__ = "site_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True, nullable=False, index=True)
+    value = Column(String(500), nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
 class Freebie(Base):
     """Tracks games that are temporarily free (Epic Games Store, Prime Gaming, etc.)"""
     __tablename__ = "freebies"

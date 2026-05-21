@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { SearchBar } from './SearchBar'
 import { Gamepad2, Heart, Bell, LogOut, LogIn, User, Menu, X, Grid3x3, Gift, TrendingDown, BookOpen, Shield } from 'lucide-react'
+import { getGuidesVisibility } from '../api/blog'
 
 const ADMIN_USERNAME = 'odinwattz'
 const ADMIN_EMAIL = 'odinwattez@outlook.com'
@@ -11,6 +13,13 @@ export function Navbar() {
   const { user, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: guidesVisibility } = useQuery({
+    queryKey: ['blog-guides-visibility'],
+    queryFn: getGuidesVisibility,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  })
+  const showGuidesNav = guidesVisibility?.guides_enabled ?? true
   const isAdmin =
     user?.username?.toLowerCase() === ADMIN_USERNAME &&
     user?.email?.toLowerCase() === ADMIN_EMAIL
@@ -61,16 +70,18 @@ export function Navbar() {
             >
               Browse
             </Link>
-            <Link
-              to="/blog"
-              className="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
-              style={{ color: '#1a4a68' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLElement).style.color = '#082030' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#1a4a68' }}
-            >
-              <BookOpen size={16} style={{ color: '#8b5a3c' }} />
-              <span>Gidsen</span>
-            </Link>
+            {showGuidesNav && (
+              <Link
+                to="/blog"
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                style={{ color: '#1a4a68' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLElement).style.color = '#082030' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#1a4a68' }}
+              >
+                <BookOpen size={16} style={{ color: '#8b5a3c' }} />
+                <span>Gidsen</span>
+              </Link>
+            )}
             <Link
               to="/free"
               className="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
@@ -200,17 +211,19 @@ export function Navbar() {
               <Grid3x3 size={20} />
               <span>Browse Games</span>
             </Link>
-            <Link
-              to="/blog"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-              style={{ color: '#1a4a68' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.5)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <BookOpen size={20} style={{ color: '#8b5a3c' }} />
-              <span>Gidsen & Blog</span>
-            </Link>
+            {showGuidesNav && (
+              <Link
+                to="/blog"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+                style={{ color: '#1a4a68' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.5)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <BookOpen size={20} style={{ color: '#8b5a3c' }} />
+                <span>Gidsen & Blog</span>
+              </Link>
+            )}
             <Link
               to="/free"
               onClick={() => setMobileMenuOpen(false)}

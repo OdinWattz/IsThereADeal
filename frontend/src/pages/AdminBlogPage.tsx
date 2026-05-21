@@ -5,6 +5,8 @@ import {
   createBlogPost,
   deleteBlogPost,
   getAdminBlogPosts,
+  getGuidesVisibility,
+  setGuidesVisibility,
   updateBlogPost,
   type BlogPost,
   type BlogPostCreatePayload,
@@ -47,6 +49,12 @@ export function AdminBlogPage() {
     enabled: isAuthenticated() && isAdmin,
   })
 
+  const { data: guidesVisibility } = useQuery({
+    queryKey: ['blog-guides-visibility'],
+    queryFn: getGuidesVisibility,
+    enabled: isAuthenticated() && isAdmin,
+  })
+
   const createMutation = useMutation({
     mutationFn: createBlogPost,
     onSuccess: () => {
@@ -79,6 +87,15 @@ export function AdminBlogPage() {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] })
     },
     onError: () => toast.error('Verwijderen mislukt'),
+  })
+
+  const toggleGuidesVisibilityMutation = useMutation({
+    mutationFn: setGuidesVisibility,
+    onSuccess: (data) => {
+      toast.success(data.guides_enabled ? 'Gidsen knop aangezet' : 'Gidsen knop uitgezet')
+      queryClient.invalidateQueries({ queryKey: ['blog-guides-visibility'] })
+    },
+    onError: () => toast.error('Gidsen zichtbaarheid aanpassen mislukt'),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -154,6 +171,31 @@ export function AdminBlogPage() {
       <p style={{ color: '#5888a5', marginBottom: '20px' }}>
         Voeg blogposts toe, werk ze bij of verwijder ze.
       </p>
+
+      <section
+        style={{
+          border: '1px solid rgba(90, 175, 225, 0.35)',
+          background: 'rgba(225,245,255,0.5)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+        }}
+      >
+        <h2 style={{ color: '#082030', margin: '0 0 6px' }}>Site zichtbaarheid</h2>
+        <p style={{ color: '#5888a5', margin: '0 0 10px' }}>
+          Verberg of toon de Gidsen knop voor iedereen in de navbar.
+        </p>
+        <label style={{ color: '#1a4a68', fontSize: '0.95rem' }}>
+          <input
+            type="checkbox"
+            checked={guidesVisibility?.guides_enabled ?? true}
+            disabled={toggleGuidesVisibilityMutation.isPending}
+            onChange={(e) => toggleGuidesVisibilityMutation.mutate(e.target.checked)}
+            style={{ marginRight: '8px' }}
+          />
+          Gidsen knop tonen in navbar
+        </label>
+      </section>
 
       <form
         onSubmit={handleSubmit}

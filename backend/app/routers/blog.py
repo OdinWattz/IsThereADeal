@@ -2,8 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, update
 from app.database import get_db
-from app.models.models import BlogPost, User
-from app.models.schemas import BlogPostOut, BlogPostCreate, BlogPostUpdate
+from app.models.models import BlogPost, SiteSetting, User
+from app.models.schemas import (
+    BlogPostOut,
+    BlogPostCreate,
+    BlogPostUpdate,
+    GuidesVisibilityOut,
+    GuidesVisibilityUpdate,
+)
 from app.auth import get_current_user, get_admin_user
 from datetime import datetime, timezone
 import asyncio
@@ -12,6 +18,7 @@ import logging
 router = APIRouter(prefix="/api/blog", tags=["blog"])
 _blog_seed_lock = asyncio.Lock()
 _blog_seed_checked = False
+GUIDES_VISIBILITY_KEY = "guides_enabled"
 
 
 def utcnow():
@@ -61,6 +68,42 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(select(BlogPost.category).distinct())
     return result.scalars().all()
+
+
+@router.get("/visibility", response_model=GuidesVisibilityOut)
+async def get_guides_visibility(db: AsyncSession = Depends(get_db)):
+    """Public visibility setting for guides/blog navigation button."""
+    result = await db.execute(
+        select(SiteSetting).where(SiteSetting.key == GUIDES_VISIBILITY_KEY)
+    )
+    setting = result.scalar_one_or_none()
+
+    if not setting:
+        return GuidesVisibilityOut(guides_enabled=True)
+
+    return GuidesVisibilityOut(guides_enabled=setting.value.lower() == "true")
+
+
+@router.patch("/admin/visibility", response_model=GuidesVisibilityOut)
+async def set_guides_visibility(
+    payload: GuidesVisibilityUpdate,
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin-only toggle for guides/blog navigation visibility."""
+    result = await db.execute(
+        select(SiteSetting).where(SiteSetting.key == GUIDES_VISIBILITY_KEY)
+    )
+    setting = result.scalar_one_or_none()
+
+    if setting is None:
+        setting = SiteSetting(key=GUIDES_VISIBILITY_KEY, value="true" if payload.guides_enabled else "false")
+        db.add(setting)
+    else:
+        setting.value = "true" if payload.guides_enabled else "false"
+
+    await db.commit()
+    return GuidesVisibilityOut(guides_enabled=payload.guides_enabled)
 
 
 @router.get("/admin/posts", response_model=list[BlogPostOut])

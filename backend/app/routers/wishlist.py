@@ -251,11 +251,7 @@ async def import_from_steam(
             "message": "Je Steam wishlist is leeg of kon niet worden opgehaald."
         }
 
-    # BATCH PROCESSING: Limit to prevent very long-running imports
-    # Optimized but sequential (DB session issues prevent true parallel)
-    # Each game: ~2-3s (APIs already parallel within upsert_game_and_prices)
-    # With cache: 3s cooldown + (30 × 2.5s) = ~78s worst-case
-    BATCH_SIZE = 30
+    # Process all new games in one run (no batch cap)
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them
@@ -270,9 +266,8 @@ async def import_from_steam(
     new_app_ids = [aid for aid in app_ids if aid not in existing_appids]
     already_imported = len(app_ids) - len(new_app_ids)
 
-    # Take only first BATCH_SIZE games to process
-    app_ids_to_process = new_app_ids[:BATCH_SIZE]
-    remaining = len(new_app_ids) - len(app_ids_to_process)
+    app_ids_to_process = new_app_ids
+    remaining = 0
 
     print(f"[Import] Total: {total_games}, Already imported: {already_imported}, "
           f"To process now: {len(app_ids_to_process)}, Remaining: {remaining}")
@@ -283,7 +278,7 @@ async def import_from_steam(
     failed = 0
     failed_games = []  # Track which games failed
 
-    print(f"[Import] Processing batch of {len(app_ids_to_process)} games IN PARALLEL")
+    print(f"[Import] Processing {len(app_ids_to_process)} games IN PARALLEL")
 
     # Step 1: Check which games already exist in DB (batch query)
     existing_games_result = await db.execute(
@@ -372,10 +367,6 @@ async def import_from_steam(
     if failed > 0:
         message += f", {failed} mislukt"
 
-    # If there are more games to import, tell user to run again
-    if remaining > 0:
-        message += f"\n\n🔄 Nog {remaining} games over! Klik opnieuw op 'Importeren' om door te gaan."
-
     print(f"[Import] Complete: {message}")
 
     return {
@@ -385,6 +376,6 @@ async def import_from_steam(
         "total": total_games,
         "already_imported": already_imported,
         "remaining": remaining,
-        "batch_size": BATCH_SIZE,
+        "batch_size": len(app_ids_to_process),
         "message": message
     }

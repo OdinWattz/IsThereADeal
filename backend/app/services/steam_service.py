@@ -110,8 +110,8 @@ async def get_featured_deals():
     seen_ids: set = set()
     results = []
 
-    def _add_items(items, max_items=50):
-        """Add items with quality filtering"""
+    def _add_items(items, max_items=50, strict=True):
+        """Add items with quality filtering; strict mode keeps stronger filters."""
         added = 0
         for item in items:
             if added >= max_items:
@@ -126,13 +126,14 @@ async def get_featured_deals():
                 final = (item.get("final_price") or 0) / 100
                 original = (item.get("original_price") or 0) / 100
 
-                # Quality filters to avoid shovelware and adult content
-                if final > 0 and final < 2.0:  # Skip very cheap games (usually shovelware)
-                    continue
-                if discount_pct > 0 and discount_pct < 10:  # Skip tiny discounts
-                    continue
-                if original > 150:  # Skip overpriced bundles/editions
-                    continue
+                if strict:
+                    # Quality filters to avoid shovelware and adult content
+                    if final > 0 and final < 2.0:  # Skip very cheap games (usually shovelware)
+                        continue
+                    if discount_pct > 0 and discount_pct < 10:  # Skip tiny discounts
+                        continue
+                    if original > 150:  # Skip overpriced bundles/editions
+                        continue
 
                 # Filter out common adult/shovelware keywords (expanded list)
                 name_lower = name.lower()
@@ -166,9 +167,19 @@ async def get_featured_deals():
                 continue
 
     # Collect more games than needed for better randomization
-    _add_items(data.get("specials", {}).get("items", []), max_items=50)
-    _add_items(data.get("top_sellers", {}).get("items", []), max_items=30)
-    _add_items(data.get("new_releases", {}).get("items", []), max_items=20)
+    specials = data.get("specials", {}).get("items", [])
+    top_sellers = data.get("top_sellers", {}).get("items", [])
+    new_releases = data.get("new_releases", {}).get("items", [])
+
+    _add_items(specials, max_items=70, strict=True)
+    _add_items(top_sellers, max_items=50, strict=True)
+    _add_items(new_releases, max_items=30, strict=True)
+
+    # If strict filters produce too few items, do a relaxed pass to fill to 100.
+    if len(results) < 100:
+        _add_items(specials, max_items=120, strict=False)
+        _add_items(top_sellers, max_items=120, strict=False)
+        _add_items(new_releases, max_items=120, strict=False)
 
     # Randomize and limit to 100 games for homepage
     random.shuffle(results)

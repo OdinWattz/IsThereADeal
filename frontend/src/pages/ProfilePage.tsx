@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Navigate, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
-import { updateProfile, changePassword, deleteAccount, getWishlist, getAlerts } from '../api/games'
+import { updateProfile, changePassword, deleteAccount, getAlerts, getUserSavings } from '../api/games'
 import toast from 'react-hot-toast'
 import { User, Lock, Trash2, Heart, Bell, Shield } from 'lucide-react'
 
@@ -36,9 +36,9 @@ export function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
 
-  const { data: wishlistItems = [] } = useQuery({
-    queryKey: ['wishlist'],
-    queryFn: () => getWishlist(50, 0),
+  const { data: savings } = useQuery({
+    queryKey: ['stats', 'savings'],
+    queryFn: getUserSavings,
     enabled: authenticated,
     staleTime: 0,
     gcTime: 0,
@@ -150,7 +150,7 @@ export function ProfilePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm mb-1" style={{color: 'var(--text-secondary)'}}>Verlanglijst</p>
-              <p className="text-3xl font-bold" style={{color: 'var(--text-primary)'}}>{wishlistItems.length}</p>
+              <p className="text-3xl font-bold" style={{color: 'var(--text-primary)'}}>{savings?.total_wishlist_games ?? 0}</p>
             </div>
             <Heart size={32} style={{color: '#e879a0'}} />
           </div>

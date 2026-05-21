@@ -115,9 +115,9 @@ export function WishlistPage() {
     if (steamImportMutation.isPending && importStartTime) {
       const interval = setInterval(() => {
         const elapsed = Date.now() - importStartTime
-        // Progress up to 95% over 25 seconds
-        // 10 games sequentially with parallel APIs + cache = ~22-25s
-        const progress = Math.min((elapsed / 25000) * 100, 95)
+        // Progress up to 95% over 75 seconds
+        // 30 games sequentially with parallel APIs + cache = ~70-75s
+        const progress = Math.min((elapsed / 75000) * 100, 95)
         setImportProgress(progress)
       }, 100)
 
@@ -498,7 +498,7 @@ export function WishlistPage() {
                 💡 <strong>Tip:</strong> Probeer je Steam profile URL of Steam ID
               </p>
               <p className="text-xs mb-2" style={{color: '#0d6799'}}>
-                ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (10 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
+                ⚡ <strong>Batch import:</strong> Grote wishlists worden in batches geïmporteerd (30 games per keer). Klik meerdere keren op "Importeren" om alle games binnen te halen.
               </p>
               <p className="text-xs" style={{color: 'var(--green)'}}>
                 🚀 <strong>Anti rate-limit:</strong> Je wishlist wordt 10 min gecached. Daarna kun je onbeperkt importeren zonder Steam opnieuw te vragen!
@@ -511,7 +511,7 @@ export function WishlistPage() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Importeren...</span>
                   <span className="text-xs text-gray-500">
-                    {importStartTime && `${Math.floor((importProgress / 100) * 25)}s / ~25s max`}
+                    {importStartTime && `${Math.floor((importProgress / 100) * 75)}s / ~75s max`}
                   </span>
                 </div>
                 <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(160,210,240,0.3)' }}>

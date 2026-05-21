@@ -251,11 +251,11 @@ async def import_from_steam(
             "message": "Je Steam wishlist is leeg of kon niet worden opgehaald."
         }
 
-    # BATCH PROCESSING: Limit to prevent timeout (Vercel has 30s HARD LIMIT)
+    # BATCH PROCESSING: Limit to prevent very long-running imports
     # Optimized but sequential (DB session issues prevent true parallel)
     # Each game: ~2-3s (APIs already parallel within upsert_game_and_prices)
-    # With cache: 3s cooldown + (10 × 2.5s) = ~28s (safe for 30s limit)
-    BATCH_SIZE = 10
+    # With cache: 3s cooldown + (30 × 2.5s) = ~78s worst-case
+    BATCH_SIZE = 30
     total_games = len(app_ids)
 
     # Find games already in wishlist to skip them

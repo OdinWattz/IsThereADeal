@@ -27,12 +27,10 @@ export function WishlistPage() {
   const [steamInput, setSteamInput] = useState('')
   const [importProgress, setImportProgress] = useState(0)
   const [importStartTime, setImportStartTime] = useState<number | null>(null)
-  const [page, setPage] = useState(0)
-  const ITEMS_PER_PAGE = 50
 
   const { data: items = [], isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['wishlist', page],
-    queryFn: () => getWishlist(ITEMS_PER_PAGE, page * ITEMS_PER_PAGE),
+    queryKey: ['wishlist'],
+    queryFn: () => getWishlist(),
     enabled: authenticated,
     staleTime: 0, // Always fetch fresh data (no caching for now)
     refetchOnMount: 'always', // Force refetch every time
@@ -85,7 +83,6 @@ export function WishlistPage() {
       }
 
       qc.invalidateQueries({ queryKey: ['wishlist'] })
-      setPage(0) // Go back to first page after import
 
       // Reset timer
       setTimeout(() => setImportStartTime(null), 500)
@@ -199,7 +196,7 @@ export function WishlistPage() {
             Verlanglijst
           </h1>
           <p className="text-sm sm:text-base" style={{color: 'var(--text-secondary)'}}>
-            {items.length} game{items.length !== 1 ? 's' : ''} getoond (pagina {page + 1})
+            {items.length} game{items.length !== 1 ? 's' : ''} getoond
             {targetMetCount > 0 && (
               <span className="ml-2" style={{color: 'var(--green)'}}>• {targetMetCount} op doelprijs!</span>
             )}
@@ -245,7 +242,6 @@ export function WishlistPage() {
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value as SortOption)
-                setPage(0)
               }}
               className="flex-1 sm:flex-initial input-aero rounded-lg px-3 py-2 text-sm"
             >
@@ -267,7 +263,6 @@ export function WishlistPage() {
                 checked={filterOnSale}
                 onChange={(e) => {
                   setFilterOnSale(e.target.checked)
-                  setPage(0)
                 }}
                 className="w-4 h-4 rounded accent-[#1480b8]"
               />
@@ -279,7 +274,6 @@ export function WishlistPage() {
                 checked={filterTargetMet}
                 onChange={(e) => {
                   setFilterTargetMet(e.target.checked)
-                  setPage(0)
                 }}
                 className="w-4 h-4 rounded accent-[#1480b8]"
               />
@@ -455,33 +449,6 @@ export function WishlistPage() {
               </div>
             )
           })}
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      {!isLoading && items.length > 0 && (
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <button
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0 || isRefetching}
-            className="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
-          >
-            ← Vorige
-          </button>
-
-          <span className="text-sm" style={{color: 'var(--text-secondary)'}}>
-            Pagina {page + 1}
-          </span>
-
-          <button
-            onClick={() => setPage(p => p + 1)}
-            disabled={items.length < ITEMS_PER_PAGE || isRefetching}
-            className="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(90,175,225,0.45)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)' }}
-          >
-            Volgende →
-          </button>
         </div>
       )}
 

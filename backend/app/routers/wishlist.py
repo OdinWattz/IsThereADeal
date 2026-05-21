@@ -19,23 +19,24 @@ router = APIRouter(prefix="/api/wishlist", tags=["wishlist"])
 async def get_wishlist(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    limit: int = Query(100, ge=1, le=500, description="Max items to return"),
+    limit: int | None = Query(None, ge=1, description="Max items to return"),
     offset: int = Query(0, ge=0, description="Number of items to skip"),
 ):
     import time
     start_time = time.time()
     print(f"[Wishlist] Fetching wishlist for user {current_user.id} ({current_user.username}), limit={limit}, offset={offset}")
 
-    result = await db.execute(
+    query = (
         select(WishlistItem)
         .where(WishlistItem.user_id == current_user.id)
-        .options(
-            selectinload(WishlistItem.game).selectinload(Game.prices)
-        )
+        .options(selectinload(WishlistItem.game).selectinload(Game.prices))
         .order_by(WishlistItem.added_at.desc())
-        .limit(limit)
         .offset(offset)
     )
+    if limit is not None:
+        query = query.limit(limit)
+
+    result = await db.execute(query)
     items = result.scalars().all()
 
     query_time = time.time() - start_time

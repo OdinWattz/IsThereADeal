@@ -200,8 +200,13 @@ export const getMe = () =>
 
 // ── Wishlist ──────────────────────────────────────────────────────────────────
 
-export const getWishlist = (limit = 100, offset = 0) =>
-  api.get<WishlistItem[]>('/wishlist', { params: { limit, offset } }).then((r) => r.data)
+export const getWishlist = (limit?: number, offset?: number) => {
+  const params: { limit?: number; offset?: number } = {}
+  if (limit != null) params.limit = limit
+  if (offset != null) params.offset = offset
+
+  return api.get<WishlistItem[]>('/wishlist', { params }).then((r) => r.data)
+}
 
 export const addToWishlist = (gameIdOrAppid: number | string, target_price?: number) => {
   const payload = typeof gameIdOrAppid === 'string'

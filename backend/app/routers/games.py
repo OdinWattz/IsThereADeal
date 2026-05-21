@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
+from datetime import datetime, timezone, timedelta
 import re
 
 from app.database import get_db
-from app.models.models import Game, GamePrice, PriceHistory
+from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal
 from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchResult
 from app.services.steam_service import search_steam_games, get_featured_deals
 from app.services.price_aggregator import upsert_game_and_prices
@@ -78,6 +79,20 @@ def _extract_steam_movie_id(movie: dict) -> Optional[str]:
 
 def _steam_movie_mp4_url(movie_id: str) -> str:
     return f"https://cdn.akamai.steamstatic.com/steam/apps/{movie_id}/movie_max.mp4"
+
+
+def _daily_featured_deal_to_dict(deal: DailyFeaturedDeal) -> dict:
+    return {
+        "steam_appid": deal.steam_appid,
+        "name": deal.name,
+        "sale_price": deal.sale_price,
+        "regular_price": deal.regular_price,
+        "discount_percent": deal.discount_percent,
+        "store_name": deal.store_name,
+        "header_image": deal.header_image,
+        "deal_rating": deal.deal_rating,
+        "url": deal.url,
+    }
 
 
 @router.get("/search", response_model=List[SearchResult])
@@ -154,15 +169,23 @@ async def featured_deals():
 
 
 @router.get("/deal-of-the-day")
-async def get_deal_of_the_day():
+async def get_deal_of_the_day(db: AsyncSession = Depends(get_db)):
     """
     Get the featured Deal of the Day.
-    Changes daily at midnight (deterministic based on date seed).
+    Stores one selected deal per day and avoids reusing deals from the last 30 days.
     """
     from app.services.cheapshark_service import get_trending_deals
-    from datetime import datetime
     import random
     import httpx
+
+    today = datetime.now(timezone.utc).date()
+
+    existing_result = await db.execute(
+        select(DailyFeaturedDeal).where(DailyFeaturedDeal.featured_date == today)
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        return _daily_featured_deal_to_dict(existing)
 
     # Get top deals
     deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
@@ -191,34 +214,54 @@ async def get_deal_of_the_day():
     if not valid_deals:
         return None
 
-    # Use today's date as seed for deterministic daily selection
-    # But rotate through different deals by using day of year as index
-    today = datetime.utcnow().date()
-    day_of_year = today.timetuple().tm_yday
+    # Exclude deals shown in the last 30 days, then pick the first remaining deal.
+    recent_cutoff = today - timedelta(days=30)
+    recent_result = await db.execute(
+        select(DailyFeaturedDeal.steam_appid).where(DailyFeaturedDeal.featured_date >= recent_cutoff)
+    )
+    recent_appids = {str(row[0]) for row in recent_result.all()}
 
-    # Select from top 50 valid deals for more variety
-    top_deals = valid_deals[:min(50, len(valid_deals))]
+    eligible_deals = [deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in recent_appids]
+    chosen_pool = eligible_deals or valid_deals
 
-    # Use day of year to pick different deals each day (cycles through the list)
-    selected_index = day_of_year % len(top_deals)
+    # Shuffle to avoid picking the same top item every time if the upstream list order is stable.
+    random.shuffle(chosen_pool)
+    selected = chosen_pool[0]
 
-    # Try up to 10 times to find a game with a valid image
-    for attempt in range(10):
-        # Rotate through the list instead of pure random
-        selected = top_deals[(selected_index + attempt) % len(top_deals)]
+    # Quick check if Steam header image exists (fast HEAD request)
+    try:
+        async with httpx.AsyncClient(timeout=2) as client:
+            img_url = selected.get("header_image", "")
+            resp = await client.head(img_url)
+            if resp.status_code != 200 and valid_deals:
+                for candidate in chosen_pool[1:10]:
+                    try:
+                        candidate_img = candidate.get("header_image", "")
+                        candidate_resp = await client.head(candidate_img)
+                        if candidate_resp.status_code == 200:
+                            selected = candidate
+                            break
+                    except Exception:
+                        continue
+    except Exception:
+        pass
 
-        # Quick check if Steam header image exists (fast HEAD request)
-        try:
-            async with httpx.AsyncClient(timeout=2) as client:
-                img_url = selected.get("header_image", "")
-                resp = await client.head(img_url)
-                if resp.status_code == 200:
-                    return selected  # Found a valid one!
-        except:
-            pass  # Try next one (will continue with next index in rotation)
-
-    # Fallback: return first deal even if image might be broken
-    return valid_deals[0] if valid_deals else None
+    snapshot = DailyFeaturedDeal(
+        featured_date=today,
+        steam_appid=str(selected.get("steam_appid", "")),
+        name=str(selected.get("name", "")),
+        sale_price=float(selected.get("sale_price", 0) or 0),
+        regular_price=float(selected.get("regular_price", 0) or 0),
+        discount_percent=int(selected.get("discount_percent", 0) or 0),
+        store_name=str(selected.get("store_name", "Steam")),
+        header_image=str(selected.get("header_image", "")),
+        deal_rating=float(selected.get("deal_rating", 0) or 0),
+        url=selected.get("url"),
+    )
+    db.add(snapshot)
+    await db.commit()
+    await db.refresh(snapshot)
+    return _daily_featured_deal_to_dict(snapshot)
 
 
 @router.get("/deals")

@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
+    Column, Integer, String, Float, Boolean, DateTime, Date, ForeignKey, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -237,6 +237,24 @@ class SiteSetting(Base):
     key = Column(String(100), unique=True, nullable=False, index=True)
     value = Column(String(500), nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class DailyFeaturedDeal(Base):
+    """Stores the featured deal selected for each day."""
+    __tablename__ = "daily_featured_deals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    featured_date = Column(Date, unique=True, nullable=False, index=True)
+    steam_appid = Column(String(20), nullable=False, index=True)
+    name = Column(String(500), nullable=False)
+    sale_price = Column(Float, nullable=False)
+    regular_price = Column(Float, nullable=False)
+    discount_percent = Column(Integer, nullable=False, default=0)
+    store_name = Column(String(100), nullable=False)
+    header_image = Column(String(1000), nullable=False)
+    deal_rating = Column(Float, nullable=False, default=0)
+    url = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
 
 
 class Freebie(Base):

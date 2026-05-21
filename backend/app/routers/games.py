@@ -114,7 +114,7 @@ async def search_games(
 @router.get("/browse")
 async def browse_games(
     page: int = 0,
-    limit: int = Query(60, ge=1, le=100),
+    limit: int = Query(100, ge=1, le=100),
     min_price: float = 0,
     max_price: float = 999,
     min_discount: int = Query(0, ge=0, le=90),

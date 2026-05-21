@@ -170,9 +170,9 @@ async def get_featured_deals():
     _add_items(data.get("top_sellers", {}).get("items", []), max_items=30)
     _add_items(data.get("new_releases", {}).get("items", []), max_items=20)
 
-    # Randomize and limit to 40 games for homepage
+    # Randomize and limit to 100 games for homepage
     random.shuffle(results)
-    return results[:40]
+    return results[:100]
 
 
 async def get_game_extra_metadata(appid: str) -> Optional[Dict[str, Any]]:

@@ -88,7 +88,7 @@ export function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {featured.slice(0, 40).map((game) => (
+            {featured.slice(0, 100).map((game) => (
               (() => {
                 const discountPercent = game.discount_percent ?? 0
                 const regularPrice = game.regular_price ?? 0

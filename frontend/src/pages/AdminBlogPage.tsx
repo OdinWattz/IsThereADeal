@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 import {
   createBlogPost,
   deleteBlogPost,
@@ -30,6 +31,7 @@ import {
   getFeaturedQueue,
   getFeaturedWhitelist,
   getTodayDealSkipHistory,
+  searchGames,
   setAdminUserActive,
   setManualFeaturedDeal,
   skipDealOfTheDay,
@@ -67,6 +69,7 @@ export function AdminBlogPage() {
   const [whitelistAppid, setWhitelistAppid] = useState('')
   const [whitelistBoost, setWhitelistBoost] = useState('3')
   const [skipDeleteDate, setSkipDeleteDate] = useState('')
+  const [featuredSearchTerm, setFeaturedSearchTerm] = useState('')
 
   const isAdmin = useMemo(() => {
     return (
@@ -141,6 +144,12 @@ export function AdminBlogPage() {
     queryKey: ['admin-users'],
     queryFn: () => getAdminUsers(100),
     enabled: isAuthenticated() && isAdmin,
+  })
+
+  const { data: featuredSearchResults = [], isLoading: isLoadingFeaturedSearch } = useQuery({
+    queryKey: ['featured-game-search', featuredSearchTerm],
+    queryFn: () => searchGames(featuredSearchTerm),
+    enabled: isAuthenticated() && isAdmin && featuredSearchTerm.trim().length >= 2,
   })
 
   const createMutation = useMutation({
@@ -454,9 +463,9 @@ export function AdminBlogPage() {
               </div>
               {(dealSkipHistory?.skipped_appids?.length ?? 0) > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dealSkipHistory?.skipped_appids.map((appid) => (
+                  {dealSkipHistory?.skipped_games?.map((game) => (
                     <span
-                      key={appid}
+                      key={game.steam_appid}
                       style={{
                         padding: '4px 8px',
                         borderRadius: '999px',
@@ -466,7 +475,9 @@ export function AdminBlogPage() {
                         fontFamily: 'monospace',
                       }}
                     >
-                      {appid}
+                      <Link to={`/game/${game.steam_appid}`} style={{ color: '#1278a8', textDecoration: 'none' }}>
+                        {game.name ? `${game.name} (${game.steam_appid})` : game.steam_appid}
+                      </Link>
                     </span>
                   ))}
                 </div>
@@ -514,7 +525,11 @@ export function AdminBlogPage() {
                   }}
                 >
                   <div style={{ color: '#1a4a68', fontSize: '0.88rem' }}>
-                    <strong style={{ fontFamily: 'monospace' }}>{item.steam_appid}</strong>
+                    <Link to={`/game/${item.steam_appid}`} style={{ color: '#1a4a68', textDecoration: 'none' }}>
+                      <strong>{item.game_name ?? 'Onbekende game'}</strong>
+                    </Link>
+                    {' · '}
+                    <span style={{ fontFamily: 'monospace' }}>{item.steam_appid}</span>
                     {' · '}
                     {item.featured_date ?? 'onbekende datum'}
                   </div>
@@ -573,6 +588,73 @@ export function AdminBlogPage() {
         }}
       >
         <h2 style={{ color: '#082030', margin: 0 }}>Featured Controls</h2>
+
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <label style={{ color: '#1a4a68', fontSize: '0.9rem', fontWeight: 600 }}>Game zoeken op naam</label>
+          <input
+            placeholder="Typ een game naam (min. 2 tekens)"
+            value={featuredSearchTerm}
+            onChange={(e) => setFeaturedSearchTerm(e.target.value)}
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid rgba(90,175,225,0.4)' }}
+          />
+          {featuredSearchTerm.trim().length >= 2 && (
+            <div style={{ display: 'grid', gap: '6px' }}>
+              {isLoadingFeaturedSearch ? (
+                <span style={{ color: '#5888a5', fontSize: '0.85rem' }}>Zoeken...</span>
+              ) : (
+                featuredSearchResults.slice(0, 8).map((result) => (
+                  <div
+                    key={result.steam_appid}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1px solid rgba(90,175,225,0.28)',
+                      borderRadius: '8px',
+                      padding: '6px 8px',
+                      background: 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    <span style={{ color: '#1a4a68', fontSize: '0.86rem' }}>
+                      <strong>{result.name}</strong> <span style={{ fontFamily: 'monospace' }}>({result.steam_appid})</span>
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setManualFeaturedAppid(result.steam_appid)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(90,175,225,0.4)', background: 'white', color: '#1a4a68', cursor: 'pointer', fontSize: '0.78rem' }}
+                      >
+                        Manual
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQueueAppid(result.steam_appid)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(90,175,225,0.4)', background: 'white', color: '#1a4a68', cursor: 'pointer', fontSize: '0.78rem' }}
+                      >
+                        Queue
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlacklistAppid(result.steam_appid)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(90,175,225,0.4)', background: 'white', color: '#1a4a68', cursor: 'pointer', fontSize: '0.78rem' }}
+                      >
+                        Blacklist
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWhitelistAppid(result.steam_appid)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(90,175,225,0.4)', background: 'white', color: '#1a4a68', cursor: 'pointer', fontSize: '0.78rem' }}
+                      >
+                        Whitelist
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px' }}>
           <input

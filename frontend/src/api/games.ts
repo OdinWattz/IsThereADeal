@@ -136,6 +136,10 @@ export interface DealSkipHistoryToday {
   date: string
   count: number
   skipped_appids: string[]
+  skipped_games: Array<{
+    steam_appid: string
+    name?: string | null
+  }>
 }
 
 export const getTodayDealSkipHistory = () =>
@@ -145,6 +149,7 @@ export interface DealSkipHistoryItem {
   id: number
   featured_date: string | null
   steam_appid: string
+  game_name?: string | null
   created_at: string | null
 }
 

@@ -460,16 +460,26 @@ async def get_today_deal_skip_history(
     today = datetime.now(timezone.utc).date()
 
     result = await db.execute(
-        select(DailyFeaturedDealSkip.steam_appid)
+        select(DailyFeaturedDealSkip.steam_appid, Game.name)
+        .select_from(DailyFeaturedDealSkip)
+        .outerjoin(Game, Game.steam_appid == DailyFeaturedDealSkip.steam_appid)
         .where(DailyFeaturedDealSkip.featured_date == today)
         .order_by(DailyFeaturedDealSkip.created_at.asc())
     )
-    skipped_appids = [str(row[0]) for row in result.all()]
+    rows = result.all()
+    skipped_appids = [str(row[0]) for row in rows]
 
     return {
         "date": today.isoformat(),
         "count": len(skipped_appids),
         "skipped_appids": skipped_appids,
+        "skipped_games": [
+            {
+                "steam_appid": str(row[0]),
+                "name": row[1],
+            }
+            for row in rows
+        ],
     }
 
 
@@ -488,7 +498,10 @@ async def get_deal_skip_history(
             DailyFeaturedDealSkip.featured_date,
             DailyFeaturedDealSkip.steam_appid,
             DailyFeaturedDealSkip.created_at,
+            Game.name,
         )
+        .select_from(DailyFeaturedDealSkip)
+        .outerjoin(Game, Game.steam_appid == DailyFeaturedDealSkip.steam_appid)
         .order_by(DailyFeaturedDealSkip.created_at.desc())
         .limit(limit)
     )
@@ -500,6 +513,7 @@ async def get_deal_skip_history(
             "featured_date": row[1].isoformat() if row[1] else None,
             "steam_appid": str(row[2]),
             "created_at": row[3].isoformat() if row[3] else None,
+            "game_name": row[4],
         }
         for row in rows
     ]

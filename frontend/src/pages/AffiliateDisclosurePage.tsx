@@ -6,7 +6,7 @@ export function AffiliateDisclosurePage() {
       <SEO
         title="Affiliate disclosure"
         description="Uitleg over affiliate-links, commission disclosures en hoe prijsvergelijking op Sirodin werkt."
-        url="https://sirodin.nl/affiliate-disclosure"
+        url="/affiliate-disclosure"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">

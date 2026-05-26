@@ -117,7 +117,7 @@ export function BrowsePage() {
         title="Browse Games - Ontdek Game Deals met Filters"
         description="Doorzoek duizenden games met geavanceerde filters. Filter op prijs, korting, genre en score. Vind exact de game die je zoekt met de beste deals."
         keywords="browse games, game filters, zoek games, games op prijs, games op korting, filter games, gratis games"
-        url="https://sirodin.nl/browse"
+        url="/browse"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}

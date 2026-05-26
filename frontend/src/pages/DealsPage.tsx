@@ -80,7 +80,7 @@ export function DealsPage() {
         title="Beste Game Deals | Trending Aanbiedingen"
         description="Ontdek de beste game deals van dit moment. Bekijk trending aanbiedingen gesorteerd op kwaliteit van Steam, GOG, Humble Bundle en meer."
         keywords="game deals, beste game aanbiedingen, trending games, game kortingen, steam sale, gog sale"
-        url="https://sirodin.nl/deals"
+        url="/deals"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>

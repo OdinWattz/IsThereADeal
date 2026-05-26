@@ -28,7 +28,7 @@ export function FreeGamesPage() {
         title="Gratis Games - Free-to-Play & Tijdelijke Gratis Aanbiedingen"
         description="Ontdek gratis games van verschillende platforms. Free-to-play games en tijdelijke gratis aanbiedingen. Claim nu je gratis games!"
         keywords="gratis games, free games, free to play, gratis pc games, free games steam, gratis game aanbiedingen, claim gratis games"
-        url="https://sirodin.nl/free"
+        url="/free"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}

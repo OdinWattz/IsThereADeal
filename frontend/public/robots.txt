@@ -9,6 +9,7 @@ Disallow: /alerts
 
 # Sitemap location
 Sitemap: https://sirodin.nl/sitemap.xml
+Sitemap: https://serpodin.nl/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

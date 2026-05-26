@@ -3,37 +3,54 @@ Dynamic Sitemap Generator
 Generates XML sitemap with static pages + popular games
 """
 from fastapi import APIRouter, Response
-from sqlalchemy import select, func
+from sqlalchemy import select
 from datetime import datetime
 from ..database import get_db
 from ..models.models import Game
 
 router = APIRouter()
 
-STATIC_URLS = [
-    {"loc": "https://sirodin.nl/", "priority": "1.0", "changefreq": "daily"},
-    {"loc": "https://sirodin.nl/deals", "priority": "0.9", "changefreq": "daily"},
-    {"loc": "https://sirodin.nl/browse", "priority": "0.8", "changefreq": "weekly"},
-    {"loc": "https://sirodin.nl/login", "priority": "0.5", "changefreq": "monthly"},
-    {"loc": "https://sirodin.nl/register", "priority": "0.5", "changefreq": "monthly"},
+BASE_DOMAINS = [
+    "https://sirodin.nl",
+    "https://serpodin.nl",
 ]
+
+STATIC_PATHS = [
+    {"path": "/", "priority": "1.0", "changefreq": "daily"},
+    {"path": "/deals", "priority": "0.9", "changefreq": "daily"},
+    {"path": "/browse", "priority": "0.8", "changefreq": "weekly"},
+    {"path": "/login", "priority": "0.5", "changefreq": "monthly"},
+    {"path": "/register", "priority": "0.5", "changefreq": "monthly"},
+]
+
+
+def append_sitemap_url(xml_content, loc, lastmod, changefreq, priority):
+    xml_content.append("  <url>")
+    xml_content.append(f"    <loc>{loc}</loc>")
+    xml_content.append(f"    <lastmod>{lastmod}</lastmod>")
+    xml_content.append(f"    <changefreq>{changefreq}</changefreq>")
+    xml_content.append(f"    <priority>{priority}</priority>")
+    xml_content.append("  </url>")
 
 
 @router.get("/sitemap.xml")
 async def generate_sitemap():
     """Generate dynamic sitemap with static pages + top games"""
 
+    today = datetime.now().strftime("%Y-%m-%d")
     xml_content = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_content.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
     # Add static URLs
-    for url in STATIC_URLS:
-        xml_content.append("  <url>")
-        xml_content.append(f'    <loc>{url["loc"]}</loc>')
-        xml_content.append(f'    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>')
-        xml_content.append(f'    <changefreq>{url["changefreq"]}</changefreq>')
-        xml_content.append(f'    <priority>{url["priority"]}</priority>')
-        xml_content.append("  </url>")
+    for domain in BASE_DOMAINS:
+        for page in STATIC_PATHS:
+            append_sitemap_url(
+                xml_content=xml_content,
+                loc=f"{domain}{page['path']}",
+                lastmod=today,
+                changefreq=page["changefreq"],
+                priority=page["priority"],
+            )
 
     # Add top 100 most accessed games (if available)
     try:
@@ -46,13 +63,15 @@ async def generate_sitemap():
             games = result.all()
 
             for game in games:
-                xml_content.append("  <url>")
-                xml_content.append(f'    <loc>https://sirodin.nl/game/{game.steam_appid}</loc>')
                 lastmod = game.last_updated.strftime("%Y-%m-%d") if game.last_updated else datetime.now().strftime("%Y-%m-%d")
-                xml_content.append(f'    <lastmod>{lastmod}</lastmod>')
-                xml_content.append('    <changefreq>weekly</changefreq>')
-                xml_content.append('    <priority>0.7</priority>')
-                xml_content.append("  </url>")
+                for domain in BASE_DOMAINS:
+                    append_sitemap_url(
+                        xml_content=xml_content,
+                        loc=f"{domain}/game/{game.steam_appid}",
+                        lastmod=lastmod,
+                        changefreq="weekly",
+                        priority="0.7",
+                    )
 
             break  # Exit after first iteration
     except Exception as e:
@@ -81,6 +100,7 @@ Disallow: /wishlist
 Disallow: /alerts
 
 Sitemap: https://sirodin.nl/sitemap.xml
+Sitemap: https://serpodin.nl/sitemap.xml
 
 Crawl-delay: 1
 """

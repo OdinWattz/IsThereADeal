@@ -49,7 +49,7 @@ export function ComparePage() {
         title="Games Vergelijken - Vergelijk Prijzen en Specs"
         description="Vergelijk tot 4 games naast elkaar. Zie prijzen, specs, reviews en scores in één overzicht. Vind de beste game voor jou."
         keywords="games vergelijken, game comparison, vergelijk games, game specs, game prijzen vergelijken, compare games"
-        url="https://sirodin.nl/compare"
+        url="/compare"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
       {/* Header */}

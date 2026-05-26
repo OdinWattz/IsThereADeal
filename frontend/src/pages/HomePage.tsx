@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getFeaturedDeals } from '../api/games'
 import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { DealOfTheDay } from '../components/DealOfTheDay'
+// import { DealOfTheDay } from '../components/DealOfTheDay'
 import { RecentlyViewed } from '../components/RecentlyViewed'
 import SEO from '../components/SEO'
 import { OptimizedImage } from '../components/OptimizedImage'
@@ -35,7 +35,6 @@ export function HomePage() {
           style={{ color: 'var(--text-secondary)' }}
         >
           Compare prices across Steam, GOG, Humble, Fanatical, key resellers and more.
-          Set price alerts and never miss a sale.
         </p>
         {/* Feature pills */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
@@ -63,7 +62,7 @@ export function HomePage() {
       </div>
 
       {/* Deal of the Day */}
-      <DealOfTheDay />
+      {/* <DealOfTheDay /> */}
 
       {/* Recently Viewed */}
       <RecentlyViewed />

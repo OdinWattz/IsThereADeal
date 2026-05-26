@@ -176,6 +176,7 @@ async def _select_and_store_daily_featured_deal(
     import random
 
     excluded_appids = excluded_appids or set()
+    base_excluded_appids = {str(appid) for appid in excluded_appids if appid}
     config = await _featured_config(db)
     min_deal_rating = float(config["min_deal_rating"])
     min_sale_price = float(config["min_sale_price"])
@@ -210,20 +211,39 @@ async def _select_and_store_daily_featured_deal(
         .where((FeaturedBlacklistItem.expires_at.is_(None)) | (FeaturedBlacklistItem.expires_at >= now_naive))
     )
     blacklisted_appids = {str(row[0]) for row in blacklist_result.all()}
-    excluded_appids.update(blacklisted_appids)
+
+    # Keep skip-history exclusion bounded to the same configured recent window.
+    # This avoids exhausting the candidate pool while still preventing immediate repeats.
+    recent_cutoff = today - timedelta(days=exclude_days)
+    skipped_result = await db.execute(
+        select(DailyFeaturedDealSkip.steam_appid).where(DailyFeaturedDealSkip.featured_date >= recent_cutoff)
+    )
+    skipped_appids = {str(row[0]) for row in skipped_result.all()}
+
+    strict_excluded_appids = set(base_excluded_appids)
+    strict_excluded_appids.update(blacklisted_appids)
+    strict_excluded_appids.update(skipped_appids)
 
     # Exclude deals shown in the configured recent window and explicitly excluded appids.
-    recent_cutoff = today - timedelta(days=exclude_days)
     recent_result = await db.execute(
         select(DailyFeaturedDeal.steam_appid).where(DailyFeaturedDeal.featured_date >= recent_cutoff)
     )
     recent_appids = {str(row[0]) for row in recent_result.all()}
-    recent_appids.update(str(appid) for appid in excluded_appids if appid)
+    recent_appids.update(strict_excluded_appids)
 
     eligible_deals = [deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in recent_appids]
     chosen_pool = eligible_deals or [
-        deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in excluded_appids
+        deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in strict_excluded_appids
     ]
+
+    # Final fallback: if strict rules exhaust the pool, keep only hard exclusions
+    # so skip can still produce a replacement instead of returning 404.
+    if not chosen_pool:
+        relaxed_excluded_appids = set(base_excluded_appids)
+        relaxed_excluded_appids.update(blacklisted_appids)
+        chosen_pool = [
+            deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in relaxed_excluded_appids
+        ]
 
     if not chosen_pool:
         return None
@@ -279,19 +299,36 @@ async def _select_and_store_daily_featured_deal(
     except Exception:
         pass
 
-    snapshot = DailyFeaturedDeal(
-        featured_date=today,
-        steam_appid=str(selected.get("steam_appid", "")),
-        name=str(selected.get("name", "")),
-        sale_price=float(selected.get("sale_price", 0) or 0),
-        regular_price=float(selected.get("regular_price", 0) or 0),
-        discount_percent=int(selected.get("discount_percent", 0) or 0),
-        store_name=str(selected.get("store_name", "Steam")),
-        header_image=str(selected.get("header_image", "")),
-        deal_rating=float(selected.get("deal_rating", 0) or 0),
-        url=selected.get("url"),
+    existing_snapshot_result = await db.execute(
+        select(DailyFeaturedDeal).where(DailyFeaturedDeal.featured_date == today)
     )
-    db.add(snapshot)
+    existing_snapshot = existing_snapshot_result.scalar_one_or_none()
+
+    if existing_snapshot:
+        existing_snapshot.steam_appid = str(selected.get("steam_appid", ""))
+        existing_snapshot.name = str(selected.get("name", ""))
+        existing_snapshot.sale_price = float(selected.get("sale_price", 0) or 0)
+        existing_snapshot.regular_price = float(selected.get("regular_price", 0) or 0)
+        existing_snapshot.discount_percent = int(selected.get("discount_percent", 0) or 0)
+        existing_snapshot.store_name = str(selected.get("store_name", "Steam"))
+        existing_snapshot.header_image = str(selected.get("header_image", ""))
+        existing_snapshot.deal_rating = float(selected.get("deal_rating", 0) or 0)
+        existing_snapshot.url = selected.get("url")
+        snapshot = existing_snapshot
+    else:
+        snapshot = DailyFeaturedDeal(
+            featured_date=today,
+            steam_appid=str(selected.get("steam_appid", "")),
+            name=str(selected.get("name", "")),
+            sale_price=float(selected.get("sale_price", 0) or 0),
+            regular_price=float(selected.get("regular_price", 0) or 0),
+            discount_percent=int(selected.get("discount_percent", 0) or 0),
+            store_name=str(selected.get("store_name", "Steam")),
+            header_image=str(selected.get("header_image", "")),
+            deal_rating=float(selected.get("deal_rating", 0) or 0),
+            url=selected.get("url"),
+        )
+        db.add(snapshot)
     if selected_queue_item is not None:
         selected_queue_item.consumed_at = _utcnow_naive()
     await db.commit()
@@ -425,8 +462,6 @@ async def skip_deal_of_the_day(
                     steam_appid=current_appid,
                 )
             )
-        await db.delete(existing)
-        await db.commit()
 
     snapshot = await _select_and_store_daily_featured_deal(
         db=db,
@@ -701,21 +736,30 @@ async def set_manual_featured_deal(
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        await db.delete(existing)
-
-    snapshot = DailyFeaturedDeal(
-        featured_date=today,
-        steam_appid=str(selected.get("steam_appid", "")),
-        name=str(selected.get("name", "")),
-        sale_price=float(selected.get("sale_price", 0) or 0),
-        regular_price=float(selected.get("regular_price", 0) or 0),
-        discount_percent=int(selected.get("discount_percent", 0) or 0),
-        store_name=str(selected.get("store_name", "Steam")),
-        header_image=str(selected.get("header_image", "")),
-        deal_rating=float(selected.get("deal_rating", 0) or 0),
-        url=selected.get("url"),
-    )
-    db.add(snapshot)
+        existing.steam_appid = str(selected.get("steam_appid", ""))
+        existing.name = str(selected.get("name", ""))
+        existing.sale_price = float(selected.get("sale_price", 0) or 0)
+        existing.regular_price = float(selected.get("regular_price", 0) or 0)
+        existing.discount_percent = int(selected.get("discount_percent", 0) or 0)
+        existing.store_name = str(selected.get("store_name", "Steam"))
+        existing.header_image = str(selected.get("header_image", ""))
+        existing.deal_rating = float(selected.get("deal_rating", 0) or 0)
+        existing.url = selected.get("url")
+        snapshot = existing
+    else:
+        snapshot = DailyFeaturedDeal(
+            featured_date=today,
+            steam_appid=str(selected.get("steam_appid", "")),
+            name=str(selected.get("name", "")),
+            sale_price=float(selected.get("sale_price", 0) or 0),
+            regular_price=float(selected.get("regular_price", 0) or 0),
+            discount_percent=int(selected.get("discount_percent", 0) or 0),
+            store_name=str(selected.get("store_name", "Steam")),
+            header_image=str(selected.get("header_image", "")),
+            deal_rating=float(selected.get("deal_rating", 0) or 0),
+            url=selected.get("url"),
+        )
+        db.add(snapshot)
     await _audit_log(
         db,
         actor=current_user.username,

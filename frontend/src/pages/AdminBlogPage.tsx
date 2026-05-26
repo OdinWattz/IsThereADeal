@@ -209,6 +209,7 @@ export function AdminBlogPage() {
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day'] })
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day-skips-today'] })
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day-skips-history'] })
+      queryClient.invalidateQueries({ queryKey: ['deal-of-the-day-featured-history'] })
     },
     onError: () => toast.error('Featured game skippen mislukt'),
   })
@@ -249,6 +250,7 @@ export function AdminBlogPage() {
     onSuccess: (deal) => {
       toast.success(`Handmatig ingesteld: ${deal.name}`)
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day'] })
+      queryClient.invalidateQueries({ queryKey: ['deal-of-the-day-featured-history'] })
       queryClient.invalidateQueries({ queryKey: ['admin-audit-log'] })
     },
     onError: (error: unknown) => {

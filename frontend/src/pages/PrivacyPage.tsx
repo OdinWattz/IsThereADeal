@@ -68,7 +68,7 @@ export function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Contact</h2>
             <p>
-              Voor privacyverzoeken kun je contact opnemen via <a href="mailto:privacy@sirodin.nl" className="text-[color:var(--accent)] hover:underline">privacy@sirodin.nl</a>.
+              Voor privacyverzoeken kun je contact opnemen via <a href="mailto:support@sirodin.nl" className="text-[color:var(--accent)] hover:underline">privacy@sirodin.nl</a>.
             </p>
           </section>
 

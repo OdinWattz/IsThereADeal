@@ -271,6 +271,54 @@ class DailyFeaturedDealSkip(Base):
     )
 
 
+class FeaturedQueueItem(Base):
+    """Manually queued appids to prioritize for featured selection."""
+    __tablename__ = "featured_queue_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    steam_appid = Column(String(20), nullable=False, index=True)
+    note = Column(String(255), nullable=True)
+    position = Column(Integer, nullable=False, default=0, index=True)
+    consumed_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+
+
+class FeaturedBlacklistItem(Base):
+    """Appids that are temporarily or permanently excluded from featured selection."""
+    __tablename__ = "featured_blacklist_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    steam_appid = Column(String(20), nullable=False, unique=True, index=True)
+    reason = Column(String(255), nullable=True)
+    expires_at = Column(DateTime, nullable=True, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+
+
+class FeaturedWhitelistItem(Base):
+    """Appids that get priority/boost during featured selection."""
+    __tablename__ = "featured_whitelist_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    steam_appid = Column(String(20), nullable=False, unique=True, index=True)
+    boost = Column(Integer, nullable=False, default=3)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+
+
+class AdminAuditLog(Base):
+    """Simple admin action log for auditability."""
+    __tablename__ = "admin_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_username = Column(String(100), nullable=False, index=True)
+    action = Column(String(100), nullable=False, index=True)
+    target_type = Column(String(100), nullable=True, index=True)
+    target_value = Column(String(255), nullable=True)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+
+
 class Freebie(Base):
     """Tracks games that are temporarily free (Epic Games Store, Prime Gaming, etc.)"""
     __tablename__ = "freebies"

@@ -1,13 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, desc
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import re
+import json
 
 from app.database import get_db
-from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal, DailyFeaturedDealSkip, User
+from app.models.models import (
+    Game,
+    GamePrice,
+    PriceHistory,
+    DailyFeaturedDeal,
+    DailyFeaturedDealSkip,
+    FeaturedQueueItem,
+    FeaturedBlacklistItem,
+    FeaturedWhitelistItem,
+    AdminAuditLog,
+    SiteSetting,
+    User,
+)
 from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchResult
 from app.auth import get_admin_user
 from app.services.steam_service import search_steam_games, get_featured_deals
@@ -16,6 +29,64 @@ from app.services.itad_service import get_price_history, get_dlc_deals_for_game
 import httpx
 
 router = APIRouter(prefix="/api/games", tags=["games"])
+
+
+FEATURED_MIN_DEAL_RATING_KEY = "featured_min_deal_rating"
+FEATURED_MIN_SALE_PRICE_KEY = "featured_min_sale_price"
+FEATURED_EXCLUDE_DAYS_KEY = "featured_exclude_days"
+FEATURED_IMAGE_RETRY_KEY = "featured_image_retry_count"
+
+
+def _utcnow_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+async def _get_site_setting(db: AsyncSession, key: str) -> Optional[str]:
+    result = await db.execute(select(SiteSetting).where(SiteSetting.key == key))
+    setting = result.scalar_one_or_none()
+    return setting.value if setting else None
+
+
+async def _set_site_setting(db: AsyncSession, key: str, value: str) -> None:
+    result = await db.execute(select(SiteSetting).where(SiteSetting.key == key))
+    setting = result.scalar_one_or_none()
+    if setting is None:
+        setting = SiteSetting(key=key, value=value)
+        db.add(setting)
+    else:
+        setting.value = value
+
+
+async def _featured_config(db: AsyncSession) -> dict:
+    min_rating = await _get_site_setting(db, FEATURED_MIN_DEAL_RATING_KEY)
+    min_price = await _get_site_setting(db, FEATURED_MIN_SALE_PRICE_KEY)
+    exclude_days = await _get_site_setting(db, FEATURED_EXCLUDE_DAYS_KEY)
+    image_retry_count = await _get_site_setting(db, FEATURED_IMAGE_RETRY_KEY)
+    return {
+        "min_deal_rating": float(min_rating) if min_rating is not None else 5.0,
+        "min_sale_price": float(min_price) if min_price is not None else 1.0,
+        "exclude_days": int(exclude_days) if exclude_days is not None else 30,
+        "image_retry_count": int(image_retry_count) if image_retry_count is not None else 10,
+    }
+
+
+async def _audit_log(
+    db: AsyncSession,
+    actor: str,
+    action: str,
+    target_type: Optional[str] = None,
+    target_value: Optional[str] = None,
+    details: Optional[dict] = None,
+) -> None:
+    db.add(
+        AdminAuditLog(
+            actor_username=actor,
+            action=action,
+            target_type=target_type,
+            target_value=target_value,
+            details=json.dumps(details) if details else None,
+        )
+    )
 
 
 def _safe_int(value, default: int = 0) -> int:
@@ -105,6 +176,11 @@ async def _select_and_store_daily_featured_deal(
     import random
 
     excluded_appids = excluded_appids or set()
+    config = await _featured_config(db)
+    min_deal_rating = float(config["min_deal_rating"])
+    min_sale_price = float(config["min_sale_price"])
+    exclude_days = int(config["exclude_days"])
+    image_retry_count = int(config["image_retry_count"])
 
     # Get top deals
     deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
@@ -117,17 +193,27 @@ async def _select_and_store_daily_featured_deal(
         appid = str(deal.get("steam_appid", ""))
         if not appid or not appid.isdigit():
             continue
-        if deal.get("deal_rating", 0) < 5.0:
+        if deal.get("deal_rating", 0) < min_deal_rating:
             continue
-        if deal.get("sale_price", 0) < 1.0:
+        if deal.get("sale_price", 0) < min_sale_price:
             continue
         valid_deals.append(deal)
 
     if not valid_deals:
         return None
 
-    # Exclude deals shown in the last 30 days and explicitly excluded appids.
-    recent_cutoff = today - timedelta(days=30)
+    # Exclude active blacklist items.
+    now_naive = _utcnow_naive()
+    blacklist_result = await db.execute(
+        select(FeaturedBlacklistItem.steam_appid)
+        .where(FeaturedBlacklistItem.is_active == True)
+        .where((FeaturedBlacklistItem.expires_at.is_(None)) | (FeaturedBlacklistItem.expires_at >= now_naive))
+    )
+    blacklisted_appids = {str(row[0]) for row in blacklist_result.all()}
+    excluded_appids.update(blacklisted_appids)
+
+    # Exclude deals shown in the configured recent window and explicitly excluded appids.
+    recent_cutoff = today - timedelta(days=exclude_days)
     recent_result = await db.execute(
         select(DailyFeaturedDeal.steam_appid).where(DailyFeaturedDeal.featured_date >= recent_cutoff)
     )
@@ -142,9 +228,38 @@ async def _select_and_store_daily_featured_deal(
     if not chosen_pool:
         return None
 
-    # Shuffle to avoid picking the same top item every time if the upstream list order is stable.
-    random.shuffle(chosen_pool)
-    selected = chosen_pool[0]
+    # First try unconsumed queue items.
+    queue_result = await db.execute(
+        select(FeaturedQueueItem)
+        .where(FeaturedQueueItem.consumed_at.is_(None))
+        .order_by(FeaturedQueueItem.position.asc(), FeaturedQueueItem.created_at.asc())
+    )
+    queue_items = queue_result.scalars().all()
+    selected = None
+    selected_queue_item = None
+    by_appid = {str(d.get("steam_appid", "")): d for d in chosen_pool}
+    for queue_item in queue_items:
+        q_appid = str(queue_item.steam_appid)
+        if q_appid in by_appid:
+            selected = by_appid[q_appid]
+            selected_queue_item = queue_item
+            break
+
+    if selected is None:
+        # Weighted random: whitelist appids get a boost.
+        whitelist_result = await db.execute(
+            select(FeaturedWhitelistItem.steam_appid, FeaturedWhitelistItem.boost)
+            .where(FeaturedWhitelistItem.is_active == True)
+        )
+        whitelist_boost_map = {str(row[0]): max(1, int(row[1])) for row in whitelist_result.all()}
+        weighted_deals = []
+        for deal in chosen_pool:
+            appid = str(deal.get("steam_appid", ""))
+            weight = whitelist_boost_map.get(appid, 1)
+            weighted_deals.extend([deal] * weight)
+
+        random.shuffle(weighted_deals)
+        selected = random.choice(weighted_deals)
 
     # Quick check if Steam header image exists (fast HEAD request)
     try:
@@ -152,7 +267,7 @@ async def _select_and_store_daily_featured_deal(
             img_url = selected.get("header_image", "")
             resp = await client.head(img_url)
             if resp.status_code != 200 and valid_deals:
-                for candidate in chosen_pool[1:10]:
+                for candidate in chosen_pool[1:image_retry_count + 1]:
                     try:
                         candidate_img = candidate.get("header_image", "")
                         candidate_resp = await client.head(candidate_img)
@@ -177,6 +292,8 @@ async def _select_and_store_daily_featured_deal(
         url=selected.get("url"),
     )
     db.add(snapshot)
+    if selected_queue_item is not None:
+        selected_queue_item.consumed_at = _utcnow_naive()
     await db.commit()
     await db.refresh(snapshot)
     return snapshot
@@ -320,6 +437,16 @@ async def skip_deal_of_the_day(
     if not snapshot:
         raise HTTPException(status_code=404, detail="No replacement deal available")
 
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_skip",
+        target_type="deal_of_the_day",
+        target_value=str(snapshot.steam_appid),
+        details={"date": today.isoformat()},
+    )
+    await db.commit()
+
     return _daily_featured_deal_to_dict(snapshot)
 
 
@@ -343,6 +470,508 @@ async def get_today_deal_skip_history(
         "date": today.isoformat(),
         "count": len(skipped_appids),
         "skipped_appids": skipped_appids,
+    }
+
+
+@router.get("/deal-of-the-day/skips")
+async def get_deal_skip_history(
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: return featured deal skip history (newest first)."""
+    _ = current_user
+
+    result = await db.execute(
+        select(
+            DailyFeaturedDealSkip.id,
+            DailyFeaturedDealSkip.featured_date,
+            DailyFeaturedDealSkip.steam_appid,
+            DailyFeaturedDealSkip.created_at,
+        )
+        .order_by(DailyFeaturedDealSkip.created_at.desc())
+        .limit(limit)
+    )
+    rows = result.all()
+
+    items = [
+        {
+            "id": int(row[0]),
+            "featured_date": row[1].isoformat() if row[1] else None,
+            "steam_appid": str(row[2]),
+            "created_at": row[3].isoformat() if row[3] else None,
+        }
+        for row in rows
+    ]
+
+    return {
+        "count": len(items),
+        "items": items,
+    }
+
+
+@router.delete("/deal-of-the-day/skips/{skip_id}")
+async def delete_deal_skip_history_item(
+    skip_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: delete one skip-history entry so that appid can be eligible again."""
+    _ = current_user
+
+    result = await db.execute(
+        select(DailyFeaturedDealSkip).where(DailyFeaturedDealSkip.id == skip_id)
+    )
+    entry = result.scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Skip history entry not found")
+
+    deleted_appid = str(entry.steam_appid)
+    await db.delete(entry)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="skip_history_delete",
+        target_type="daily_featured_deal_skip",
+        target_value=deleted_appid,
+        details={"skip_id": skip_id},
+    )
+    await db.commit()
+
+    return {"ok": True, "deleted_id": skip_id}
+
+
+@router.delete("/deal-of-the-day/skips/by-date/{featured_date}")
+async def delete_deal_skip_history_by_date(
+    featured_date: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: delete all skip entries for a specific date (YYYY-MM-DD)."""
+    try:
+        date_obj = datetime.strptime(featured_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format, use YYYY-MM-DD")
+
+    result = await db.execute(
+        select(DailyFeaturedDealSkip).where(DailyFeaturedDealSkip.featured_date == date_obj)
+    )
+    entries = result.scalars().all()
+
+    for entry in entries:
+        await db.delete(entry)
+
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="skip_history_bulk_delete",
+        target_type="daily_featured_deal_skip",
+        target_value=featured_date,
+        details={"count": len(entries)},
+    )
+    await db.commit()
+    return {"ok": True, "deleted_count": len(entries), "date": featured_date}
+
+
+@router.get("/deal-of-the-day/config")
+async def get_featured_config_admin(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    return await _featured_config(db)
+
+
+@router.patch("/deal-of-the-day/config")
+async def update_featured_config_admin(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    min_rating = float(payload.get("min_deal_rating", 5.0))
+    min_price = float(payload.get("min_sale_price", 1.0))
+    exclude_days = int(payload.get("exclude_days", 30))
+    image_retry_count = int(payload.get("image_retry_count", 10))
+
+    await _set_site_setting(db, FEATURED_MIN_DEAL_RATING_KEY, str(min_rating))
+    await _set_site_setting(db, FEATURED_MIN_SALE_PRICE_KEY, str(min_price))
+    await _set_site_setting(db, FEATURED_EXCLUDE_DAYS_KEY, str(exclude_days))
+    await _set_site_setting(db, FEATURED_IMAGE_RETRY_KEY, str(image_retry_count))
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_config_update",
+        target_type="site_setting",
+        details={
+            "min_deal_rating": min_rating,
+            "min_sale_price": min_price,
+            "exclude_days": exclude_days,
+            "image_retry_count": image_retry_count,
+        },
+    )
+    await db.commit()
+    return await _featured_config(db)
+
+
+@router.post("/deal-of-the-day/manual")
+async def set_manual_featured_deal(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    from app.services.cheapshark_service import get_trending_deals
+
+    steam_appid = str(payload.get("steam_appid", "")).strip()
+    if not steam_appid or not steam_appid.isdigit():
+        raise HTTPException(status_code=400, detail="Valid steam_appid is required")
+
+    today = datetime.now(timezone.utc).date()
+    deals = await get_trending_deals(page=0, limit=250, apply_quality_filter=False)
+    selected = next((d for d in deals if str(d.get("steam_appid", "")) == steam_appid), None)
+    if not selected:
+        raise HTTPException(status_code=404, detail="Appid not found in current deal feed")
+
+    existing_result = await db.execute(
+        select(DailyFeaturedDeal).where(DailyFeaturedDeal.featured_date == today)
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        await db.delete(existing)
+
+    snapshot = DailyFeaturedDeal(
+        featured_date=today,
+        steam_appid=str(selected.get("steam_appid", "")),
+        name=str(selected.get("name", "")),
+        sale_price=float(selected.get("sale_price", 0) or 0),
+        regular_price=float(selected.get("regular_price", 0) or 0),
+        discount_percent=int(selected.get("discount_percent", 0) or 0),
+        store_name=str(selected.get("store_name", "Steam")),
+        header_image=str(selected.get("header_image", "")),
+        deal_rating=float(selected.get("deal_rating", 0) or 0),
+        url=selected.get("url"),
+    )
+    db.add(snapshot)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_manual_override",
+        target_type="deal_of_the_day",
+        target_value=steam_appid,
+        details={"date": today.isoformat()},
+    )
+    await db.commit()
+    await db.refresh(snapshot)
+    return _daily_featured_deal_to_dict(snapshot)
+
+
+@router.get("/deal-of-the-day/queue")
+async def get_featured_queue(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    result = await db.execute(
+        select(FeaturedQueueItem).order_by(FeaturedQueueItem.position.asc(), FeaturedQueueItem.created_at.asc())
+    )
+    items = result.scalars().all()
+    return {
+        "count": len(items),
+        "items": [
+            {
+                "id": item.id,
+                "steam_appid": item.steam_appid,
+                "note": item.note,
+                "position": item.position,
+                "consumed_at": item.consumed_at.isoformat() if item.consumed_at else None,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
+            }
+            for item in items
+        ],
+    }
+
+
+@router.post("/deal-of-the-day/queue")
+async def add_featured_queue_item(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    steam_appid = str(payload.get("steam_appid", "")).strip()
+    if not steam_appid or not steam_appid.isdigit():
+        raise HTTPException(status_code=400, detail="Valid steam_appid is required")
+    note = payload.get("note")
+
+    max_position_result = await db.execute(select(func.max(FeaturedQueueItem.position)))
+    max_position = max_position_result.scalar_one_or_none() or 0
+    item = FeaturedQueueItem(
+        steam_appid=steam_appid,
+        note=str(note) if note else None,
+        position=int(max_position) + 1,
+    )
+    db.add(item)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_queue_add",
+        target_type="featured_queue_item",
+        target_value=steam_appid,
+    )
+    await db.commit()
+    await db.refresh(item)
+    return {"id": item.id, "steam_appid": item.steam_appid, "position": item.position}
+
+
+@router.delete("/deal-of-the-day/queue/{queue_id}")
+async def delete_featured_queue_item(
+    queue_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    result = await db.execute(select(FeaturedQueueItem).where(FeaturedQueueItem.id == queue_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Queue item not found")
+    target = str(item.steam_appid)
+    await db.delete(item)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_queue_delete",
+        target_type="featured_queue_item",
+        target_value=target,
+    )
+    await db.commit()
+    return {"ok": True, "deleted_id": queue_id}
+
+
+@router.get("/deal-of-the-day/blacklist")
+async def get_featured_blacklist(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    result = await db.execute(select(FeaturedBlacklistItem).order_by(FeaturedBlacklistItem.created_at.desc()))
+    items = result.scalars().all()
+    return {
+        "count": len(items),
+        "items": [
+            {
+                "id": item.id,
+                "steam_appid": item.steam_appid,
+                "reason": item.reason,
+                "expires_at": item.expires_at.isoformat() if item.expires_at else None,
+                "is_active": item.is_active,
+            }
+            for item in items
+        ],
+    }
+
+
+@router.post("/deal-of-the-day/blacklist")
+async def add_featured_blacklist_item(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    steam_appid = str(payload.get("steam_appid", "")).strip()
+    if not steam_appid or not steam_appid.isdigit():
+        raise HTTPException(status_code=400, detail="Valid steam_appid is required")
+
+    reason = payload.get("reason")
+    expires_days = payload.get("expires_in_days")
+    expires_at = None
+    if expires_days is not None:
+        expires_at = _utcnow_naive() + timedelta(days=int(expires_days))
+
+    existing_result = await db.execute(
+        select(FeaturedBlacklistItem).where(FeaturedBlacklistItem.steam_appid == steam_appid)
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        existing.reason = str(reason) if reason else existing.reason
+        existing.expires_at = expires_at
+        existing.is_active = True
+        item = existing
+    else:
+        item = FeaturedBlacklistItem(
+            steam_appid=steam_appid,
+            reason=str(reason) if reason else None,
+            expires_at=expires_at,
+            is_active=True,
+        )
+        db.add(item)
+
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_blacklist_upsert",
+        target_type="featured_blacklist_item",
+        target_value=steam_appid,
+        details={"expires_in_days": expires_days},
+    )
+    await db.commit()
+    await db.refresh(item)
+    return {"id": item.id, "steam_appid": item.steam_appid, "is_active": item.is_active}
+
+
+@router.delete("/deal-of-the-day/blacklist/{item_id}")
+async def delete_featured_blacklist_item(
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    result = await db.execute(select(FeaturedBlacklistItem).where(FeaturedBlacklistItem.id == item_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Blacklist item not found")
+    target = str(item.steam_appid)
+    await db.delete(item)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_blacklist_delete",
+        target_type="featured_blacklist_item",
+        target_value=target,
+    )
+    await db.commit()
+    return {"ok": True, "deleted_id": item_id}
+
+
+@router.get("/deal-of-the-day/whitelist")
+async def get_featured_whitelist(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    result = await db.execute(select(FeaturedWhitelistItem).order_by(FeaturedWhitelistItem.created_at.desc()))
+    items = result.scalars().all()
+    return {
+        "count": len(items),
+        "items": [
+            {
+                "id": item.id,
+                "steam_appid": item.steam_appid,
+                "boost": item.boost,
+                "is_active": item.is_active,
+            }
+            for item in items
+        ],
+    }
+
+
+@router.post("/deal-of-the-day/whitelist")
+async def add_featured_whitelist_item(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    steam_appid = str(payload.get("steam_appid", "")).strip()
+    if not steam_appid or not steam_appid.isdigit():
+        raise HTTPException(status_code=400, detail="Valid steam_appid is required")
+
+    boost = max(1, int(payload.get("boost", 3)))
+    existing_result = await db.execute(
+        select(FeaturedWhitelistItem).where(FeaturedWhitelistItem.steam_appid == steam_appid)
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        existing.boost = boost
+        existing.is_active = True
+        item = existing
+    else:
+        item = FeaturedWhitelistItem(steam_appid=steam_appid, boost=boost, is_active=True)
+        db.add(item)
+
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_whitelist_upsert",
+        target_type="featured_whitelist_item",
+        target_value=steam_appid,
+        details={"boost": boost},
+    )
+    await db.commit()
+    await db.refresh(item)
+    return {"id": item.id, "steam_appid": item.steam_appid, "boost": item.boost}
+
+
+@router.delete("/deal-of-the-day/whitelist/{item_id}")
+async def delete_featured_whitelist_item(
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    result = await db.execute(select(FeaturedWhitelistItem).where(FeaturedWhitelistItem.id == item_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Whitelist item not found")
+    target = str(item.steam_appid)
+    await db.delete(item)
+    await _audit_log(
+        db,
+        actor=current_user.username,
+        action="featured_whitelist_delete",
+        target_type="featured_whitelist_item",
+        target_value=target,
+    )
+    await db.commit()
+    return {"ok": True, "deleted_id": item_id}
+
+
+@router.get("/admin/audit")
+async def get_admin_audit_log(
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    result = await db.execute(select(AdminAuditLog).order_by(desc(AdminAuditLog.created_at)).limit(limit))
+    rows = result.scalars().all()
+    return {
+        "count": len(rows),
+        "items": [
+            {
+                "id": row.id,
+                "actor_username": row.actor_username,
+                "action": row.action,
+                "target_type": row.target_type,
+                "target_value": row.target_value,
+                "details": row.details,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/admin/health")
+async def get_admin_health(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    _ = current_user
+    today = datetime.now(timezone.utc).date()
+    today_skip_count_result = await db.execute(
+        select(func.count(DailyFeaturedDealSkip.id)).where(DailyFeaturedDealSkip.featured_date == today)
+    )
+    queue_pending_result = await db.execute(
+        select(func.count(FeaturedQueueItem.id)).where(FeaturedQueueItem.consumed_at.is_(None))
+    )
+    blacklist_active_result = await db.execute(
+        select(func.count(FeaturedBlacklistItem.id)).where(FeaturedBlacklistItem.is_active == True)
+    )
+    whitelist_active_result = await db.execute(
+        select(func.count(FeaturedWhitelistItem.id)).where(FeaturedWhitelistItem.is_active == True)
+    )
+    users_result = await db.execute(select(func.count(User.id)))
+
+    return {
+        "today": today.isoformat(),
+        "today_skip_count": int(today_skip_count_result.scalar_one() or 0),
+        "queue_pending": int(queue_pending_result.scalar_one() or 0),
+        "blacklist_active": int(blacklist_active_result.scalar_one() or 0),
+        "whitelist_active": int(whitelist_active_result.scalar_one() or 0),
+        "user_count": int(users_result.scalar_one() or 0),
     }
 
 

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.database import get_db
 from app.models.models import User
 from app.models.schemas import UserCreate, UserLogin, UserOut, Token, UserUpdate, PasswordChange, DeleteAccount
-from app.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.auth import hash_password, verify_password, create_access_token, get_current_user, get_admin_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -20,7 +20,10 @@ async def register(payload: UserCreate, request: Request, db: AsyncSession = Dep
     try:
         # Check duplicates
         existing = await db.execute(
-            select(User).where((User.username == payload.username) | (User.email == payload.email))
+            select(User).where(
+                (func.lower(User.username) == payload.username.lower())
+                | (func.lower(User.email) == payload.email.lower())
+            )
         )
         if existing.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Could not create account")
@@ -78,14 +81,18 @@ async def update_profile(
     try:
         # Check if username is being updated and if it's unique
         if update.username and update.username != current_user.username:
-            result = await db.execute(select(User).where(User.username == update.username))
+            result = await db.execute(
+                select(User).where(func.lower(User.username) == update.username.lower())
+            )
             if result.scalar_one_or_none():
                 raise HTTPException(status_code=400, detail="Username already taken")
             current_user.username = update.username
 
         # Check if email is being updated and if it's unique
         if update.email and update.email != current_user.email:
-            result = await db.execute(select(User).where(User.email == update.email))
+            result = await db.execute(
+                select(User).where(func.lower(User.email) == update.email.lower())
+            )
             if result.scalar_one_or_none():
                 raise HTTPException(status_code=400, detail="Email already taken")
             current_user.email = update.email
@@ -139,3 +146,47 @@ async def delete_account(
     await db.commit()
 
     return {"message": "Account deleted successfully"}
+
+
+@router.get("/admin/users")
+async def list_users_admin(
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    result = await db.execute(select(User).order_by(User.created_at.desc()).limit(limit))
+    users = result.scalars().all()
+    return {
+        "count": len(users),
+        "items": [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+            }
+            for user in users
+        ],
+    }
+
+
+@router.patch("/admin/users/{user_id}/active")
+async def set_user_active_admin(
+    user_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    desired_state = bool(payload.get("is_active", True))
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_active = desired_state
+    await db.commit()
+    return {
+        "id": user.id,
+        "username": user.username,
+        "is_active": user.is_active,
+    }

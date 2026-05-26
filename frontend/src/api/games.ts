@@ -141,6 +141,158 @@ export interface DealSkipHistoryToday {
 export const getTodayDealSkipHistory = () =>
   api.get<DealSkipHistoryToday>('/games/deal-of-the-day/skips/today').then((r) => r.data)
 
+export interface DealSkipHistoryItem {
+  id: number
+  featured_date: string | null
+  steam_appid: string
+  created_at: string | null
+}
+
+export interface DealSkipHistoryList {
+  count: number
+  items: DealSkipHistoryItem[]
+}
+
+export const getDealSkipHistory = (limit = 100) =>
+  api.get<DealSkipHistoryList>('/games/deal-of-the-day/skips', { params: { limit } }).then((r) => r.data)
+
+export const deleteDealSkipHistoryItem = (skipId: number) =>
+  api.delete(`/games/deal-of-the-day/skips/${skipId}`).then((r) => r.data)
+
+export const deleteDealSkipHistoryByDate = (date: string) =>
+  api.delete(`/games/deal-of-the-day/skips/by-date/${date}`).then((r) => r.data)
+
+export interface FeaturedConfig {
+  min_deal_rating: number
+  min_sale_price: number
+  exclude_days: number
+  image_retry_count: number
+}
+
+export const getFeaturedConfig = () =>
+  api.get<FeaturedConfig>('/games/deal-of-the-day/config').then((r) => r.data)
+
+export const updateFeaturedConfig = (payload: Partial<FeaturedConfig>) =>
+  api.patch<FeaturedConfig>('/games/deal-of-the-day/config', payload).then((r) => r.data)
+
+export const setManualFeaturedDeal = (steam_appid: string) =>
+  api.post<DealOfDay>('/games/deal-of-the-day/manual', { steam_appid }).then((r) => r.data)
+
+export interface FeaturedQueueItem {
+  id: number
+  steam_appid: string
+  note?: string
+  position: number
+  consumed_at?: string | null
+  created_at?: string | null
+}
+
+export interface FeaturedQueueList {
+  count: number
+  items: FeaturedQueueItem[]
+}
+
+export const getFeaturedQueue = () =>
+  api.get<FeaturedQueueList>('/games/deal-of-the-day/queue').then((r) => r.data)
+
+export const addFeaturedQueueItem = (steam_appid: string, note?: string) =>
+  api.post('/games/deal-of-the-day/queue', { steam_appid, note }).then((r) => r.data)
+
+export const deleteFeaturedQueueItem = (id: number) =>
+  api.delete(`/games/deal-of-the-day/queue/${id}`).then((r) => r.data)
+
+export interface FeaturedBlacklistItem {
+  id: number
+  steam_appid: string
+  reason?: string
+  expires_at?: string | null
+  is_active: boolean
+}
+
+export interface FeaturedBlacklistList {
+  count: number
+  items: FeaturedBlacklistItem[]
+}
+
+export const getFeaturedBlacklist = () =>
+  api.get<FeaturedBlacklistList>('/games/deal-of-the-day/blacklist').then((r) => r.data)
+
+export const addFeaturedBlacklistItem = (steam_appid: string, reason?: string, expires_in_days?: number) =>
+  api.post('/games/deal-of-the-day/blacklist', { steam_appid, reason, expires_in_days }).then((r) => r.data)
+
+export const deleteFeaturedBlacklistItem = (id: number) =>
+  api.delete(`/games/deal-of-the-day/blacklist/${id}`).then((r) => r.data)
+
+export interface FeaturedWhitelistItem {
+  id: number
+  steam_appid: string
+  boost: number
+  is_active: boolean
+}
+
+export interface FeaturedWhitelistList {
+  count: number
+  items: FeaturedWhitelistItem[]
+}
+
+export const getFeaturedWhitelist = () =>
+  api.get<FeaturedWhitelistList>('/games/deal-of-the-day/whitelist').then((r) => r.data)
+
+export const addFeaturedWhitelistItem = (steam_appid: string, boost = 3) =>
+  api.post('/games/deal-of-the-day/whitelist', { steam_appid, boost }).then((r) => r.data)
+
+export const deleteFeaturedWhitelistItem = (id: number) =>
+  api.delete(`/games/deal-of-the-day/whitelist/${id}`).then((r) => r.data)
+
+export interface AdminAuditLogItem {
+  id: number
+  actor_username: string
+  action: string
+  target_type?: string | null
+  target_value?: string | null
+  details?: string | null
+  created_at?: string | null
+}
+
+export interface AdminAuditLogList {
+  count: number
+  items: AdminAuditLogItem[]
+}
+
+export const getAdminAuditLog = (limit = 100) =>
+  api.get<AdminAuditLogList>('/games/admin/audit', { params: { limit } }).then((r) => r.data)
+
+export interface AdminHealth {
+  today: string
+  today_skip_count: number
+  queue_pending: number
+  blacklist_active: number
+  whitelist_active: number
+  user_count: number
+}
+
+export const getAdminHealth = () =>
+  api.get<AdminHealth>('/games/admin/health').then((r) => r.data)
+
+export interface AdminUserItem {
+  id: number
+  username: string
+  email: string
+  is_active: boolean
+  created_at?: string | null
+}
+
+export interface AdminUsersList {
+  count: number
+  items: AdminUserItem[]
+}
+
+export const getAdminUsers = (limit = 100) =>
+  api.get<AdminUsersList>('/auth/admin/users', { params: { limit } }).then((r) => r.data)
+
+export const setAdminUserActive = (userId: number, is_active: boolean) =>
+  api.patch(`/auth/admin/users/${userId}/active`, { is_active }).then((r) => r.data)
+
 export interface TrendingDeal {
   steam_appid: string
   name: string

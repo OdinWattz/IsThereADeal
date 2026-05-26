@@ -15,6 +15,7 @@ from app.models.models import User
 
 ADMIN_USERNAME = "odinwattz"
 ADMIN_EMAIL = "odinwattez@outlook.com"
+ADMIN_USER_ID = 1
 
 # bcrypt 4.0+ raises ValueError on passwords > 72 bytes instead of silently
 # truncating. truncate_error=False restores the old silent-truncation behaviour.
@@ -94,8 +95,9 @@ async def get_optional_user(
 
 async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
     if (
-        current_user.username.lower() != ADMIN_USERNAME
-        or current_user.email.lower() != ADMIN_EMAIL
+        current_user.id != ADMIN_USER_ID
+        or current_user.username != ADMIN_USERNAME
+        or current_user.email != ADMIN_EMAIL
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -257,6 +257,20 @@ class DailyFeaturedDeal(Base):
     created_at = Column(DateTime, default=utcnow)
 
 
+class DailyFeaturedDealSkip(Base):
+    """Tracks which featured deals were skipped for a date to avoid reselecting them."""
+    __tablename__ = "daily_featured_deal_skips"
+
+    id = Column(Integer, primary_key=True, index=True)
+    featured_date = Column(Date, nullable=False, index=True)
+    steam_appid = Column(String(20), nullable=False, index=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("featured_date", "steam_appid", name="uq_daily_featured_deal_skip_date_appid"),
+    )
+
+
 class Freebie(Base):
     """Tracks games that are temporarily free (Epic Games Store, Prime Gaming, etc.)"""
     __tablename__ = "freebies"

@@ -12,7 +12,7 @@ import {
   type BlogPostCreatePayload,
   type BlogPostUpdatePayload,
 } from '../api/blog'
-import { skipDealOfTheDay } from '../api/games'
+import { getTodayDealSkipHistory, skipDealOfTheDay } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 
 const ADMIN_USERNAME = 'odinwattz'
@@ -53,6 +53,12 @@ export function AdminBlogPage() {
   const { data: guidesVisibility } = useQuery({
     queryKey: ['blog-guides-visibility'],
     queryFn: getGuidesVisibility,
+    enabled: isAuthenticated() && isAdmin,
+  })
+
+  const { data: dealSkipHistory, isLoading: isLoadingDealSkipHistory } = useQuery({
+    queryKey: ['deal-of-the-day-skips-today'],
+    queryFn: getTodayDealSkipHistory,
     enabled: isAuthenticated() && isAdmin,
   })
 
@@ -104,6 +110,7 @@ export function AdminBlogPage() {
     onSuccess: (deal) => {
       toast.success(`Nieuwe featured deal: ${deal.name}`)
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day'] })
+      queryClient.invalidateQueries({ queryKey: ['deal-of-the-day-skips-today'] })
     },
     onError: () => toast.error('Featured game skippen mislukt'),
   })
@@ -237,6 +244,36 @@ export function AdminBlogPage() {
         >
           {skipDealOfDayMutation.isPending ? 'Nieuwe featured game ophalen...' : 'Skip featured game'}
         </button>
+        <div style={{ marginTop: '12px', color: '#1a4a68', fontSize: '0.92rem' }}>
+          {isLoadingDealSkipHistory ? (
+            <span style={{ color: '#5888a5' }}>Skipgeschiedenis laden...</span>
+          ) : (
+            <>
+              <div style={{ marginBottom: '8px' }}>
+                Vandaag geskipt: <strong>{dealSkipHistory?.count ?? 0}</strong>
+              </div>
+              {(dealSkipHistory?.skipped_appids?.length ?? 0) > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {dealSkipHistory?.skipped_appids.map((appid) => (
+                    <span
+                      key={appid}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '999px',
+                        background: 'rgba(18, 120, 168, 0.12)',
+                        border: '1px solid rgba(18, 120, 168, 0.25)',
+                        color: '#1278a8',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {appid}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </section>
 
       <form

@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 import re
 
 from app.database import get_db
-from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal, User
+from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal, DailyFeaturedDealSkip, User
 from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchResult
 from app.auth import get_admin_user
 from app.services.steam_service import search_steam_games, get_featured_deals
@@ -291,9 +291,23 @@ async def skip_deal_of_the_day(
     )
     existing = existing_result.scalar_one_or_none()
 
+    skip_history_result = await db.execute(
+        select(DailyFeaturedDealSkip.steam_appid).where(DailyFeaturedDealSkip.featured_date == today)
+    )
+    today_skipped_appids = {str(row[0]) for row in skip_history_result.all()}
+
     excluded_appids: set[str] = set()
+    excluded_appids.update(today_skipped_appids)
     if existing:
-        excluded_appids.add(str(existing.steam_appid))
+        current_appid = str(existing.steam_appid)
+        excluded_appids.add(current_appid)
+        if current_appid not in today_skipped_appids:
+            db.add(
+                DailyFeaturedDealSkip(
+                    featured_date=today,
+                    steam_appid=current_appid,
+                )
+            )
         await db.delete(existing)
         await db.commit()
 
@@ -307,6 +321,29 @@ async def skip_deal_of_the_day(
         raise HTTPException(status_code=404, detail="No replacement deal available")
 
     return _daily_featured_deal_to_dict(snapshot)
+
+
+@router.get("/deal-of-the-day/skips/today")
+async def get_today_deal_skip_history(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: return today's skipped featured appids."""
+    _ = current_user
+    today = datetime.now(timezone.utc).date()
+
+    result = await db.execute(
+        select(DailyFeaturedDealSkip.steam_appid)
+        .where(DailyFeaturedDealSkip.featured_date == today)
+        .order_by(DailyFeaturedDealSkip.created_at.asc())
+    )
+    skipped_appids = [str(row[0]) for row in result.all()]
+
+    return {
+        "date": today.isoformat(),
+        "count": len(skipped_appids),
+        "skipped_appids": skipped_appids,
+    }
 
 
 @router.get("/deals")

@@ -132,6 +132,15 @@ export interface DealOfDay {
 export const skipDealOfTheDay = () =>
   api.post<DealOfDay>('/games/deal-of-the-day/skip').then((r) => r.data)
 
+export interface DealSkipHistoryToday {
+  date: string
+  count: number
+  skipped_appids: string[]
+}
+
+export const getTodayDealSkipHistory = () =>
+  api.get<DealSkipHistoryToday>('/games/deal-of-the-day/skips/today').then((r) => r.data)
+
 export interface TrendingDeal {
   steam_appid: string
   name: string

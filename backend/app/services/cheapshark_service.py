@@ -11,7 +11,7 @@ from app.services import cache as _cache
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
 CHEAPSHARK_HEADERS = {
     # CheapShark requires a descriptive User-Agent; missing UA can return HTTP 400.
-    "User-Agent": os.getenv("CHEAPSHARK_USER_AGENT", "IsThereADeal/1.0 (contact: admin@serpodin.nl)"),
+    "User-Agent": os.getenv("CHEAPSHARK_USER_AGENT", "IsThereADeal/1.0 (contact: admin@sirodin.nl)"),
     "Accept": "application/json",
 }
 

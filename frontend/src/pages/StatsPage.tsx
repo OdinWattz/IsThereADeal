@@ -84,7 +84,7 @@ export function StatsPage() {
         title="Besparingen Dashboard - Zie je Game Deal Statistieken"
         description="Bekijk hoeveel je bespaart met je wishlist en alerts. Real-time statistieken over je game deals en kortingen."
         keywords="game besparingen, deal statistieken, game korting tracker, wishlist stats"
-        url="https://serpodin.nl/stats"
+        url="https://sirodin.nl/stats"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}

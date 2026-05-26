@@ -1,11 +1,11 @@
-# SEO Implementatie voor serpodin.nl
+# SEO Implementatie voor sirodin.nl
 
 ## 📦 Wat is er geïmplementeerd?
 
 ### 1. HTML Meta Tags (`frontend/index.html`)
 
 ✅ **Basis SEO**
-- Title tag: "Serpodin - Game Prijsvergelijking | Beste Game Deals & Kortingen"
+- Title tag: "Sirodin - Game Prijsvergelijking | Beste Game Deals & Kortingen"
 - Meta description (160 karakters)
 - Keywords meta tag
 - Author tag
@@ -34,10 +34,10 @@
 ```json
 {
   "@type": "WebSite",
-  "name": "Serpodin",
+  "name": "Sirodin",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://serpodin.nl/search?q={search_term_string}"
+    "target": "https://sirodin.nl/search?q={search_term_string}"
   }
 }
 ```
@@ -46,9 +46,9 @@
 ```json
 {
   "@type": "Organization",
-  "name": "Serpodin",
-  "url": "https://serpodin.nl",
-  "logo": "https://serpodin.nl/favicon.svg"
+  "name": "Sirodin",
+  "url": "https://sirodin.nl",
+  "logo": "https://sirodin.nl/favicon.svg"
 }
 ```
 
@@ -91,7 +91,7 @@
   title={`${game.name} Prijzen & Deals`}
   description={`Vergelijk prijzen voor ${game.name}...`}
   image={game.header_image}
-  url={`https://serpodin.nl/game/${appid}`}
+  url={`https://sirodin.nl/game/${appid}`}
   type="article"
 />
 ```
@@ -101,7 +101,7 @@
 <SEO
   title="Beste Game Deals | Trending Aanbiedingen"
   description="Ontdek de beste game deals..."
-  url="https://serpodin.nl/deals"
+  url="https://sirodin.nl/deals"
 />
 ```
 
@@ -140,15 +140,15 @@ git push origin main
 1. Ga naar Vercel dashboard
 2. Check dat build succesvol is
 3. Test deze URLs:
-   - https://serpodin.nl/
-   - https://serpodin.nl/robots.txt
-   - https://serpodin.nl/sitemap.xml
-   - https://serpodin.nl/manifest.json
+   - https://sirodin.nl/
+   - https://sirodin.nl/robots.txt
+   - https://sirodin.nl/sitemap.xml
+   - https://sirodin.nl/manifest.json
 
 ### Stap 3: Google Search Console
 1. Ga naar [Google Search Console](https://search.google.com/search-console)
 2. Klik "Add Property" → "URL prefix"
-3. Voer in: `https://serpodin.nl`
+3. Voer in: `https://sirodin.nl`
 4. Verifieer via HTML tag methode:
    ```html
    <!-- Voeg toe aan <head> in index.html -->
@@ -161,7 +161,7 @@ git push origin main
 
 ### Stap 4: Bing Webmaster Tools (Optioneel)
 1. Ga naar [Bing Webmaster Tools](https://www.bing.com/webmasters)
-2. Voeg site toe: `https://serpodin.nl`
+2. Voeg site toe: `https://sirodin.nl`
 3. Importeer van Google Search Console (makkelijkst)
 4. Of verifieer via XML file
 
@@ -173,7 +173,7 @@ git push origin main
 
 2. [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
    - Test Open Graph tags
-   - URL: `https://serpodin.nl`
+   - URL: `https://sirodin.nl`
 
 3. [Twitter Card Validator](https://cards-dev.twitter.com/validator)
    - Test Twitter Cards
@@ -187,7 +187,7 @@ git push origin main
 ### Week 1-2: Indexering
 - Google crawlt de site
 - Eerste pagina's verschijnen in index
-- Check via: `site:serpodin.nl` in Google
+- Check via: `site:sirodin.nl` in Google
 
 ### Week 3-4: Eerste Rankings
 - Begin te ranken voor long-tail keywords
@@ -306,4 +306,4 @@ git push origin main
    - YouTube integration
    - VideoObject schema
 
-Succes met de SEO van serpodin.nl! 🚀
+Succes met de SEO van sirodin.nl! 🚀

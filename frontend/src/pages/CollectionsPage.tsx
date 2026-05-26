@@ -65,7 +65,7 @@ export function CollectionsPage() {
         title="Mijn Collecties - Organiseer je Game Library"
         description="Maak custom game collecties en organiseer je library. Groepeer games per genre, serie of interesse."
         keywords="game collecties, game library, organiseer games, game groepen"
-        url="https://serpodin.nl/collections"
+        url="https://sirodin.nl/collections"
       />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}

@@ -1,4 +1,4 @@
-# robots.txt for serpodin.nl
+# robots.txt for sirodin.nl
 
 User-agent: *
 Allow: /
@@ -8,7 +8,7 @@ Disallow: /wishlist
 Disallow: /alerts
 
 # Sitemap location
-Sitemap: https://serpodin.nl/sitemap.xml
+Sitemap: https://sirodin.nl/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

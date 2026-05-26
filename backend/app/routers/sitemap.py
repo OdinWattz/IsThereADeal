@@ -11,11 +11,11 @@ from ..models.models import Game
 router = APIRouter()
 
 STATIC_URLS = [
-    {"loc": "https://serpodin.nl/", "priority": "1.0", "changefreq": "daily"},
-    {"loc": "https://serpodin.nl/deals", "priority": "0.9", "changefreq": "daily"},
-    {"loc": "https://serpodin.nl/browse", "priority": "0.8", "changefreq": "weekly"},
-    {"loc": "https://serpodin.nl/login", "priority": "0.5", "changefreq": "monthly"},
-    {"loc": "https://serpodin.nl/register", "priority": "0.5", "changefreq": "monthly"},
+    {"loc": "https://sirodin.nl/", "priority": "1.0", "changefreq": "daily"},
+    {"loc": "https://sirodin.nl/deals", "priority": "0.9", "changefreq": "daily"},
+    {"loc": "https://sirodin.nl/browse", "priority": "0.8", "changefreq": "weekly"},
+    {"loc": "https://sirodin.nl/login", "priority": "0.5", "changefreq": "monthly"},
+    {"loc": "https://sirodin.nl/register", "priority": "0.5", "changefreq": "monthly"},
 ]
 
 
@@ -47,7 +47,7 @@ async def generate_sitemap():
 
             for game in games:
                 xml_content.append("  <url>")
-                xml_content.append(f'    <loc>https://serpodin.nl/game/{game.steam_appid}</loc>')
+                xml_content.append(f'    <loc>https://sirodin.nl/game/{game.steam_appid}</loc>')
                 lastmod = game.last_updated.strftime("%Y-%m-%d") if game.last_updated else datetime.now().strftime("%Y-%m-%d")
                 xml_content.append(f'    <lastmod>{lastmod}</lastmod>')
                 xml_content.append('    <changefreq>weekly</changefreq>')
@@ -80,7 +80,7 @@ Disallow: /profile
 Disallow: /wishlist
 Disallow: /alerts
 
-Sitemap: https://serpodin.nl/sitemap.xml
+Sitemap: https://sirodin.nl/sitemap.xml
 
 Crawl-delay: 1
 """

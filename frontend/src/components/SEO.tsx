@@ -26,15 +26,15 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'Serpodin - Game Prijsvergelijking | Beste Game Deals & Kortingen',
+  title = 'Sirodin - Game Prijsvergelijking | Beste Game Deals & Kortingen',
   description = 'Vergelijk game prijzen van 30+ winkels zoals Steam, GOG, Humble Bundle en meer. Vind de beste deals, volg prijsgeschiedenis en krijg prijsalerts voor je favoriete games.',
   keywords = 'game prijzen, game deals, game korting, steam prijzen, pc games goedkoop, game prijsvergelijking, beste game deals',
-  image = 'https://serpodin.nl/og-image.png',
-  url = 'https://serpodin.nl/',
+  image = 'https://sirodin.nl/og-image.png',
+  url = 'https://sirodin.nl/',
   type = 'website',
   product,
 }: SEOProps) {
-  const fullTitle = title.includes('Serpodin') ? title : `${title} | Serpodin`;
+  const fullTitle = title.includes('Sirodin') ? title : `${title} | Sirodin`;
 
   // Build Product schema for Google
   const productSchema = product ? {

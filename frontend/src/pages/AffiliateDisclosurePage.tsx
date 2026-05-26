@@ -5,15 +5,15 @@ export function AffiliateDisclosurePage() {
     <>
       <SEO
         title="Affiliate disclosure"
-        description="Uitleg over affiliate-links, commission disclosures en hoe prijsvergelijking op Serpodin werkt."
-        url="https://serpodin.nl/affiliate-disclosure"
+        description="Uitleg over affiliate-links, commission disclosures en hoe prijsvergelijking op Sirodin werkt."
+        url="https://sirodin.nl/affiliate-disclosure"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <h1 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Affiliate disclosure</h1>
         <div className="space-y-4 text-sm sm:text-base leading-7" style={{ color: 'var(--text-secondary)' }}>
           <p>
-            Serpodin gebruikt soms affiliate- of partnerlinks. Als je via zo&apos;n link een aankoop doet, kan deze site een commissie ontvangen.
+            Sirodin gebruikt soms affiliate- of partnerlinks. Als je via zo&apos;n link een aankoop doet, kan deze site een commissie ontvangen.
             Dat kost jou niets extra.
           </p>
           <p>

@@ -5,8 +5,8 @@ export function PrivacyPage() {
     <>
       <SEO
         title="Privacyverklaring"
-        description="Privacyverklaring voor Serpodin met uitleg over accountgegevens, lokale opslag, prijsalerts en externe prijsbronnen."
-        url="https://serpodin.nl/privacy"
+        description="Privacyverklaring voor Sirodin met uitleg over accountgegevens, lokale opslag, prijsalerts en externe prijsbronnen."
+        url="https://sirodin.nl/privacy"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -68,7 +68,7 @@ export function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Contact</h2>
             <p>
-              Voor privacyverzoeken kun je contact opnemen via <a href="mailto:privacy@serpodin.nl" className="text-[color:var(--accent)] hover:underline">privacy@serpodin.nl</a>.
+              Voor privacyverzoeken kun je contact opnemen via <a href="mailto:privacy@sirodin.nl" className="text-[color:var(--accent)] hover:underline">privacy@sirodin.nl</a>.
             </p>
           </section>
 

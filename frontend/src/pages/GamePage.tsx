@@ -276,7 +276,7 @@ export function GamePage() {
           description={`Vergelijk prijzen voor ${game.name} van 30+ winkels. ${game.short_description || 'Vind de beste deals en kortingen.'}`}
           keywords={`${game.name}, ${game.name} prijs, ${game.name} deal, ${game.name} korting, ${game.genres || 'game'}`}
           image={game.header_image}
-          url={`https://serpodin.nl/game/${appid}`}
+          url={`https://sirodin.nl/game/${appid}`}
           type="article"
           product={productSchemaData}
         />

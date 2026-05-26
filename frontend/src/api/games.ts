@@ -118,6 +118,20 @@ export interface FeaturedDeal {
 export const getFeaturedDeals = () =>
   api.get<FeaturedDeal[]>('/games/featured').then((r) => r.data)
 
+export interface DealOfDay {
+  steam_appid: string
+  name: string
+  sale_price: number
+  regular_price: number
+  discount_percent: number
+  store_name: string
+  header_image: string
+  deal_rating: number
+}
+
+export const skipDealOfTheDay = () =>
+  api.post<DealOfDay>('/games/deal-of-the-day/skip').then((r) => r.data)
+
 export interface TrendingDeal {
   steam_appid: string
   name: string

@@ -7,8 +7,9 @@ from datetime import datetime, timezone, timedelta
 import re
 
 from app.database import get_db
-from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal
+from app.models.models import Game, GamePrice, PriceHistory, DailyFeaturedDeal, User
 from app.models.schemas import GameOut, GamePriceOut, PriceHistoryPoint, SearchResult
+from app.auth import get_admin_user
 from app.services.steam_service import search_steam_games, get_featured_deals
 from app.services.price_aggregator import upsert_game_and_prices
 from app.services.itad_service import get_price_history, get_dlc_deals_for_game
@@ -95,6 +96,92 @@ def _daily_featured_deal_to_dict(deal: DailyFeaturedDeal) -> dict:
     }
 
 
+async def _select_and_store_daily_featured_deal(
+    db: AsyncSession,
+    today,
+    excluded_appids: Optional[set[str]] = None,
+) -> Optional[DailyFeaturedDeal]:
+    from app.services.cheapshark_service import get_trending_deals
+    import random
+
+    excluded_appids = excluded_appids or set()
+
+    # Get top deals
+    deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
+    if not deals:
+        return None
+
+    # Filter to only include games with valid Steam data
+    valid_deals = []
+    for deal in deals:
+        appid = str(deal.get("steam_appid", ""))
+        if not appid or not appid.isdigit():
+            continue
+        if deal.get("deal_rating", 0) < 5.0:
+            continue
+        if deal.get("sale_price", 0) < 1.0:
+            continue
+        valid_deals.append(deal)
+
+    if not valid_deals:
+        return None
+
+    # Exclude deals shown in the last 30 days and explicitly excluded appids.
+    recent_cutoff = today - timedelta(days=30)
+    recent_result = await db.execute(
+        select(DailyFeaturedDeal.steam_appid).where(DailyFeaturedDeal.featured_date >= recent_cutoff)
+    )
+    recent_appids = {str(row[0]) for row in recent_result.all()}
+    recent_appids.update(str(appid) for appid in excluded_appids if appid)
+
+    eligible_deals = [deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in recent_appids]
+    chosen_pool = eligible_deals or [
+        deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in excluded_appids
+    ]
+
+    if not chosen_pool:
+        return None
+
+    # Shuffle to avoid picking the same top item every time if the upstream list order is stable.
+    random.shuffle(chosen_pool)
+    selected = chosen_pool[0]
+
+    # Quick check if Steam header image exists (fast HEAD request)
+    try:
+        async with httpx.AsyncClient(timeout=2) as client:
+            img_url = selected.get("header_image", "")
+            resp = await client.head(img_url)
+            if resp.status_code != 200 and valid_deals:
+                for candidate in chosen_pool[1:10]:
+                    try:
+                        candidate_img = candidate.get("header_image", "")
+                        candidate_resp = await client.head(candidate_img)
+                        if candidate_resp.status_code == 200:
+                            selected = candidate
+                            break
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+
+    snapshot = DailyFeaturedDeal(
+        featured_date=today,
+        steam_appid=str(selected.get("steam_appid", "")),
+        name=str(selected.get("name", "")),
+        sale_price=float(selected.get("sale_price", 0) or 0),
+        regular_price=float(selected.get("regular_price", 0) or 0),
+        discount_percent=int(selected.get("discount_percent", 0) or 0),
+        store_name=str(selected.get("store_name", "Steam")),
+        header_image=str(selected.get("header_image", "")),
+        deal_rating=float(selected.get("deal_rating", 0) or 0),
+        url=selected.get("url"),
+    )
+    db.add(snapshot)
+    await db.commit()
+    await db.refresh(snapshot)
+    return snapshot
+
+
 @router.get("/search", response_model=List[SearchResult])
 async def search_games(
     q: str = Query(..., min_length=2),
@@ -174,10 +261,6 @@ async def get_deal_of_the_day(db: AsyncSession = Depends(get_db)):
     Get the featured Deal of the Day.
     Stores one selected deal per day and avoids reusing deals from the last 30 days.
     """
-    from app.services.cheapshark_service import get_trending_deals
-    import random
-    import httpx
-
     today = datetime.now(timezone.utc).date()
 
     existing_result = await db.execute(
@@ -187,80 +270,42 @@ async def get_deal_of_the_day(db: AsyncSession = Depends(get_db)):
     if existing:
         return _daily_featured_deal_to_dict(existing)
 
-    # Get top deals
-    deals = await get_trending_deals(page=0, limit=100, apply_quality_filter=True)
-
-    if not deals:
+    snapshot = await _select_and_store_daily_featured_deal(db=db, today=today)
+    if not snapshot:
         return None
 
-    # Filter to only include games with valid Steam data
-    valid_deals = []
-    for deal in deals:
-        # Skip games with obviously invalid appids
-        appid = str(deal.get("steam_appid", ""))
-        if not appid or not appid.isdigit():
-            continue
+    return _daily_featured_deal_to_dict(snapshot)
 
-        # Skip games with very low deal ratings
-        if deal.get("deal_rating", 0) < 5.0:
-            continue
 
-        # Skip games that are too cheap (often broken/removed)
-        if deal.get("sale_price", 0) < 1.0:
-            continue
+@router.post("/deal-of-the-day/skip")
+async def skip_deal_of_the_day(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: skip today's featured deal and select another one."""
+    _ = current_user
+    today = datetime.now(timezone.utc).date()
 
-        valid_deals.append(deal)
-
-    if not valid_deals:
-        return None
-
-    # Exclude deals shown in the last 30 days, then pick the first remaining deal.
-    recent_cutoff = today - timedelta(days=30)
-    recent_result = await db.execute(
-        select(DailyFeaturedDeal.steam_appid).where(DailyFeaturedDeal.featured_date >= recent_cutoff)
+    existing_result = await db.execute(
+        select(DailyFeaturedDeal).where(DailyFeaturedDeal.featured_date == today)
     )
-    recent_appids = {str(row[0]) for row in recent_result.all()}
+    existing = existing_result.scalar_one_or_none()
 
-    eligible_deals = [deal for deal in valid_deals if str(deal.get("steam_appid", "")) not in recent_appids]
-    chosen_pool = eligible_deals or valid_deals
+    excluded_appids: set[str] = set()
+    if existing:
+        excluded_appids.add(str(existing.steam_appid))
+        await db.delete(existing)
+        await db.commit()
 
-    # Shuffle to avoid picking the same top item every time if the upstream list order is stable.
-    random.shuffle(chosen_pool)
-    selected = chosen_pool[0]
-
-    # Quick check if Steam header image exists (fast HEAD request)
-    try:
-        async with httpx.AsyncClient(timeout=2) as client:
-            img_url = selected.get("header_image", "")
-            resp = await client.head(img_url)
-            if resp.status_code != 200 and valid_deals:
-                for candidate in chosen_pool[1:10]:
-                    try:
-                        candidate_img = candidate.get("header_image", "")
-                        candidate_resp = await client.head(candidate_img)
-                        if candidate_resp.status_code == 200:
-                            selected = candidate
-                            break
-                    except Exception:
-                        continue
-    except Exception:
-        pass
-
-    snapshot = DailyFeaturedDeal(
-        featured_date=today,
-        steam_appid=str(selected.get("steam_appid", "")),
-        name=str(selected.get("name", "")),
-        sale_price=float(selected.get("sale_price", 0) or 0),
-        regular_price=float(selected.get("regular_price", 0) or 0),
-        discount_percent=int(selected.get("discount_percent", 0) or 0),
-        store_name=str(selected.get("store_name", "Steam")),
-        header_image=str(selected.get("header_image", "")),
-        deal_rating=float(selected.get("deal_rating", 0) or 0),
-        url=selected.get("url"),
+    snapshot = await _select_and_store_daily_featured_deal(
+        db=db,
+        today=today,
+        excluded_appids=excluded_appids,
     )
-    db.add(snapshot)
-    await db.commit()
-    await db.refresh(snapshot)
+
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="No replacement deal available")
+
     return _daily_featured_deal_to_dict(snapshot)
 
 

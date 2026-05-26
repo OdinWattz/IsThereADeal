@@ -12,6 +12,7 @@ import {
   type BlogPostCreatePayload,
   type BlogPostUpdatePayload,
 } from '../api/blog'
+import { skipDealOfTheDay } from '../api/games'
 import { useAuthStore } from '../store/authStore'
 
 const ADMIN_USERNAME = 'odinwattz'
@@ -96,6 +97,15 @@ export function AdminBlogPage() {
       queryClient.invalidateQueries({ queryKey: ['blog-guides-visibility'] })
     },
     onError: () => toast.error('Gidsen zichtbaarheid aanpassen mislukt'),
+  })
+
+  const skipDealOfDayMutation = useMutation({
+    mutationFn: skipDealOfTheDay,
+    onSuccess: (deal) => {
+      toast.success(`Nieuwe featured deal: ${deal.name}`)
+      queryClient.invalidateQueries({ queryKey: ['deal-of-the-day'] })
+    },
+    onError: () => toast.error('Featured game skippen mislukt'),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -195,6 +205,38 @@ export function AdminBlogPage() {
           />
           Gidsen knop tonen in navbar
         </label>
+      </section>
+
+      <section
+        style={{
+          border: '1px solid rgba(90, 175, 225, 0.35)',
+          background: 'rgba(225,245,255,0.5)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+        }}
+      >
+        <h2 style={{ color: '#082030', margin: '0 0 6px' }}>Deal of the Day</h2>
+        <p style={{ color: '#5888a5', margin: '0 0 10px' }}>
+          Forceer direct een andere featured game voor vandaag.
+        </p>
+        <button
+          type="button"
+          onClick={() => skipDealOfDayMutation.mutate()}
+          disabled={skipDealOfDayMutation.isPending}
+          style={{
+            padding: '10px 14px',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#1278a8',
+            color: 'white',
+            cursor: skipDealOfDayMutation.isPending ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            opacity: skipDealOfDayMutation.isPending ? 0.75 : 1,
+          }}
+        >
+          {skipDealOfDayMutation.isPending ? 'Nieuwe featured game ophalen...' : 'Skip featured game'}
+        </button>
       </section>
 
       <form

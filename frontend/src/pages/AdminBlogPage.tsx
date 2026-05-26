@@ -244,7 +244,16 @@ export function AdminBlogPage() {
       queryClient.invalidateQueries({ queryKey: ['deal-of-the-day'] })
       queryClient.invalidateQueries({ queryKey: ['admin-audit-log'] })
     },
-    onError: () => toast.error('Handmatig instellen mislukt'),
+    onError: (error: unknown) => {
+      const message =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail === 'string'
+          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : 'Handmatig instellen mislukt'
+      toast.error(message || 'Handmatig instellen mislukt')
+    },
   })
 
   const addQueueItemMutation = useMutation({

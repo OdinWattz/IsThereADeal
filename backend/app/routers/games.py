@@ -643,7 +643,54 @@ async def set_manual_featured_deal(
     deals = await get_trending_deals(page=0, limit=250, apply_quality_filter=False)
     selected = next((d for d in deals if str(d.get("steam_appid", "")) == steam_appid), None)
     if not selected:
-        raise HTTPException(status_code=404, detail="Appid not found in current deal feed")
+        # Fallback: use existing DB data or fetch fresh data for this appid.
+        game = None
+        try:
+            game = await upsert_game_and_prices(db, steam_appid, include_key_resellers=False)
+        except Exception:
+            game = None
+
+        if game is None:
+            game_result = await db.execute(
+                select(Game)
+                .where(Game.steam_appid == steam_appid)
+                .options(selectinload(Game.prices))
+            )
+            game = game_result.scalar_one_or_none()
+        else:
+            game_result = await db.execute(
+                select(Game)
+                .where(Game.id == game.id)
+                .options(selectinload(Game.prices))
+            )
+            game = game_result.scalar_one_or_none()
+
+        if game is None:
+            raise HTTPException(status_code=404, detail="Game/appid not found")
+
+        prices = list(game.prices or [])
+        prices_with_sale = [p for p in prices if p.sale_price is not None]
+        if prices_with_sale:
+            best_price = min(prices_with_sale, key=lambda p: float(p.sale_price or 0))
+        else:
+            prices_with_regular = [p for p in prices if p.regular_price is not None]
+            best_price = min(prices_with_regular, key=lambda p: float(p.regular_price or 0)) if prices_with_regular else None
+
+        sale_price = float(best_price.sale_price or best_price.regular_price or 0) if best_price else 0.0
+        regular_price = float(best_price.regular_price or sale_price or 0) if best_price else 0.0
+        discount_percent = int(best_price.discount_percent or 0) if best_price else 0
+
+        selected = {
+            "steam_appid": str(game.steam_appid),
+            "name": str(game.name or "Unknown Game"),
+            "sale_price": sale_price,
+            "regular_price": regular_price,
+            "discount_percent": discount_percent,
+            "store_name": str(best_price.store_name) if best_price and best_price.store_name else "Unknown",
+            "header_image": str(game.header_image or ""),
+            "deal_rating": 0.0,
+            "url": str(best_price.url) if best_price and best_price.url else None,
+        }
 
     existing_result = await db.execute(
         select(DailyFeaturedDeal).where(DailyFeaturedDeal.featured_date == today)

@@ -142,3 +142,39 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes wishlist-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes wishlist-pop {
+  0% { transform: scale(0.82); }
+  65% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.wishlist-heart-btn {
+  transform: scale(0.92);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.wishlist-heart-btn:hover,
+.wishlist-heart-btn:focus-visible {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.42), 0 8px 18px rgba(10, 34, 52, 0.35);
+  filter: saturate(1.15);
+}
+
+.wishlist-heart-btn:active {
+  transform: scale(0.9);
+}
+
+.wishlist-heart-btn.is-active {
+  animation: wishlist-pulse 1.25s ease-in-out infinite;
+}
+
+.wishlist-heart-btn.is-busy .wishlist-heart-icon,
+.wishlist-heart-btn.is-active .wishlist-heart-icon {
+  animation: wishlist-pop 0.24s ease-out;
+}

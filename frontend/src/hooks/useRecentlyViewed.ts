@@ -64,9 +64,23 @@ export function useRecentlyViewed() {
     }
   }, [])
 
+  const removeFromRecentlyViewed = useCallback((steamAppid: string) => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      const existing: RecentlyViewedGame[] = stored ? JSON.parse(stored) : []
+      const updated = existing.filter((g) => g.steam_appid !== steamAppid)
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      setRecentlyViewed(updated)
+    } catch (error) {
+      console.error('Failed to remove recently viewed item:', error)
+    }
+  }, [])
+
   return {
     recentlyViewed,
     addToRecentlyViewed,
     clearRecentlyViewed,
+    removeFromRecentlyViewed,
   }
 }

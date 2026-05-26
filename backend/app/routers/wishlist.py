@@ -12,6 +12,40 @@ from app.services.price_aggregator import upsert_game_and_prices
 from app.services.steam_wishlist_service import import_steam_wishlist
 from app.routers.games import _enrich_game
 
+
+async def _create_fallback_game_from_appid(db: AsyncSession, steam_appid: str) -> Game:
+    """Create a minimal Game row when external metadata lookup fails."""
+    # Re-check in case another request created the game concurrently.
+    existing_result = await db.execute(select(Game).where(Game.steam_appid == steam_appid))
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        return existing
+
+    fallback_name = f"Steam App {steam_appid}"
+    fallback_header = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/header.jpg"
+
+    # Try to enrich fallback data from current trending deals when available.
+    try:
+        from app.services.cheapshark_service import get_trending_deals
+
+        deals = await get_trending_deals(page=0, limit=250, apply_quality_filter=False)
+        matched = next((d for d in deals if str(d.get("steam_appid", "")) == steam_appid), None)
+        if matched:
+            fallback_name = str(matched.get("name") or fallback_name)
+            fallback_header = str(matched.get("header_image") or fallback_header)
+    except Exception:
+        pass
+
+    game = Game(
+        steam_appid=steam_appid,
+        name=fallback_name,
+        header_image=fallback_header,
+        steam_url=f"https://store.steampowered.com/app/{steam_appid}/",
+    )
+    db.add(game)
+    await db.flush()
+    return game
+
 router = APIRouter(prefix="/api/wishlist", tags=["wishlist"])
 
 
@@ -69,17 +103,21 @@ async def add_to_wishlist(
 
         # Support both game_id and steam_appid
         if payload.steam_appid:
+            steam_appid = str(payload.steam_appid).strip()
+            if not steam_appid.isdigit():
+                raise HTTPException(status_code=400, detail="Invalid steam_appid")
+
             # Try to find existing game by steam_appid
             result = await db.execute(
-                select(Game).where(Game.steam_appid == payload.steam_appid)
+                select(Game).where(Game.steam_appid == steam_appid)
             )
             game = result.scalar_one_or_none()
 
             # If not found, fetch and save it automatically
             if not game:
-                game = await upsert_game_and_prices(db, payload.steam_appid, include_key_resellers=False)
+                game = await upsert_game_and_prices(db, steam_appid, include_key_resellers=False)
                 if not game:
-                    raise HTTPException(status_code=404, detail="Game not found")
+                    game = await _create_fallback_game_from_appid(db, steam_appid)
                 await db.commit()
         elif payload.game_id:
             # Legacy: support game_id directly

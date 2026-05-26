@@ -1,18 +1,81 @@
-import { useQuery } from '@tanstack/react-query'
-import { getFeaturedDeals } from '../api/games'
-import { TrendingDown, Zap, BarChart2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState, type MouseEvent } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { addToWishlist, getFeaturedDeals, getWishlist, removeFromWishlist } from '../api/games'
+import { TrendingDown, Zap, BarChart2, Heart } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 // import { DealOfTheDay } from '../components/DealOfTheDay'
 import { RecentlyViewed } from '../components/RecentlyViewed'
 import SEO from '../components/SEO'
 import { OptimizedImage } from '../components/OptimizedImage'
+import { useAuthStore } from '../store/authStore'
+import toast from 'react-hot-toast'
 
 export function HomePage() {
+  const { isAuthenticated } = useAuthStore()
+  const authenticated = isAuthenticated()
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [pendingWishlistAppid, setPendingWishlistAppid] = useState<string | null>(null)
+
   const { data: featured = [], isLoading } = useQuery({
     queryKey: ['featured'],
     queryFn: getFeaturedDeals,
     staleTime: 1000 * 60 * 15,
   })
+
+  const { data: wishlistItems = [] } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: () => getWishlist(),
+    enabled: authenticated,
+    staleTime: 1000 * 60,
+  })
+
+  const wishlistByAppid = new Map(
+    wishlistItems.map((item) => [item.game.steam_appid, item.id] as const)
+  )
+
+  const toggleWishlistMutation = useMutation({
+    mutationFn: async (steamAppid: string) => {
+      const wishlistId = wishlistByAppid.get(steamAppid)
+      if (wishlistId) {
+        await removeFromWishlist(wishlistId)
+        return { action: 'removed' as const }
+      }
+      await addToWishlist(steamAppid)
+      return { action: 'added' as const }
+    },
+    onMutate: (steamAppid: string) => {
+      setPendingWishlistAppid(steamAppid)
+    },
+    onSuccess: (result) => {
+      toast.success(result.action === 'added' ? 'Toegevoegd aan verlanglijst!' : 'Verwijderd van verlanglijst')
+      qc.invalidateQueries({ queryKey: ['wishlist'] })
+    },
+    onError: (e: unknown) => {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast.error(detail ?? 'Wishlist actie mislukt')
+    },
+    onSettled: () => {
+      setPendingWishlistAppid(null)
+    },
+  })
+
+  const handleWishlistClick = (event: MouseEvent<HTMLButtonElement>, steamAppid: string) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!authenticated) {
+      toast('Log in om games aan je verlanglijst toe te voegen')
+      navigate('/login')
+      return
+    }
+
+    if (pendingWishlistAppid) {
+      return
+    }
+
+    toggleWishlistMutation.mutate(steamAppid)
+  }
 
   return (
     <>
@@ -92,12 +155,15 @@ export function HomePage() {
                 const discountPercent = game.discount_percent ?? 0
                 const regularPrice = game.regular_price ?? 0
                 const salePrice = game.sale_price ?? regularPrice
+                const hasHeaderImage = !!game.header_image?.trim()
+                const fallbackHeaderImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/header.jpg`
+                const cardHeaderImage = hasHeaderImage ? game.header_image!.trim() : fallbackHeaderImage
 
                 return (
                   <Link
                     key={game.steam_appid}
                     to={`/game/${game.steam_appid}`}
-                    className="block rounded-xl overflow-hidden transition-all duration-200"
+                    className="group block rounded-xl overflow-hidden transition-all duration-200"
                     style={{
                       background: 'rgba(255, 255, 255, 0.84)',
                       backdropFilter: 'blur(8px)',
@@ -107,11 +173,42 @@ export function HomePage() {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1278a8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 22px rgba(18, 120, 168, 0.2)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(110, 190, 235, 0.42)'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(40, 110, 165, 0.09)' }}
                   >
-                    <div className="relative">
+                    <div className="relative w-full h-24 sm:h-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(168,216,242,0.7), rgba(201,236,255,0.75))' }}>
+                      <div
+                        className="absolute inset-0 flex items-center justify-center px-2 text-center text-xs font-medium"
+                        style={{ color: 'rgba(8,32,48,0.6)' }}
+                      >
+                        {game.name}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={wishlistByAppid.has(game.steam_appid) ? `Verwijder ${game.name} uit verlanglijst` : `Voeg ${game.name} toe aan verlanglijst`}
+                        title={wishlistByAppid.has(game.steam_appid) ? 'Verwijder van verlanglijst' : 'Voeg toe aan verlanglijst'}
+                        onClick={(event) => handleWishlistClick(event, game.steam_appid)}
+                        disabled={pendingWishlistAppid === game.steam_appid}
+                        className={`wishlist-heart-btn absolute top-2 right-2 z-20 rounded-full p-2 ${wishlistByAppid.has(game.steam_appid) ? 'opacity-100 is-active' : hasHeaderImage ? 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100' : 'opacity-100'} ${pendingWishlistAppid === game.steam_appid ? 'cursor-not-allowed is-busy' : ''}`}
+                        style={{
+                          background: wishlistByAppid.has(game.steam_appid) ? 'rgba(232, 121, 160, 0.9)' : 'rgba(8, 32, 48, 0.65)',
+                          backdropFilter: 'blur(4px)',
+                          border: wishlistByAppid.has(game.steam_appid) ? '1px solid rgba(232,121,160,0.95)' : '1px solid rgba(255,255,255,0.4)',
+                          boxShadow: '0 3px 8px rgba(0, 0, 0, 0.2)',
+                          outline: 'none',
+                        }}
+                      >
+                        <Heart
+                          className="wishlist-heart-icon"
+                          size={14}
+                          color="#ffffff"
+                          fill={wishlistByAppid.has(game.steam_appid) ? '#ffffff' : 'transparent'}
+                        />
+                      </button>
                       <OptimizedImage
-                        src={game.header_image || ''}
+                        src={cardHeaderImage}
                         alt={game.name}
-                        className="w-full h-24 sm:h-28 object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.visibility = 'hidden'
+                        }}
                       />
                       {discountPercent > 0 && (
                         <div className="absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'linear-gradient(135deg, #1ea866, #15924e)', boxShadow: '0 2px 6px rgba(22,154,88,0.3)' }}>

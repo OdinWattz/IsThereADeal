@@ -28,6 +28,7 @@ import {
   getDealSkipHistory,
   getFeaturedBlacklist,
   getFeaturedConfig,
+  getFeaturedDealHistory,
   getFeaturedQueue,
   getFeaturedWhitelist,
   getTodayDealSkipHistory,
@@ -101,6 +102,12 @@ export function AdminBlogPage() {
   const { data: fullDealSkipHistory, isLoading: isLoadingFullDealSkipHistory } = useQuery({
     queryKey: ['deal-of-the-day-skips-history'],
     queryFn: () => getDealSkipHistory(150),
+    enabled: isAuthenticated() && isAdmin,
+  })
+
+  const { data: featuredDealHistory, isLoading: isLoadingFeaturedDealHistory } = useQuery({
+    queryKey: ['deal-of-the-day-featured-history'],
+    queryFn: () => getFeaturedDealHistory(150),
     enabled: isAuthenticated() && isAdmin,
   })
 
@@ -430,6 +437,61 @@ export function AdminBlogPage() {
           />
           Gidsen knop tonen in navbar
         </label>
+      </section>
+
+      <section
+        style={{
+          border: '1px solid rgba(90, 175, 225, 0.35)',
+          background: 'rgba(225,245,255,0.5)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+        }}
+      >
+        <h2 style={{ color: '#082030', margin: '0 0 6px' }}>Featured deals history (DB)</h2>
+        <p style={{ color: '#5888a5', margin: '0 0 10px' }}>
+          Dit is de echte history uit daily_featured_deals.
+        </p>
+        {isLoadingFeaturedDealHistory ? (
+          <p style={{ color: '#5888a5' }}>Featured history laden...</p>
+        ) : (
+          <div style={{ display: 'grid', gap: '8px' }}>
+            <div style={{ color: '#1a4a68', fontSize: '0.92rem' }}>
+              Totaal entries: <strong>{featuredDealHistory?.count ?? 0}</strong>
+            </div>
+            {(featuredDealHistory?.items?.length ?? 0) === 0 ? (
+              <p style={{ color: '#5888a5' }}>Nog geen featured history aanwezig.</p>
+            ) : (
+              featuredDealHistory?.items.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    border: '1px solid rgba(90,175,225,0.28)',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    background: 'rgba(255,255,255,0.55)',
+                  }}
+                >
+                  <div style={{ color: '#1a4a68', fontSize: '0.88rem' }}>
+                    <Link to={`/game/${item.steam_appid}`} style={{ color: '#1a4a68', textDecoration: 'none' }}>
+                      <strong>{item.name}</strong>
+                    </Link>
+                    {' · '}
+                    <span style={{ fontFamily: 'monospace' }}>{item.steam_appid}</span>
+                    {' · '}
+                    {item.featured_date ?? 'onbekende datum'}
+                    {' · '}
+                    {item.discount_percent}%
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </section>
 
       <section

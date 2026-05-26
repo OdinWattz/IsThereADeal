@@ -648,6 +648,10 @@ async def set_manual_featured_deal(
         try:
             game = await upsert_game_and_prices(db, steam_appid, include_key_resellers=False)
         except Exception:
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             game = None
 
         if game is None:
@@ -723,6 +727,46 @@ async def set_manual_featured_deal(
     await db.commit()
     await db.refresh(snapshot)
     return _daily_featured_deal_to_dict(snapshot)
+
+
+@router.get("/deal-of-the-day/history")
+async def get_featured_deal_history(
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    """Admin-only: return featured deal history from daily_featured_deals table."""
+    _ = current_user
+
+    result = await db.execute(
+        select(DailyFeaturedDeal)
+        .order_by(DailyFeaturedDeal.featured_date.desc(), DailyFeaturedDeal.created_at.desc())
+        .limit(limit)
+    )
+    rows = result.scalars().all()
+
+    items = [
+        {
+            "id": row.id,
+            "featured_date": row.featured_date.isoformat() if row.featured_date else None,
+            "steam_appid": row.steam_appid,
+            "name": row.name,
+            "sale_price": row.sale_price,
+            "regular_price": row.regular_price,
+            "discount_percent": row.discount_percent,
+            "store_name": row.store_name,
+            "header_image": row.header_image,
+            "deal_rating": row.deal_rating,
+            "url": row.url,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+        }
+        for row in rows
+    ]
+
+    return {
+        "count": len(items),
+        "items": items,
+    }
 
 
 @router.get("/deal-of-the-day/queue")

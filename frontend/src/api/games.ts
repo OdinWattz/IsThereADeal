@@ -183,6 +183,29 @@ export const updateFeaturedConfig = (payload: Partial<FeaturedConfig>) =>
 export const setManualFeaturedDeal = (steam_appid: string) =>
   api.post<DealOfDay>('/games/deal-of-the-day/manual', { steam_appid }).then((r) => r.data)
 
+export interface FeaturedDealHistoryItem {
+  id: number
+  featured_date: string | null
+  steam_appid: string
+  name: string
+  sale_price: number
+  regular_price: number
+  discount_percent: number
+  store_name: string
+  header_image: string
+  deal_rating: number
+  url?: string | null
+  created_at: string | null
+}
+
+export interface FeaturedDealHistoryList {
+  count: number
+  items: FeaturedDealHistoryItem[]
+}
+
+export const getFeaturedDealHistory = (limit = 100) =>
+  api.get<FeaturedDealHistoryList>('/games/deal-of-the-day/history', { params: { limit } }).then((r) => r.data)
+
 export interface FeaturedQueueItem {
   id: number
   steam_appid: string

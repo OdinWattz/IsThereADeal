@@ -15,7 +15,7 @@ export function HomePage() {
   const authenticated = isAuthenticated()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [pendingWishlistAppid, setPendingWishlistAppid] = useState<string | null>(null)
+  const [pendingWishlistAppids, setPendingWishlistAppids] = useState<Set<string>>(new Set())
 
   const { data: featured = [], isLoading } = useQuery({
     queryKey: ['featured'],
@@ -45,7 +45,7 @@ export function HomePage() {
       return { action: 'added' as const }
     },
     onMutate: (steamAppid: string) => {
-      setPendingWishlistAppid(steamAppid)
+      setPendingWishlistAppids((prev) => new Set(prev).add(steamAppid))
     },
     onSuccess: (result) => {
       toast.success(result.action === 'added' ? 'Toegevoegd aan verlanglijst!' : 'Verwijderd van verlanglijst')
@@ -55,8 +55,12 @@ export function HomePage() {
       const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast.error(detail ?? 'Wishlist actie mislukt')
     },
-    onSettled: () => {
-      setPendingWishlistAppid(null)
+    onSettled: (_data, _error, steamAppid) => {
+      setPendingWishlistAppids((prev) => {
+        const next = new Set(prev)
+        next.delete(steamAppid)
+        return next
+      })
     },
   })
 
@@ -70,7 +74,7 @@ export function HomePage() {
       return
     }
 
-    if (pendingWishlistAppid) {
+    if (pendingWishlistAppids.has(steamAppid)) {
       return
     }
 
@@ -185,8 +189,8 @@ export function HomePage() {
                         aria-label={wishlistByAppid.has(game.steam_appid) ? `Verwijder ${game.name} uit verlanglijst` : `Voeg ${game.name} toe aan verlanglijst`}
                         title={wishlistByAppid.has(game.steam_appid) ? 'Verwijder van verlanglijst' : 'Voeg toe aan verlanglijst'}
                         onClick={(event) => handleWishlistClick(event, game.steam_appid)}
-                        disabled={pendingWishlistAppid === game.steam_appid}
-                        className={`wishlist-heart-btn absolute top-2 right-2 z-20 rounded-full p-2 ${wishlistByAppid.has(game.steam_appid) ? 'opacity-100 is-active' : hasHeaderImage ? 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100' : 'opacity-100'} ${pendingWishlistAppid === game.steam_appid ? 'cursor-not-allowed is-busy' : ''}`}
+                        disabled={pendingWishlistAppids.has(game.steam_appid)}
+                        className={`wishlist-heart-btn absolute top-2 right-2 z-20 rounded-full p-2 ${wishlistByAppid.has(game.steam_appid) ? 'opacity-100 is-active' : hasHeaderImage ? 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100' : 'opacity-100'} ${pendingWishlistAppids.has(game.steam_appid) ? 'cursor-not-allowed is-busy' : ''}`}
                         style={{
                           background: wishlistByAppid.has(game.steam_appid) ? 'rgba(232, 121, 160, 0.9)' : 'rgba(8, 32, 48, 0.65)',
                           backdropFilter: 'blur(4px)',

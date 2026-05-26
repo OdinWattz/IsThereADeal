@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Search } from 'lucide-react'
-import { searchGames } from '../api/games'
+import { Search, Heart } from 'lucide-react'
+import { addToWishlist, getWishlist, removeFromWishlist, searchGames } from '../api/games'
 import type { SearchResult } from '../api/games'
 import { OptimizedImage } from './OptimizedImage'
+import { useAuthStore } from '../store/authStore'
+import toast from 'react-hot-toast'
 
 interface SearchBarProps {
   onSelectGame?: (result: SearchResult) => void
@@ -15,9 +18,54 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const [pendingWishlistAppids, setPendingWishlistAppids] = useState<Set<string>>(new Set())
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
+  const authenticated = isAuthenticated()
+  const qc = useQueryClient()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { data: wishlistItems = [] } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: () => getWishlist(),
+    enabled: authenticated,
+    staleTime: 1000 * 60,
+  })
+
+  const wishlistByAppid = new Map(
+    wishlistItems.map((item) => [item.game.steam_appid, item.id] as const)
+  )
+
+  const toggleWishlistMutation = useMutation({
+    mutationFn: async (steamAppid: string) => {
+      const wishlistId = wishlistByAppid.get(steamAppid)
+      if (wishlistId) {
+        await removeFromWishlist(wishlistId)
+        return { action: 'removed' as const }
+      }
+      await addToWishlist(steamAppid)
+      return { action: 'added' as const }
+    },
+    onMutate: (steamAppid: string) => {
+      setPendingWishlistAppids((prev) => new Set(prev).add(steamAppid))
+    },
+    onSuccess: (result) => {
+      toast.success(result.action === 'added' ? 'Toegevoegd aan verlanglijst!' : 'Verwijderd van verlanglijst')
+      qc.invalidateQueries({ queryKey: ['wishlist'] })
+    },
+    onError: (e: unknown) => {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast.error(detail ?? 'Wishlist actie mislukt')
+    },
+    onSettled: (_data, _error, steamAppid) => {
+      setPendingWishlistAppids((prev) => {
+        const next = new Set(prev)
+        next.delete(steamAppid)
+        return next
+      })
+    },
+  })
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -64,6 +112,23 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
     navigate(`/search?q=${encodeURIComponent(query.trim())}`)
   }
 
+  const handleWishlistClick = (event: React.MouseEvent<HTMLButtonElement>, steamAppid: string) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!authenticated) {
+      toast('Log in om games aan je verlanglijst toe te voegen')
+      navigate('/login')
+      return
+    }
+
+    if (pendingWishlistAppids.has(steamAppid)) {
+      return
+    }
+
+    toggleWishlistMutation.mutate(steamAppid)
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%' }}>
       <form onSubmit={handleSubmit}>
@@ -105,14 +170,23 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
           zIndex: 100, overflow: 'hidden',
         }}>
           {results.map((r) => (
-            <button
+            <div
               key={r.steam_appid}
+              role="button"
+              tabIndex={0}
               onClick={() => handleSelect(r)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleSelect(r)
+                }
+              }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 14px', border: 'none', background: 'none',
+                padding: '10px 14px', background: 'none',
                 cursor: 'pointer', textAlign: 'left',
                 borderBottom: '1px solid rgba(90, 175, 225, 0.25)',
+                outline: 'none',
               }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(180, 228, 252, 0.55)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -124,7 +198,29 @@ export function SearchBar({ onSelectGame, placeholder = 'Search games...' }: Sea
               {r.is_in_db && (
                 <span style={{ flexShrink: 0, fontSize: '0.7rem', backgroundColor: 'rgba(18,120,168,0.15)', color: '#1278a8', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(18,120,168,0.25)' }}>tracked</span>
               )}
-            </button>
+              <button
+                type="button"
+                aria-label={wishlistByAppid.has(r.steam_appid) ? `Verwijder ${r.name} uit verlanglijst` : `Voeg ${r.name} toe aan verlanglijst`}
+                title={wishlistByAppid.has(r.steam_appid) ? 'Verwijder van verlanglijst' : 'Voeg toe aan verlanglijst'}
+                onClick={(event) => handleWishlistClick(event, r.steam_appid)}
+                disabled={pendingWishlistAppids.has(r.steam_appid)}
+                className={`wishlist-heart-btn rounded-full p-2 ${wishlistByAppid.has(r.steam_appid) ? 'is-active' : ''} ${pendingWishlistAppids.has(r.steam_appid) ? 'cursor-not-allowed is-busy' : ''}`}
+                style={{
+                  flexShrink: 0,
+                  background: wishlistByAppid.has(r.steam_appid) ? 'rgba(232, 121, 160, 0.9)' : 'rgba(8, 32, 48, 0.65)',
+                  border: wishlistByAppid.has(r.steam_appid) ? '1px solid rgba(232,121,160,0.95)' : '1px solid rgba(255,255,255,0.4)',
+                  boxShadow: '0 3px 8px rgba(0, 0, 0, 0.2)',
+                  outline: 'none',
+                }}
+              >
+                <Heart
+                  className="wishlist-heart-icon"
+                  size={13}
+                  color="#ffffff"
+                  fill={wishlistByAppid.has(r.steam_appid) ? '#ffffff' : 'transparent'}
+                />
+              </button>
+            </div>
           ))}
           <button
             onClick={() => { setOpen(false); setQuery(''); navigate(`/search?q=${encodeURIComponent(query.trim())}`) }}
